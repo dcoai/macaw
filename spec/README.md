@@ -8,6 +8,37 @@ It is the shared layer beneath **visualize** (charts and boards), **metresis** (
 
 **Sources:** every claim about another project cites its requirement report in [`design/requirements/`](../design/requirements/) (`visualize.md`, `metresis.md`, `dcotek_web.md`, all following `TEMPLATE.md`), which cite that project's spec.
 
+## Goals and non-goals
+
+### Goals
+
+1. **Composes components in any Phoenix LiveView app.** composex is the composition layer, not a framework a host is built around. Any LiveView mounts a surface with one call (as a LiveComponent, or with `live_render`), from a document plus a map of sources. It needs no host framework, database, tracking or router.
+2. **Every host concern is a behaviour with a working default.** The smallest app is a few lines; a host replaces only what it cares about.
+
+   | Concern | Behaviour | Default |
+   |---|---|---|
+   | who is viewing | viewer | none (anonymous) |
+   | what is observed about the viewer | observation | nothing |
+   | where definitions live | store | in memory |
+   | where state persists | state persistence | nowhere (per view, lost on leave) |
+   | where a link or drill goes | navigation | an event to the host |
+   | which credentials a source uses | the source's own configuration | none |
+3. **Complete without a socket.** A surface renders as complete server HTML (a dead render, or no JS), and the live layer only adds to it.
+4. **Strict web rules for every component:** nothing inline (`script-src` and `style-src` limited to the app's own files plus hashes), nothing from another origin, accessible, and honoring reduced motion (§9, §9a). A component that meets these works in any host, the strictest included.
+5. **No dependency on its adopters.** composex depends on none of visualize, metresis or dcotek_web; they depend on it. A CI check enforces it.
+6. **Proven by an example app** in this repository, using none of the three: a page composed from built-in components and an in-memory source, run in CI.
+7. **Open to third parties.** Built-in components and sources use the same public contracts as any package, through an explicit, default-closed registry (§9).
+
+### Non-goals
+
+- **A web framework.** Routing, sessions, sites and endpoints are the host's.
+- **An identity or access system.** The viewer and what it may see arrive from the host (§10).
+- **An analytics or tracking system.** Components declare what they would observe; the host decides and collects (§10).
+- **A charting library or a data store.** Charts are components (visualize); stores of data are sources (metresis, exio, a database).
+- **A CMS or editor.** composex runs documents; editing tools sit on top.
+
+---
+
 ## 0. The finding in one paragraph
 
 The three projects already agree on more than they differ. All three:
