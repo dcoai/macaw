@@ -83,7 +83,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 
 **visualize stays visualize.** It holds more than charts (geo and maps, scenes, the design builder) and is a product built on the blocks, not one of them. It depends on `macaw_layers` and `macaw_data`, and registers its theme slots into Macaw's themes. It may be folded into Macaw later, but not yet.
 
-**visualize and `macaw_compose` never depend on each other.** Visuals reach pages through a small adapter, **`macaw_charts`**, which depends on both and implements the component contract around visualize designs.
+**visualize and `macaw_compose` never depend on each other.** Visuals reach pages through a small adapter, **`macaw_visualize`**, which depends on both and implements the component contract around visualize designs.
 
 Other component packages (metresis's panels, components built on ryutronic) depend on `macaw_compose` and bring their own dependencies; Macaw never imports them.
 

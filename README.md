@@ -14,7 +14,7 @@ Macaw exists for **composition effects**: components composed through it gain ef
 | `macaw_live` | the LiveView runtime |
 | `macaw_records` | data-editing components (later) |
 
-**visualize** keeps its own name and depends on `macaw_layers` and `macaw_data`. Its visuals reach Macaw pages through the `macaw_charts` adapter; visualize and `macaw_compose` never depend on each other.
+**visualize** keeps its own name and depends on `macaw_layers` and `macaw_data`. Its visuals reach Macaw pages through the `macaw_visualize` adapter; visualize and `macaw_compose` never depend on each other.
 
 ## Status
 
