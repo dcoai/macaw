@@ -10,7 +10,7 @@ A **derived source** (visualize's *virtual source*) is computed from other sourc
   - a **host** `defsource` in a registered module: trusted but bounded.
 
   It is never a mini-language.
-- **The checker:** exactly one `fn` of arity 1 (inputs) or 2 (inputs, context), against an explicit allowlist of `{module, function, arity}`. It refuses:
+- **The checker:** exactly one `fn` of arity 1 (inputs) or 2 (inputs, context), against an explicit allowlist of `{module, function, arity}`, generated from the transforms and aggregates registered by enabled packages (§5). It refuses:
   - `send`, `receive`, `spawn`, `try`, `raise` and `apply`;
   - `import`, `quote`, sigils, struct literals and module atoms;
   - dynamic calls.
@@ -23,7 +23,7 @@ A **derived source** (visualize's *virtual source*) is computed from other sourc
   - heap: 10,000,000 words.
 - **Faults never carry data values.** The last good output survives a fault.
 - **The output conforms to its declared schema,** or it is a fault.
-- **Context has no clock.** A source reads its inputs' schemas, their deliveries' served facts, and the variables at its scope.
+- **Context has no clock.** A source reads its inputs' schemas, their deliveries' served facts, and the variable state sources at its scope ([03](03-state.md#state-sources)).
 
 ## 2. Inputs {#derived-inputs}
 
@@ -48,3 +48,14 @@ Derivations that need raw rows or the store stay **inside the source**, never in
 - rollup vs raw selection.
 
 (metresis.md C2.)
+
+## 5. Transforms and aggregates {#derived-operations}
+
+The operations a visualize design applies to its data and the operations a derived source may call are **the same code**, in `macaw_data` beside derived sources (macaw_compose#22, decision 11):
+- **the transform behavior,** with the table operations: filter, sort, take, fold, sum, bin, stack, window, lttb, m4 and spectrum;
+- **the aggregate behavior,** with its statistics.
+
+A computation can therefore move between a design and a derived source unchanged, and a metresis feed and a visualize chart reduce data the same way.
+
+- **Transforms that need geometry** (they declare `needs: [:frame]` or `needs: [:projection]`: layouts, geographic operations) stay in the package that draws, and register through the registry like any other member ([12](12-registry.md)).
+- **The sandbox allowlist is generated** from the registered members of enabled packages, never written by hand, so enabling a package is the only way to widen it.
