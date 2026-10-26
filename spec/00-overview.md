@@ -10,7 +10,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 
 1. **Composition effects: the whole is greater than the sum of its parts.** This is why Macaw exists. Components composed through Macaw gain effects none of them can produce alone, for *every* combination, including combinations nobody planned.
 
-   **The principle is N + M, not N × M.** Without composition, making N components interact needs code for every pair, so it never happens. With Macaw, each component declares itself once (its slots, identity, kinds, state, exports, events, observation and renders), and every combination works.
+   **The principle is N + M, not N × M.** Without composition, making N components interact needs code for every pair, so it never happens. With Macaw, each component declares itself once (its slots, identity, kinds, state, events, observation and renders), and every combination works.
 
    | Effect | What happens | Provided by |
    |---|---|---|

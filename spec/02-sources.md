@@ -81,7 +81,7 @@ Push is optional and declared:
 
 ## 7. Credentials {#sources-credentials}
 
-Credentials and bindings never appear in documents. A page names a source; the host maps the name to a configured source. For metresis, that is a per-domain token, ideally scoped (metresis#555). (visualize.md C1, D-141; metresis.md C11.)
+Credentials and source configuration never appear in documents. A page names a source; the host maps the name to a configured source (its **source configuration**). For metresis, that is a per-domain token, ideally scoped (metresis#555). (visualize.md C1, D-141; metresis.md C11.)
 
 ## 8. The interaction event {#sources-event}
 
@@ -103,6 +103,6 @@ Every component emits interaction in **one struct**, `Macaw.Data.Event`, defined
 ```
 
 - **`initiator`** separates the steps of a view path (a visitor did something) from its markers (the system did something) ([08](08-records.md#records-paths)). A paused animation is a system event.
-- **The recorded form,** `Event.recordable/1`, drops `row` and `point`. Records, observation and state snapshots only ever see the recorded form, so data values never reach them ([08](08-records.md#records-content)).
+- **The recorded form,** `Event.recordable/1`, drops `row` and `point`. Records, observation and state snapshots only ever see the recorded form, so **row values never reach them**. The `identity` and the event's own `value` do, and they can be personal; whether they are recorded is decided per state source by capture level ([08](08-records.md#records-stores)).
 - **The drawn-token rule:** an event on an element that maps to data resolves against the drawing it landed on. Each drawing carries a token; an event whose token is not the current drawing's is dropped, never resolved against newer data. (visualize D-170.)
 - **Identity is the declared identity** of the item (§1). Inference from other fields is allowed only for a visitor's one-off pick, never for tracking or recording. (visualize D-167.)

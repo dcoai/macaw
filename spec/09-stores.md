@@ -25,7 +25,7 @@ The **context** says who is acting and from where, so entries are traceable. The
   - new ids are issued, and references are rewritten through one table;
   - it commits whole or not at all.
 - **A bundle takes the transitive closure.**
-- **A bundle carries definitions** (re-keyed on import), **never bindings, credentials or data.**
+- **A bundle carries definitions** (re-keyed on import), and the bindings inside them, **never source configuration, credentials or data.**
 
 ## 3. Portability: bundles and state snapshots {#stores-portable}
 
@@ -33,7 +33,7 @@ Goal 9: save configuration, and state where possible, and restore it on another 
 - **A bundle** is the transitive closure of the documents a page (or a set of pages) needs: pages, surfaces, component settings and presets, templates, layers, themes and styles. It carries provenance (the source store, the export time, the version stamps) and each entry's original id.
 - **A bundle may carry a state snapshot** ([03](03-state.md#state-snapshots)).
 - **What never travels:**
-  - credentials and bindings: the importing host maps source names to its own configured sources;
+  - credentials and source configuration: the importing host maps source names to its own configured sources;
   - data: sources re-read;
   - identity: the host's records stay with the host.
 - **Import is a relocation:**

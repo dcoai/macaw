@@ -19,7 +19,7 @@ Choosing any step shows the page as it was there. The path and the replay are on
 
 ## 2. What is recorded {#records-content}
 
-- **Base renders:** the **neutral** render of a page version, content-addressed and shared by every visit.
+- **Base renders:** the **neutral** render of a page version **before any delivery**: every component in its initial drawn state (`loading`), and state at its initial values. It therefore holds no data and nothing per viewer, so it is content-addressed and shared by every visit.
   - It is stored **by part and assembled:** the chrome rendered by a given template stack is stored once, and a page's base render is an assembly of part hashes. The record still *means* "the whole page as seen".
   - Its assets are captured too, including generated content-addressed stylesheets ([10](10-web.md#web-csp)).
 
@@ -36,7 +36,7 @@ Choosing any step shows the page as it was there. The path and the replay are on
 | record | digests, recorded events, requests | never |
 | state snapshot ([03](03-state.md#state-snapshots)) | interaction state | never |
 
-**Replay** re-renders the base render, applies the state events up to the chosen step, and re-runs the components. Replay runs no scripts in the frame. (dcotek_web.md C7.)
+**Replay** starts from the base render, applies the state events up to the chosen step, and re-runs the components against requeried sources (§4). Replay runs no scripts in the frame. (dcotek_web.md C7.)
 
 ## 3. Attention {#records-attention}
 
@@ -60,4 +60,4 @@ Choosing any step shows the page as it was there. The path and the replay are on
 - **Identity never enters Macaw.** The same record format works in any app, and a record can be shared without identifying anyone.
 - **Deletion and retention have one owner:** the host deletes the visit and the records linked to it.
 - **Replay gets its viewer from the host.**
-- **State values can themselves be personal** (a typed search, picked skills). So recording is declared per state source with the lowest capture level allowed, and is **closed by default**: a source or state source is recorded only when it declares it and the host enables it. macaw_server's D6 (nothing finer than page level for anonymous visitors) applies to state values too.
+- **State values can themselves be personal** (a typed search, picked skills). So recording is declared per state source with the lowest capture level allowed ([01](01-vocabulary.md#vocab-records)), and is **closed by default**: a source or state source is recorded only when it declares it and the host enables it. macaw_server's D6 (nothing finer than page level for anonymous visitors) applies to state values too.

@@ -13,7 +13,7 @@
 |---|---|---|
 | ids on object storage | macaw_compose#4 | an exio-backed store is built |
 | `macaw_edit`'s shapes (operations, change sets, conflict display, how writes are recorded) | macaw_compose#9 | `macaw_edit` starts |
-| edges of the page DAG crossing processes (persistent regions) | — | `macaw_live` is built |
+| edges of the page DAG crossing processes: persistent regions, `:shared` state's owner, cross-page pooling | — | `macaw_live` is built |
 | a runtime page builder | — | after v1 ([06](06-pages.md#pages-runtime)) |
 
 ## In the adopting projects {#open-adopters}

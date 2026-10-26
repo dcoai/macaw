@@ -24,7 +24,7 @@ Every declarative value Macaw reads is a **document**: pages, surfaces, template
   (visualize.md C6, D-195.)
 - **Map and JSON forms are exact inverses** for valid values. Values JSON can't express use one table of `$` tags. (visualize.md C6.)
 - **A canonical digest** (`Document.digest/1`) fingerprints any document independently of key order. Records, base renders and bundles cite it. (metresis.md C6.)
-- **Documents hold no functions, bindings or credentials.** (visualize.md C6.)
+- **Documents hold no functions, credentials or source configuration.** They do hold bindings, which name sources and state by name only ([01](01-vocabulary.md#vocab-data)). (visualize.md C6.)
 - **Untrusted strings** are sanitized where read and escaped where written, and URLs are checked by a host policy. (visualize.md C6.)
 - **Fetched documents** (from exio or a database) are untrusted input: the same gates apply, and nothing is evaluated. (dcotek_web.md C6.)
 

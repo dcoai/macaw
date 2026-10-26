@@ -46,7 +46,7 @@ Macaw provides **one generic same-origin asset proxy** for media a component nee
 |---|---|---|
 | live | a connected LiveView | hooks attached; a visual may draw marks on a canvas |
 | socketless | bots, black holes, no JS, the first render | complete HTML and SVG, never canvas; native behaviors only; the first render from the deliveries |
-| neutral | base renders for records | as socketless, with no hooks, scripts, tokens, live regions or per-viewer markup |
+| neutral | base renders for records, before any delivery ([08](08-records.md#records-content)); print | as socketless, with no hooks, scripts, tokens, live regions or per-viewer markup |
 | print | print and PDF output | as neutral, in the print theme and the automatic print layer, laid out in the print box |
 
 ## 3. Responsive layout {#web-responsive}
@@ -138,7 +138,7 @@ Observation reports what a viewer did with a component, never what data they saw
 - **One closed vocabulary:** `view`, `dwell`, `hover_item`, `focus_item`, `activate`, `select`, `brush`, `copy` and `scroll_into_view`.
 - **Each observation is an event in its recorded form** ([02](02-sources.md#sources-event)): the element and identity, never data values.
 - **A component declares** which it can emit (`observes`). **The host enables** a subset per page. **Nothing is emitted otherwise**, so an adopter used without a host plan reports nothing.
-- **Hover and focus are reported on enter and leave,** never on pointer motion; raw movement never reaches the server.
+- **Hover and focus are reported on enter and leave,** never on pointer motion; raw movement never reaches the server. The hover *position* that components share is `:local` state ([03](03-state.md#state-scopes)); a `hover_item` observation is a separate, enabled event.
 - The host's disclosure is generated from the enabled declarations, so it matches exactly what the page can report ([00](00-overview.md#overview-goals)).
 
 ## 6. The client bus {#web-bus}

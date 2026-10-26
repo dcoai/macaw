@@ -17,9 +17,9 @@ Each declaration buys a composition effect ([00](00-overview.md) goal 1, rule 1)
 | **settings schema**, made of parameters (§1.1), which may depend on bound slot schemas (`legal_for`) | validated pages; type-legal options (metresis.md C3) |
 | **slots**: typed inputs with `requires` contracts, checkable before data flows | any source works; faults found at validation (visualize.md C1) |
 | **kinds** it renders as (static) | correct placement and landmarks (§2) |
-| **state** it writes (`writes`), its **local state** (`local`), and **exports** (§1.3) | interaction without wiring ([03](03-state.md)) |
+| the **standard state** it writes (`writes`) and its **local state** (`local`) (§1.3) | interaction without wiring ([03](03-state.md)) |
 | a **budget per slot** (§1.2) | correct fetch sizes; one hard bound per host ([02](02-sources.md#sources-delivery)) |
-| **events** it emits, in the shared event struct, each marked visitor- or system-initiated | accurate view paths ([08](08-records.md)) |
+| **events** it emits, by name, in the shared event struct; each emission carries its initiator | accurate view paths ([08](08-records.md)); cell actions ([06](06-pages.md#pages-actions)) |
 | **announcements** it may request, by name (`announces`) | one coordinated announcer ([10](10-web.md#web-a11y)) |
 | **observation** it can emit (`observes`), a subset of the closed vocabulary | disclosure that matches (dcotek_web.md C3, C12; [10](10-web.md#web-observation)) |
 | **element ids**, stable and derived from content structure | attention that aggregates across builds (dcotek_web.md C3) |
@@ -60,9 +60,9 @@ A component that draws rows declares, for each slot, a **row budget** as a funct
 
 ### 1.3 State a component writes and reads {#components-state}
 
-- **`writes`** names the state sources a component writes and the type of value each takes: `writes: [selection: :identity, window: :x_window]`. A component writes them **only by emitting events** ([03](03-state.md)); the runtime applies the event.
+- **`writes`** names the **standard** state sources a component writes ([03](03-state.md#state-sources): `selection`, `window`, a scene's `camera` and `breakpoints`) and the type of value each takes: `writes: [selection: :identity, window: :x_window]`. Their meaning is built into the component. It writes them **only by emitting events**; the runtime applies the event. Any other state source is the page author's, written through a cell action ([06](06-pages.md#pages-actions)).
 - **`local`** names keys in the `:local` scope it shares through the client bus, with the domain type each carries: `local: [hover: :x_domain, brush_band: :x_window]` ([03](03-state.md#state-scopes)). Pixels never travel on the bus.
-- **Exports** are values others may read ([03](03-state.md#state-exports)).
+- **Exports** are not a component's declaration: the placement document declares them ([03](03-state.md#state-exports)).
 - **A component reads state it doesn't write** through a parameter binding (§1.1) or a slot bound to the state source. It never reads another component.
 
 ### 1.4 Reading load {#components-reading}
@@ -153,7 +153,7 @@ A **container** is a component of kind `:container` whose content is surfaces: t
 - Panes **render** lazily, but **compute** whatever other nodes depend on ([03](03-state.md#state-dag)).
 - **Opening a pane is a view change** (a step), never navigation.
 - Each container type follows its accessibility pattern ([10](10-web.md#web-a11y)).
-- **A container may position its panes by its own coordinate model.** A visualize scene is one visual; the live elements embedded in it (a terminal, a chart) are its panes, placed in scene coordinates. Its camera and playhead are state sources ([03](03-state.md#state-sources)), so they are recorded and shareable like any other state. (macaw_compose#22, R20.)
+- **A container may position its panes by its own coordinate model.** A visualize scene is one visual; the live elements embedded in it (a terminal, a chart) are its panes, placed in scene coordinates. Its camera and breakpoints are state sources, and its playhead is the `window` with `as_of` ([03](03-state.md#state-sources)), so they are recorded and shareable like any other state. (macaw_compose#22, R20.)
 - **Nesting** is only through containers, to a **depth of 3** (surface → container → surface …). A surface's grid never directly contains a grid.
 
 ## 6. Packaging {#components-packaging}

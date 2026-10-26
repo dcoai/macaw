@@ -104,9 +104,9 @@ cells:
         navigate: {to: {page: service}, params: {service: {event: [identity, service]}}}
 ```
 
-- **`set`** writes a state source from the event's fields: a view change, applied by the runtime as if the state's own event had been emitted.
+- **`set`** writes a state source from the event's fields: a view change, applied by the runtime as an event on that state source.
 - **`navigate`** goes to a typed reference ([09](09-stores.md#stores-references)) with params taken from the event's fields: a navigation step, performed by the host's navigation behavior. The library never navigates.
-- **Event fields** are named as paths into the event ([02](02-sources.md#sources-event)): `{event: identity}`, `{event: [identity, service]}`, `{event: value}`, or `{event: [row, field]}`. A value read from `row` is used live and never recorded; the record holds the resulting step.
+- **Event fields** are named as paths into the event ([02](02-sources.md#sources-event)): `{event: identity}`, `{event: [identity, service]}`, `{event: value}`, or `{event: [row, field]}`. Only the named field is read: the row itself is never recorded. A field written by `set` becomes that state source's value, recorded under its capture level like any other ([08](08-records.md#records-stores)); one used by `navigate` is recorded as the step's params.
 - **Several actions on one event run in their declared order,** so one pick may select and then navigate.
 - **Validated with the page:** the event must be one the component declares, the state must accept the value's type, and a `navigate` action's params are checked against the target page's declared params, by type and legal values.
 
@@ -123,7 +123,7 @@ params:
 ```
 
 - Params are validated before anything renders; an illegal value is a `404`-class refusal, never a fault inside a component.
-- State sources read them with `initial: {:param, "service"}` ([03](03-state.md#state-sources)), and source requests may bind them.
+- State sources read them with `initial: {:param, "service"}`, and source requests bind them like state (`params: %{service: {:param, "service"}}`, [03](03-state.md#state-sources)).
 - A `navigate` action's params are validated against them (§5).
 
 ## 6. A runtime page builder (out of scope for v1) {#pages-runtime}

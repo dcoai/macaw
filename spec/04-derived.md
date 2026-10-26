@@ -26,7 +26,7 @@ A **derived source** (visualize's *virtual source*) is computed from other sourc
   - reductions: 100,000,000, **counted, not timed**, so the verdict is the same on a loaded host;
   - liveness: 30 s;
   - heap: 10,000,000 words.
-- **Faults never carry data values.** The last good output survives a fault.
+- **Faults never carry data values.** The last good output survives a fault, and the source's readers draw `stale` ([05](05-components.md#components-states)), worded with the fault's reason, until the next good output.
 - **The output conforms to its declared schema,** or it is a fault.
 - **Context has no clock.** A source reads its inputs' schemas and their deliveries' served facts. Anything else it depends on (a variable, a selection) is an input like any other.
 

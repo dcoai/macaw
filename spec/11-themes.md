@@ -20,7 +20,7 @@
 
 ## 3. Switching at runtime {#themes-runtime}
 
-- A theme chooser is a component writing a viewer- or page-scoped state source, `theme`.
+- A theme chooser is a control whose cell action sets the `theme` preference, a state source at `:viewer` scope, or `:session` for an anonymous visitor ([03](03-state.md#state-sources)).
 - A change swaps the root's theme class through an ordinary diff (classes are fine under CSP), and every component recolors.
 - It persists like other state: in the host's user store when the host knows the viewer, otherwise in the session. The server renders the right class first, so there is no flash.
 - **User-defined themes:** the host generates a stylesheet for the user's theme, served as a file from `'self'` (`/themes/<hash>.css`), by the same mechanism as every document-defined stylesheet ([10](10-web.md#web-csp), rule 3). It must pass the same contrast check, and a theme that fails is refused.
