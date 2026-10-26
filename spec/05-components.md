@@ -21,7 +21,7 @@ Each declaration buys a composition effect ([00](00-overview.md) goal 1, rule 1)
 | a **budget per slot** (§1.2) | correct fetch sizes; one hard bound per host ([02](02-sources.md#sources-delivery)) |
 | **events** it emits, in the shared event struct, each marked visitor- or system-initiated | accurate view paths ([08](08-records.md)) |
 | **announcements** it may request, by name (`announces`) | one coordinated announcer ([10](10-web.md#web-a11y)) |
-| **observation** it can emit (`observes`), a subset of the closed vocabulary | disclosure that matches (dcotek_web.md C3, C12; [10](10-web.md)) |
+| **observation** it can emit (`observes`), a subset of the closed vocabulary | disclosure that matches (dcotek_web.md C3, C12; [10](10-web.md#web-observation)) |
 | **element ids**, stable and derived from content structure | attention that aggregates across builds (dcotek_web.md C3) |
 | **reading load** (§1.4) | reading vs skimming vs glancing (dcotek_web.md C3) |
 | **client hooks**, as static files from `'self'` | strict CSP ([10](10-web.md#web-csp)) |
@@ -104,7 +104,7 @@ def render(:content, assigns),    do: ~H"<ul class=\"cards\">…</ul>"
   - data-carried colors (a `:color` column, a schema's value colors) are typed content, allowed only with a non-color cue and a contrast guard;
   - literal colors are refused. A design language that permits them standalone (visualize's `colors: :open` profile) is validated under the **`:roles` profile** on a Macaw page.
 - **Headings at the level given by context,** never hard-coded ([10](10-web.md#web-a11y)).
-- **Links and navigation as events or host link helpers.** A component never navigates by itself; its placement maps events to actions ([06](06-pages.md)).
+- **Links and navigation as events or host link helpers.** A component never navigates by itself; its placement maps events to actions ([06](06-pages.md#pages-actions)).
 - **Announcements are requested, never owned.** A component never renders a live region; it requests an announcement by name, from the server or from a hook ([10](10-web.md#web-a11y)).
 - **No inline `style` or `<style>`, no inline script, no script evaluation, nothing from another origin** ([10](10-web.md#web-csp)):
   - a finite set of values is a class in a static stylesheet;

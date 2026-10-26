@@ -829,3 +829,34 @@ Nothing needs a separate package. What remains is adapter-shaped code, and all o
 12. **Tile proxy.** visualize `Plug`, host code, or a generic Macaw same-origin asset proxy (A17)?
 13. **Scene key bindings.** Under Macaw, is `capture: :page` (#620) dropped, or does Macaw provide a declared page-shortcut layer that respects WCAG 2.1.4?
 14. **The deprecation window for boards.** One release of `@deprecated` (as #877 decision 5), or removal at 0.9 with only the migration tool?
+
+---
+
+## 6. Where each design now lives in the spec
+
+Adopted under macaw_compose#22 (work items #23–#27). visualize's side is visualize#940.
+
+| R | Spec sections |
+|---|---|
+| R1 | 00 goal 6, §4; 05 §6; README |
+| R2 | 05 §1, §1.1, §2; 07 §3, §4 |
+| R3 | 05 §1.1, §1.3, §4 (`state/3`); 03 §1; 04 §1 |
+| R4 | 02 §8; 08 §1, §2; 01 §3 |
+| R5 | 05 §1.2; 02 §3, §6 |
+| R6 | 05 §3 (modes), §4; 10 §2 |
+| R7 | 03 §2 (`:local`); 10 §6; 02 §6 (cross-page pooling); 00 goal 1 |
+| R8 | 03 §7 |
+| R9 | 06 §5 (actions, page params); 03 §1 (`initial`) |
+| R10 | 03 §1 (preferences); 02 §2 |
+| R11 | 11 §1, §2; 02 §1; 05 §3 |
+| R12 | 10 §1, §1.1; 05 §1, §3; 08 §2 |
+| R13 | 10 §4; 05 §3 |
+| R14 | 10 §5; 05 §1 |
+| R15 | 05 §1.4 |
+| R16 | 08 §2; 01 §3; 00 goal 1 |
+| R17 | 12 §1 |
+| R18 | 04 §5; 00 §4 |
+| R19 | 12 §2 |
+| R20 | 05 §5; 03 §1 (`window` with `as_of`, camera); 10 §4 (shortcut layer) |
+
+Decisions: Q3 → 07 §3, 06 §3; Q4 → 02 §8; Q9 → 02 §6; Q10 → 05 §6; Q12 → 10 §1.1; Q13 → 10 §4; Q14 → visualize#947.

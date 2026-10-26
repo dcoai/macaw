@@ -13,14 +13,24 @@ object-src 'none'; base-uri 'none'; frame-ancestors 'none'
 - **No inline script and no `eval`/`new Function`.**
 - **Hooks are static files from `'self'`.** Only a host's own small inline script (dcotek_web's tracking plan) is hashed.
 - **Nothing from another origin.**
-- **The delivery rule:** a finite set of values becomes a class; a per-datum value becomes an SVG presentation attribute (not governed by CSP); a dynamic value is set by a trusted hook through CSSOM, which CSP allows.
+- **The delivery rule,** for everything a component styles or loads (macaw_compose#22, R12):
+  1. a finite set of values becomes a **class** in a static stylesheet;
+  2. a per-datum value becomes an **SVG presentation attribute** (not governed by CSP);
+  3. a finite set **defined at runtime by a document** (a design's motion: transitions and keyframes; a user's theme, [11](11-themes.md#themes-runtime)) becomes a **generated stylesheet**, content-addressed (`/assets/<hash>.css`), generated on demand and served from `'self'`. Its content is a pure function of the document, so the same document always yields the same file, and base snapshots capture it ([08](08-records.md#records-content));
+  4. a dynamic value is set by a trusted hook through the CSSOM, which CSP allows;
+  5. **no script evaluation,** anywhere;
+  6. **media from another origin is proxied** through a same-origin route (§1.1).
 
-What this asks of visualize (visualize#938):
-- grid and cell placement by class;
-- theme and motion rules in static stylesheets;
-- blend modes and animations as classes;
-- no `:js` canvas path;
-- a board drawn in the first render.
+What this asks of visualize (visualize#944): inline styles become classes, per-design motion becomes generated stylesheets, dark mode is the theme class, the `:js` canvas path is removed, map tiles come through the proxy, and every chart is complete SVG in the first render.
+
+### 1.1 The asset proxy {#web-proxy}
+
+Macaw provides **one generic same-origin asset proxy** for media a component needs from elsewhere: map tiles, remote images, a site's images on object storage (macaw_compose#22, decision 12).
+- **A component declares its proxy routes:** a name, the URL template it fetches, and the content types it accepts. The host mounts the proxy once.
+- **Closed by default:** the host enables each origin explicitly; an undeclared route or an origin not enabled is refused.
+- **It never forwards the viewer:** no cookies, credentials or identifying headers go upstream; the host may add its own credentials by configuration, never from a document.
+- **Bounded:** each response is checked for its declared content type and capped in size, and cached by URL with the upstream's freshness.
+- Pages then hold same-origin URLs only, so `img-src 'self'` holds.
 
 (visualize.md C10; dcotek_web.md C10.)
 
@@ -28,8 +38,8 @@ What this asks of visualize (visualize#938):
 
 | Mode | Use | Notes |
 |---|---|---|
-| live | a connected LiveView | hooks attached |
-| socketless | bots, black holes, no JS, the first render | complete HTML; native behaviors only |
+| live | a connected LiveView | hooks attached; a visual may draw marks on a canvas |
+| socketless | bots, black holes, no JS, the first render | complete HTML and SVG, never canvas; native behaviors only; the first render from the deliveries |
 | neutral | base snapshots for records | no hooks, scripts, prefixes or per-viewer markup |
 | print | print and PDF export | the automatic print layer |
 
@@ -49,7 +59,7 @@ What this asks of visualize (visualize#938):
   | `:hide` | not shown | a class |
 
 - **Grid rows:** DOM order plus column classes, with `grid-auto-flow: dense`. It is accepted if it renders every visualize and metresis board fixture identically (macaw_compose#5).
-- **Motion:** named animations in the stylesheet, removed under `prefers-reduced-motion`.
+- **Motion:** named animations in the static stylesheet, or in a document's generated stylesheet (§1), removed under `prefers-reduced-motion`.
 - **Print:** the print layer compiles to `@media print`: chrome hidden, disclosures open, regions stacked.
 
 (macaw_compose#8, question 4.)
@@ -69,6 +79,12 @@ What this asks of visualize (visualize#938):
 - **composite widgets are one tab stop** with arrows inside (charts, grids, tree menus, tab sets);
 - Escape closes or leaves, and Enter or Space activates;
 - no traps, except `:modal`, which releases on Escape.
+- **Key bindings are focus-scoped.** A component handles keys while focus is inside it. **Page-wide shortcuts** go only through the **page-shortcut layer**, which the composition owns (macaw_compose#22, decision 13):
+  - a component declares the shortcuts it offers (a key, an action name, a description); the page accepts or drops each, and validation refuses two on one key;
+  - every single-character shortcut can be turned off or remapped by the viewer, through a `shortcuts` preference state source ([03](03-state.md#state-sources)), as WCAG 2.1.4 requires;
+  - the layer lists the active shortcuts for assistive technology and in a help dialog.
+
+  A visualize scene's `capture: :page` (visualize#620) declares its keys to this layer.
 
 **Focus after changes**, owned by Macaw:
 
@@ -80,7 +96,11 @@ What this asks of visualize (visualize#938):
 | error | to the error summary or first invalid field | the error |
 | within a persistent region | kept | — |
 
-**One announcer per surface:** one polite and one assertive live region. Components request announcements as declared events, and the surface queues, merges and rate-limits them.
+**One announcer per composition** (a surface, or an adopter's standalone component, such as a visualize chart outside Macaw): one polite and one assertive live region. Components never render a live region of their own. They request announcements by a name they declare (`announces`, [05](05-components.md#components-declares)):
+- **from the server,** as an event;
+- **from a hook,** as a DOM event, `macaw:announce`, with `{name, text, politeness}`, which the announcer hook (`macaw_live`) receives.
+
+The announcer queues, merges and rate-limits requests, and drops undeclared names. A visual's keyboard readout is such a request (visualize#945).
 
 **Every component:**
 - real elements;
@@ -103,3 +123,20 @@ The menu pattern is a **disclosure navigation** (buttons with `aria-expanded` an
 - surface and template validation;
 - theme contrast checks;
 - **axe-core and keyboard scripts in CI** for the example app.
+
+## 5. Observation {#web-observation}
+
+Observation reports what a viewer did with a component, never what data they saw (macaw_compose#22, R14).
+- **One closed vocabulary:** `view`, `dwell`, `hover_item`, `focus_item`, `activate`, `select`, `brush`, `copy` and `scroll_into_view`.
+- **Each observation is an event in its recorded form** ([02](02-sources.md#sources-event)): the element and identity, never data values.
+- **A component declares** which it can emit (`observes`). **The host enables** a subset per page. **Nothing is emitted otherwise**, so an adopter used without a host plan reports nothing.
+- **Hover and focus are reported on enter and leave,** never on pointer motion; raw movement never reaches the server.
+- The host's disclosure is generated from the enabled declarations, so it matches exactly what the page can report ([00](00-overview.md#overview-goals)).
+
+## 6. The client bus {#web-bus}
+
+The **client bus** carries the `:local` scope ([03](03-state.md#state-scopes)) between components in one browser page. It is a static module in `macaw_live`, served from `'self'`.
+- **Keyed by local scope name;** each component's hook publishes and subscribes only to the keys its component declares (`local`, [05](05-components.md#components-state)). Undeclared keys are refused.
+- **Domain values only** (a time, an identity, a window), never pixels, so components of different authors share a hover.
+- **It never reaches the server,** and nothing on it is recorded or persisted. A value that must count is turned into an event by the component.
+- visualize's `VisualizeSync` becomes this bus; standalone, visualize ships a compatible bus of its own (visualize#906).

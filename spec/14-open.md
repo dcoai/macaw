@@ -22,4 +22,4 @@
 |---|---|---|
 | dcotek_web | live navigation when pages' observation plans differ; where token emphasis lives, and whether it narrows down share chains; the PDF résumé as a page view or an event; content in exio (spec amendment) and when it is snapshotted | dcotek_web#130 |
 | metresis | placing a single panel; what a click means on a public page; a read-only alerts scope; a comparison source | metresis#556 |
-| visualize | `Board.Server`'s shared state vs per-viewer state; which open proposals to re-scope against Macaw | visualize#938 |
+| visualize | settled by macaw_compose#22: shared vs per-viewer state is scopes plus cross-page pooling, and the re-scoping is visualize#940's amendments. Open there: the board deprecation release (one release, the owner's choice) and the details of the board-to-surface migration | visualize#940, #947 |

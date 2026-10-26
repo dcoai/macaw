@@ -21,7 +21,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
    | the whole view in one link | a shared link restores every component's state | host-owned persistence ([03](03-state.md#state-persistence)) |
    | whole-page replay | what a viewer saw, across everything on the page, at any step | records ([08](08-records.md)) |
    | "why this number?" | any shown value traces back through its derivations to its data | the declared graph ([03](03-state.md#state-dag)) |
-   | disclosure that matches | the host's privacy note, observation code and CSP hash are right for this exact combination | declared observation, from one closed vocabulary ([05](05-components.md), [10](10-web.md)) |
+   | disclosure that matches | the host's privacy note, observation code and CSP hash are right for this exact combination | declared observation, from one closed vocabulary ([05](05-components.md), [10](10-web.md#web-observation)) |
    | accessibility of the whole | one outline, one tab order, one announcer, landmarks | pages and templates own structure ([10](10-web.md#web-a11y)) |
    | one look | every component matches; contrast is checked once | one theme; drawing colors come from its roles ([11](11-themes.md)) |
    | consistent access | every component honors what this viewer may see | the viewer reaches every source ([02](02-sources.md)) |
@@ -80,7 +80,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 | **`macaw_layers`** | `Macaw.Layers` | the document kernel; fragments, use sites, composites, stacking, masks, `explain`; the library (store, bundle); **themes**: document, roles, registry, stylesheet compilation, contrast ([07](07-documents.md), [09](09-stores.md), [11](11-themes.md)) | nothing; no Phoenix |
 | **`macaw_data`** | `Macaw.Data` | the data model (Table, Schema, Delivery, units, quantities, facts); the **interaction event** and its recorded form; the **source contract**, push, the source conformance kit; **derived sources**; the **transform** and **aggregate** behaviors and the table operations ([02](02-sources.md), [04](04-derived.md)) | `macaw_layers` |
 | **`macaw_compose`** | `Macaw.Compose` | sources on pages, state sources, exports, the page DAG; components, kinds, cells, containers; the built-in content components, the table among them; pages, templates, layers, regions, surfaces; records; the registry; the component conformance kit ([03](03-state.md), [05](05-components.md), [06](06-pages.md), [08](08-records.md), [10](10-web.md), [12](12-registry.md), [13](13-writes.md)) | `macaw_layers`, `macaw_data` |
-| **`macaw_live`** | `Macaw.Live` | the LiveView runtime: mounting, page and surface processes, contained cells, persistent regions, static hooks, focus, the announcer | `macaw_compose`, Phoenix LiveView |
+| **`macaw_live`** | `Macaw.Live` | the LiveView runtime: mounting, page and surface processes, contained cells, persistent regions, static hooks, focus, the announcer, the client bus, the page-shortcut layer, the asset proxy | `macaw_compose`, Phoenix LiveView |
 | `macaw_records` (later) | `Macaw.Records` | drafts, change sets, sinks, the Ecto adapter, the effect discipline ([13](13-writes.md)) | `macaw_compose` |
 
 **visualize stays visualize.** It holds more than charts (geo and maps, scenes, the design builder) and is a product built on the blocks, not one of them. It depends on `macaw_layers` and `macaw_data`, and registers its theme slots into Macaw's themes. It may be folded into Macaw later, but not yet.
