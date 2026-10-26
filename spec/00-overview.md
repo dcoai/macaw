@@ -58,6 +58,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 6. **No dependency on its adopters.** composex depends on none of visualize, metresis or dcotek_web. A CI check enforces it.
 7. **Proven by an example app** in this repository, using none of the three, run in CI with accessibility and keyboard checks.
 8. **Open to third parties.** Built-in components and sources use the same public contracts as any package, through an explicit, default-closed registry ([12](12-registry.md)).
+9. **Portable: save and restore, right where you were.** Configuration travels as a **bundle**, and state as a **state snapshot**. Restored on another machine, the same pages, configuration and state come back, re-attached to whoever restores them ([09](09-stores.md#stores-portable)). This works because everything configurable is composable data ([07](07-documents.md#documents-everything)).
 
 ## 3. Non-goals {#overview-non-goals}
 

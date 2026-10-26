@@ -39,6 +39,16 @@ visualize's fragment machinery moves into composex and is used by every stackabl
 
 (visualize.md C4, C7; composex#8.)
 
-## 3. Validation time {#documents-validation-time}
+## 3. Everything is composable data {#documents-everything}
+
+**Every configurable thing is a document of the fragment shape,** and there is no second configuration format (owner, 2026-10-26). That covers:
+- pages, surfaces and cells;
+- **component settings;**
+- templates, layers, themes and styles;
+- source declarations.
+
+Each stacks, masks, validates and explains the same way (§2). A configured component is a stack: its defaults, then a **preset** (a fragment), then the cell's local settings. So "why is this table sorted by date?" answers through `explain`, like any other value. This uniformity is what makes portability possible ([09](09-stores.md#stores-portable)), and what lets an AI author anything through one format.
+
+## 4. Validation time {#documents-validation-time}
 
 Validation runs **whenever a document is loaded**, through pure functions. In v1 that is at build or boot. A broken shipped document fails the build, and a broken fetched document is refused, keeping the last good version. (metresis.md C6; dcotek_web.md C13.)

@@ -61,6 +61,9 @@
 | **stack / compose** | cascade and union of fragments under per-key merge rules |
 | **explain** | provenance of any value: which layer or fragment it came from |
 | **store** | where documents live, behind the store behavior, with typed ids |
+| **bundle** | the transitive closure of documents a page needs, portable between stores; never credentials, data or identity |
+| **state snapshot** | current values of persisted state sources by scope; restorable, carrying no identity |
+| **preset** | a fragment of component settings, stacked between a component's defaults and a cell's local settings |
 | **registry** | the explicit, default-closed list of components, templates, layers, sources, functions and hooks a host enables |
 | **conformance kit** | tests shipped in the library that any component or source author runs |
 

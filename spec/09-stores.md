@@ -27,7 +27,21 @@ The **context** says who is acting and from where, so entries are traceable. The
 - **An export takes the transitive closure.**
 - **A bundle carries definitions** (re-keyed on import), **never bindings, credentials or data.**
 
-## 3. Ids on object storage {#stores-object}
+## 3. Portability: bundles and state snapshots {#stores-portable}
+
+Goal 9: save configuration, and state where possible, and restore it on another machine, right where you were.
+- **A bundle** is the transitive closure of the documents a page (or a set of pages) needs: pages, surfaces, component settings and presets, templates, layers, themes and styles. It carries provenance (the source store, the export time, the version stamps) and each entry's original id.
+- **A bundle may carry a state snapshot** ([03](03-state.md#state-snapshots)).
+- **What never travels:**
+  - credentials and bindings: the importing host maps source names to its own configured sources;
+  - data: sources re-read;
+  - identity: the host's records stay with the host.
+- **Import is a relocation:**
+  - every check runs first (versions, migrations, validation, unknown names in the registry);
+  - new ids are issued, and references are rewritten;
+  - it commits whole or not at all, and every fault is reported.
+
+## 4. Ids on object storage {#stores-object}
 
 Open (composex#4). visualize's per-kind sequences, which are never reused, are awkward on S3. The options are:
 - ids derived from object keys;

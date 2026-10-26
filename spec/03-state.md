@@ -49,7 +49,14 @@ Each has one owner:
 
 Persistence is for **interaction** state only. It is never how domain data is saved; that is the records library's job ([13](13-writes.md)). metresis persists in the URL; dcotek_web must not use the URL for visitor-specific state, and uses the session and token instead. (metresis.md C5; dcotek_web.md C1.)
 
-## 4. Exports {#state-exports}
+## 4. State snapshots {#state-snapshots}
+
+A **state snapshot** is the current value of every persisted state source in a set of scopes (a page, a session, a viewer), in the same shape as the state events in records ([08](08-records.md)). It can be exported and restored, alone or inside a bundle ([09](09-stores.md#stores-portable)).
+- Restoring validates each value against its state source's current schema. A value that no longer fits is dropped, and reported by path.
+- Values are restored for whoever restores them: a snapshot carries no identity.
+- Recording rules apply: a state source that may not be recorded is not exported either.
+
+## 5. Exports {#state-exports}
 
 Surfaces, containers and cells publish **exports**: named state others may bind to.
 
@@ -62,7 +69,7 @@ exports:
 
 **Others bind only to exports, never to internals.** Encapsulation keeps a surface reusable: it can be rearranged inside without breaking anything that depends on it. An aggregate over several exports is a derived source at the scope where it is defined ([04](04-derived.md)). (composex#2.)
 
-## 5. The page DAG {#state-dag}
+## 6. The page DAG {#state-dag}
 
 Every source on a page is a node: feeds, derived sources, state sources and exports. Bindings are edges.
 
