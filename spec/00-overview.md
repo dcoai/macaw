@@ -2,15 +2,15 @@
 
 ## 1. Purpose {#overview-purpose}
 
-composex composes live, data-driven pages out of independent components, which share typed data and interactive state through one source contract. You declare the arrangement and the data flow in validated documents, and composex runs them per viewer on Phoenix LiveView: rendered on the server, safe under a strict security policy, and reproducible afterwards.
+Macaw is a family of building blocks for live, data-driven applications (§4). Together they compose pages out of independent components, which share typed data and interactive state through one source contract. You declare the arrangement and the data flow in validated documents, and Macaw runs them per viewer on Phoenix LiveView: rendered on the server, safe under a strict security policy, and reproducible afterwards.
 
 Its first adopters are visualize (charts and boards), metresis (measurements and dashboards) and dcotek_web (sites). The model was derived from their requirements (`design/requirements/`).
 
 ## 2. Goals {#overview-goals}
 
-1. **Composition effects: the whole is greater than the sum of its parts.** This is why composex exists. Components composed through composex gain effects none of them can produce alone, for *every* combination, including combinations nobody planned.
+1. **Composition effects: the whole is greater than the sum of its parts.** This is why Macaw exists. Components composed through Macaw gain effects none of them can produce alone, for *every* combination, including combinations nobody planned.
 
-   **The principle is N + M, not N × M.** Without composition, making N components interact needs code for every pair, so it never happens. With composex, each component declares itself once (its slots, identity, kinds, state, exports, events, observation and renders), and every combination works.
+   **The principle is N + M, not N × M.** Without composition, making N components interact needs code for every pair, so it never happens. With Macaw, each component declares itself once (its slots, identity, kinds, state, exports, events, observation and renders), and every combination works.
 
    | Effect | What happens | Provided by |
    |---|---|---|
@@ -35,7 +35,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 
    **The test** is the example app (goal 7). Its components are written as if by different authors, none references another, and a page document alone assembles them. It shows the effects, and **a component added later joins every effect with no change to the existing ones.**
 
-2. **Composes components in any Phoenix LiveView app.** composex is the composition layer, not a framework a host is built around. Any LiveView mounts a page or a surface with one call, from a document plus a map of sources. It needs no host framework, database, tracking or router.
+2. **Composes components in any Phoenix LiveView app.** Macaw is a set of building blocks, not a framework a host is built around. Any LiveView mounts a page or a surface with one call, from a document plus a map of sources. It needs no host framework, database, tracking or router.
 
 3. **Every host concern is a behavior with a working default.** The smallest app is a few lines; a host replaces only what it cares about.
 
@@ -55,7 +55,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
    - WCAG 2.2 AA ([10](10-web.md)).
 
    A component that meets these works in any host.
-6. **No dependency on its adopters.** composex depends on none of visualize, metresis or dcotek_web. A CI check enforces it.
+6. **No dependency on its adopters.** No Macaw library depends on visualize, metresis or dcotek_web; they depend on Macaw. visualize and `macaw_compose` never depend on each other (§4). A CI check enforces both rules.
 7. **Proven by an example app** in this repository, using none of the three, run in CI with accessibility and keyboard checks.
 8. **Open to third parties.** Built-in components and sources use the same public contracts as any package, through an explicit, default-closed registry ([12](12-registry.md)).
 9. **Portable: save and restore, right where you were.** Configuration travels as a **bundle**, and state as a **state snapshot**. Restored on another machine, the same pages, configuration and state come back, re-attached to whoever restores them ([09](09-stores.md#stores-portable)). This works because everything configurable is composable data ([07](07-documents.md#documents-everything)).
@@ -67,29 +67,40 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 - **An analytics or tracking system.** Components declare what they would observe; the host decides and collects.
 - **A charting library or a data store.** Charts are components (visualize). Data stores are sources (metresis, exio, a database).
 - **Records editing machinery.** Drafts, change sets and transactions belong to a component library on top ([13](13-writes.md)).
-- **A CMS or editor.** composex runs documents; editing tools sit on top. A **runtime page builder** is out of scope for v1 but not precluded ([06](06-pages.md#pages-runtime)).
+- **A CMS or editor.** Macaw runs documents; editing tools sit on top. A **runtime page builder** is out of scope for v1 but not precluded ([06](06-pages.md#pages-runtime)).
 
-## 4. Packaging {#overview-packaging}
+## 4. The Macaw libraries {#overview-packaging}
 
-| Package | Contains | Depends on |
-|---|---|---|
-| `composex` | the pure core: documents and fragments, the data model, the source contract, state and the page DAG, derived sources, the component, surface, template and page contracts, records, themes, the registry, the conformance kit | no Phoenix |
-| `composex_live` | the LiveView runtime: mounting, the page and surface processes, contained cells, persistent regions, hooks, the announcer | `composex`, Phoenix LiveView |
+**Macaw** is a family of building blocks that lead to applications (macaw_compose#18). Each library is one package with a descriptive suffix:
 
-Component packages (visualize's charts, metresis's panels, a records library) depend on these and bring their own dependencies; composex never imports them.
+| Package | Module | Holds | Depends on |
+|---|---|---|---|
+| **`macaw_layers`** | `Macaw.Layers` | the document kernel; fragments, use sites, composites, stacking, masks, `explain`; the library (store, bundle); **themes**: document, roles, registry, stylesheet compilation, contrast ([07](07-documents.md), [09](09-stores.md), [11](11-themes.md)) | nothing; no Phoenix |
+| **`macaw_data`** | `Macaw.Data` | the data model (Table, Schema, Delivery, units, quantities, facts); the **source contract**, push, the source conformance kit; **derived sources** ([02](02-sources.md), [04](04-derived.md)) | `macaw_layers` |
+| **`macaw_compose`** | `Macaw.Compose` | sources on pages, state sources, exports, the page DAG; components, kinds, cells, containers; pages, templates, layers, regions, surfaces; records; the registry; the component conformance kit ([03](03-state.md), [05](05-components.md), [06](06-pages.md), [08](08-records.md), [10](10-web.md), [12](12-registry.md), [13](13-writes.md)) | `macaw_layers`, `macaw_data` |
+| **`macaw_live`** | `Macaw.Live` | the LiveView runtime: mounting, page and surface processes, contained cells, persistent regions, static hooks, focus, the announcer | `macaw_compose`, Phoenix LiveView |
+| `macaw_records` (later) | `Macaw.Records` | drafts, change sets, sinks, the Ecto adapter, the effect discipline ([13](13-writes.md)) | `macaw_compose` |
+
+**visualize stays visualize.** It holds more than charts (geo and maps, scenes, the design builder) and is a product built on the blocks, not one of them. It depends on `macaw_layers` and `macaw_data`, and registers its theme slots into Macaw's themes. It may be folded into Macaw later, but not yet.
+
+**visualize and `macaw_compose` never depend on each other.** Visuals reach pages through a small adapter, **`macaw_charts`**, which depends on both and implements the component contract around visualize designs.
+
+Other component packages (metresis's panels, components built on ryutronic) depend on `macaw_compose` and bring their own dependencies; Macaw never imports them.
+
+**Boards are superseded.** A visualize board is a surface with a grid region: shared window and selection are state sources, virtual sources are derived sources, drill is navigation. Its runtime moves into `macaw_compose` and `macaw_live`; visualize keeps drawing visuals and exports.
 
 ## 5. Order of work {#overview-order}
 
-1. The document kernel, with the fragment and stacking machinery ([07](07-documents.md)).
-2. The source contract and data model ([02](02-sources.md)).
-3. State sources, exports and the page DAG ([03](03-state.md)).
-4. Component, surface, template and container contracts ([05](05-components.md), [06](06-pages.md)).
-5. Themes and the web rules ([10](10-web.md), [11](11-themes.md)).
-6. The live layer (`composex_live`).
-7. Adoption in each project (visualize#938, metresis#556, dcotek_web#130).
+1. The document kernel, with the fragment and stacking machinery, in **`macaw_layers`** ([07](07-documents.md)). This absorbs visualize's planned extractions #880, #893 and #912.
+2. The data model and source contract, in **`macaw_data`** ([02](02-sources.md)). This absorbs visualize's #903 and #916.
+3. Derived sources in **`macaw_data`** ([04](04-derived.md)); state sources, exports and the page DAG in **`macaw_compose`** ([03](03-state.md)).
+4. Component, surface, template and container contracts, in **`macaw_compose`** ([05](05-components.md), [06](06-pages.md)).
+5. Themes in **`macaw_layers`** ([11](11-themes.md)), and the web rules in **`macaw_compose`** ([10](10-web.md)).
+6. The live layer, **`macaw_live`**.
+7. Adoption: visualize on `macaw_layers` and `macaw_data` (visualize#938, #939), metresis on `macaw_data` (metresis#556), dcotek_web on `macaw_compose` and `macaw_live` (dcotek_web#130).
 
 The CI dependency check (goal 6) and the example app (goal 7) are acceptance criteria of the first implementation proposal that ships code.
 
 ## 6. Status {#overview-status}
 
-Spec only; nothing is implemented. Decisions are recorded on composex#1 (the anchor), #2 (vocabulary), #3 (state), #8 (templates), #9 (writes) and #10 (composition effects). Open and deferred questions are in [14](14-open.md).
+Spec only; nothing is implemented. Decisions are recorded on macaw_compose#1 (the anchor), #2 (vocabulary), #3 (state), #8 (templates), #9 (writes) and #10 (composition effects). Open and deferred questions are in [14](14-open.md).

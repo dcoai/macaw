@@ -1,6 +1,6 @@
 # 04 — Derived sources {#derived}
 
-A **derived source** (visualize's *virtual source*) is computed from other sources by a function. composex adopts visualize's design whole; it is the most developed part of the three projects (visualize.md C2).
+A **derived source** (visualize's *virtual source*) is computed from other sources by a function. Macaw adopts visualize's design whole; it is the most developed part of the three projects (visualize.md C2).
 
 ## 1. The model {#derived-model}
 

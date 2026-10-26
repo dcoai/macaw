@@ -1,6 +1,6 @@
 # 07 — Documents {#documents}
 
-Every declarative value composex reads is a **document**: pages, surfaces, templates, layers, themes, visualize designs, component settings and records. One kernel validates them all. It starts from visualize's planned `Visualize.Document` (visualize#912), which moves to composex.
+Every declarative value Macaw reads is a **document**: pages, surfaces, templates, layers, themes, visualize designs, component settings and records. One kernel validates them all. It starts from visualize's planned `Visualize.Document` (visualize#912), which moves to Macaw.
 
 ## 1. The kernel {#documents-kernel}
 
@@ -30,14 +30,14 @@ Every declarative value composex reads is a **document**: pages, surfaces, templ
 
 ## 2. Fragments and stacking {#documents-fragments}
 
-visualize's fragment machinery moves into composex and is used by every stackable document: templates and layers, styles, themes and designs. It comprises:
+visualize's fragment machinery moves into Macaw and is used by every stackable document: templates and layers, styles, themes and designs. It comprises:
 - **fragments** and **composites;**
 - **use sites,** resolved `ref → local → mask → bind → stack`;
 - **`stack/1`,** a cascade, and **`compose/2`,** a union, each under **per-key merge rules** (`:concat`, `:union`, `:deep`, `:override`);
 - **masks,** which explicitly drop keys from below;
 - **`explain/1`,** provenance for any value: which layer or fragment set it.
 
-(visualize.md C4, C7; composex#8.)
+(visualize.md C4, C7; macaw_compose#8.)
 
 ## 3. Everything is composable data {#documents-everything}
 

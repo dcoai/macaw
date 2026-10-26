@@ -21,4 +21,4 @@
 - It persists like other state: in the user's settings when the host knows them, otherwise in the session. The server renders the right class first, so there is no flash.
 - **User-defined themes:** the host generates a stylesheet for the user's theme, served as a file from `'self'` (`/themes/<hash>.css`). It must pass the same contrast check, and a theme that fails is refused.
 
-(composex#8, question 4.)
+(macaw_compose#8, question 4.)

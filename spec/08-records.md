@@ -1,6 +1,6 @@
 # 08 — Records: view paths, replay and provenance {#records}
 
-A **record** makes a page view reproducible. It holds what was shown, in which states, and how the visitor moved through it. **It never holds the viewer.** (composex#8, question 3.)
+A **record** makes a page view reproducible. It holds what was shown, in which states, and how the visitor moved through it. **It never holds the viewer.** (macaw_compose#8, question 3.)
 
 ## 1. View paths {#records-paths}
 
@@ -36,7 +36,7 @@ Choosing any step shows the page as it was there. The path and the replay are on
 
 - The point of replay is the **component level:** what was shown, attention and dwell. It is not the exact rows.
 - **Replay requeries sources and shows current data.**
-- A source that supports `:as_of` (metresis's immutable samples, exio's object versions, a database with history) is asked for the viewing moment. composex supports time travel and never requires it.
+- A source that supports `:as_of` (metresis's immutable samples, exio's object versions, a database with history) is asked for the viewing moment. Macaw supports time travel and never requires it.
 - Components whose source could not time-travel are labeled **"showing current data"**.
 - **The viewer for a requery** is supplied by the host; by default, the person replaying.
 
@@ -44,10 +44,10 @@ Choosing any step shows the page as it was there. The path and the replay are on
 
 | Store | Holds | Owner |
 |---|---|---|
-| **the composex record** | definition digests; state events (instance, state, value, time, initiator); source requests; steps and markers | composex, neutral and portable |
-| **the host's records** | the visit (visitor, session, token, site, address); the access at the time (capabilities, gate states); the link from each page view to its composex record | the host, under its own privacy rules |
+| **the Macaw record** | definition digests; state events (instance, state, value, time, initiator); source requests; steps and markers | Macaw, neutral and portable |
+| **the host's records** | the visit (visitor, session, token, site, address); the access at the time (capabilities, gate states); the link from each page view to its Macaw record | the host, under its own privacy rules |
 
-- **Identity never enters composex.** The same record format works in any app, and a record can be shared without identifying anyone.
+- **Identity never enters Macaw.** The same record format works in any app, and a record can be shared without identifying anyone.
 - **Deletion and retention have one owner:** the host deletes the visit and the records linked to it.
 - **Replay gets its viewer from the host.**
 - **State values can themselves be personal** (a typed search, picked skills). So recording is declared per state source with the lowest capture level allowed, and is **closed by default**: a source or state source is recorded only when it declares it and the host enables it. dcotek_web's D6 (nothing finer than page level for anonymous visitors) applies to state values too.

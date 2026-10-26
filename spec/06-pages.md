@@ -32,7 +32,7 @@ regions:
 
 ## 2. Templates and layers {#pages-templates}
 
-A **template** is a registered, named arrangement of regions, with a landmark role per region and, per region, a default collapse behavior and a breakpoint. **Layers** stack on it, using visualize's fragment machinery (reused in composex, [07](07-documents.md#documents-fragments)):
+A **template** is a registered, named arrangement of regions, with a landmark role per region and, per region, a default collapse behavior and a breakpoint. **Layers** stack on it, using visualize's fragment machinery (reused in Macaw, [07](07-documents.md#documents-fragments)):
 
 ```elixir
 template :site do
@@ -69,7 +69,7 @@ layer :print,       on: :site, do: [hide(:header), hide(:sidebar), hide(:footer)
 - **Print** is an automatic layer, stacked by the print and export mode.
 - **One stack per page** replaces nested page and site templates.
 
-(composex#8, question 2.)
+(macaw_compose#8, question 2.)
 
 ## 3. Regions and surfaces {#pages-regions}
 

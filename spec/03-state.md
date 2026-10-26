@@ -13,7 +13,7 @@ state "skills",
   record:  :full                 # the lowest capture level at which it may be recorded; omitted means never
 ```
 
-- **Components declare state; the runtime holds it.** A component changes state only by an event. Components hold no storage and no adapter. That way state can be shared, recorded and tested in one place. (composex#3.)
+- **Components declare state; the runtime holds it.** A component changes state only by an event. Components hold no storage and no adapter. That way state can be shared, recorded and tested in one place. (macaw_compose#3.)
 - **Standard state sources** cover the special cases with fixed schemas:
   - `selection`, an identity `{field, value}`;
   - `window`, set by a brush;
@@ -33,9 +33,9 @@ state "skills",
 | `:viewer` | across visits (the host must know the viewer) | a preferred unit system |
 | `:shared` | every viewer of that surface | a wall display's selection |
 
-**State belongs to a component instance** (its place plus the component plus a key), not to whatever a region currently shows. When an instance is replaced (a layer fills a persistent region differently), its state follows its scope: `:region` state is gone, and `:session` state returns when the instance does. (composex#8, question 1.)
+**State belongs to a component instance** (its place plus the component plus a key), not to whatever a region currently shows. When an instance is replaced (a layer fills a persistent region differently), its state follows its scope: `:region` state is gone, and `:session` state returns when the instance does. (macaw_compose#8, question 1.)
 
-The default scope and the persistence behavior's final shape are settled by experiment in the example app (composex#3).
+The default scope and the persistence behavior's final shape are settled by experiment in the example app (macaw_compose#3).
 
 ## 3. Persistence and recording {#state-persistence}
 
@@ -43,7 +43,7 @@ Each has one owner:
 
 | Layer | Owner | Default |
 |---|---|---|
-| live value | the composex runtime | — |
+| live value | the Macaw runtime | — |
 | **persistence:** survives a reload, a new page, a later visit | a host behavior: URL, session, token, database | **none** |
 | **recording:** what it was over time, for replay | a host behavior, capped by capture level | **none** (closed by default) |
 
@@ -67,7 +67,7 @@ exports:
   window: window
 ```
 
-**Others bind only to exports, never to internals.** Encapsulation keeps a surface reusable: it can be rearranged inside without breaking anything that depends on it. An aggregate over several exports is a derived source at the scope where it is defined ([04](04-derived.md)). (composex#2.)
+**Others bind only to exports, never to internals.** Encapsulation keeps a surface reusable: it can be rearranged inside without breaking anything that depends on it. An aggregate over several exports is a derived source at the scope where it is defined ([04](04-derived.md)). (macaw_compose#2.)
 
 ## 6. The page DAG {#state-dag}
 

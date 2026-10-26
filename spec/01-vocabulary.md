@@ -1,6 +1,6 @@
 # 01 — Vocabulary {#vocab}
 
-**One word, one meaning.** A duplicate concept becomes one concept, and distinct concepts that share a word get distinct words. Renaming one copy of a duplicate is not allowed (composex#2). "Part" is deliberately unused as a defined term, and appears in prose only.
+**One word, one meaning.** A duplicate concept becomes one concept, and distinct concepts that share a word get distinct words. Renaming one copy of a duplicate is not allowed (macaw_compose#2). "Part" is deliberately unused as a defined term, and appears in prose only.
 
 ## 1. Structure {#vocab-structure}
 
@@ -12,7 +12,7 @@
 | **mask** | in a layer, an explicit removal of keys from the layers below, so an override is intended rather than a conflict |
 | **region** | a named area of a template, with a landmark role; holds surfaces in a flow |
 | **persistent region** | a region that survives live navigation between pages, keeping its components' state and process |
-| **surface** | a reusable composed unit: cells in a grid or a flow, with its own state. A dashboard, a set of prose components, a table with filters. A visualize *board* is a surface with a grid; a metresis *dashboard bundle* is a surface published by metresis |
+| **surface** | a reusable composed unit: cells in a grid or a flow, with its own state. A dashboard, a set of prose components, a table with filters. A visualize *board* is superseded by a surface with a grid; a metresis *dashboard bundle* is a surface published by metresis |
 | **cell** | a placement of a component in a surface: the component, its settings, its slot bindings, its place |
 | **container** | a component kind whose content is surfaces: tabs, drawer, accordion, split |
 | **section** | a headed flow unit inside a prose surface |
@@ -56,7 +56,7 @@
 
 | Term | Meaning |
 |---|---|
-| **document** | any declarative value composex validates: pages, surfaces, templates, layers, themes, designs, settings, records |
+| **document** | any declarative value Macaw validates: pages, surfaces, templates, layers, themes, designs, settings, records |
 | **fragment** | a reusable piece of a document, of a derived kind |
 | **stack / compose** | cascade and union of fragments under per-key merge rules |
 | **explain** | provenance of any value: which layer or fragment it came from |

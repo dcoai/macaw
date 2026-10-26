@@ -35,17 +35,17 @@ A **source** is anything a component's slot reads. One contract serves feeds, qu
 ```
 
 - **`params`** use the same type vocabulary as `Data.Schema`, with **legal values**. For example, metresis's aggregation is a category whose values are `legal(metric)`, so no consumer can ask for an aggregation the type forbids. (metresis.md C1.)
-- **`supports`:** every capability is optional. composex finishes a window, box, latest or budget that the source did not honor, and reports it. (visualize.md C1, D-140.)
+- **`supports`:** every capability is optional. Macaw finishes a window, box, latest or budget that the source did not honor, and reports it. (visualize.md C1, D-140.)
 - **Window-less sources are allowed** (thresholds, projects, fragments). (metresis.md C1; dcotek_web.md C1.)
 - **The budget never widens the window.** A source may refuse to split a bucket's keys, delivering nothing rather than a partial distribution. (metresis.md C1.)
 - **`reveals`** declares what a result tells about the data or the viewer. Hosts generate disclosure from it. (dcotek_web.md C12.)
-- **The viewer is an argument, not a setting.** A source may refuse, filter or tease by it. composex never writes a viewer to a document, delivery or record. (dcotek_web.md C11; visualize.md C11.)
+- **The viewer is an argument, not a setting.** A source may refuse, filter or tease by it. Macaw never writes a viewer to a document, delivery or record. (dcotek_web.md C11; visualize.md C11.)
 - **Errors are values.** A source never raises. (visualize.md C1; metresis.md C1.)
 
 ## 3. Deliveries {#sources-delivery}
 
 A delivery reports what it actually served:
-- `served`: the window, resolution, `capped`, `reduced_by` (`:source | :composex`), the params, and a note (for example, "coarsened from raw");
+- `served`: the window, resolution, `capped`, `reduced_by` (`:source | :Macaw`), the params, and a note (for example, "coarsened from raw");
 - `origin`: the source, a digest of the request, and `as_of` when used.
 
 Absence is never zero: a source never fills a gap with 0. (metresis.md C1.)
@@ -62,7 +62,7 @@ Push is optional and declared:
 
 ## 5. Change notification {#sources-change}
 
-**"This source's data changed; re-read it."** Any writer (a records component after a commit, a host after an import) announces a change to a source by name, or the source pushes. Every reader on the page, and on other viewers' pages through the host's PubSub, re-fetches. Components never need to know who else reads the same data. (composex#9.)
+**"This source's data changed; re-read it."** Any writer (a records component after a commit, a host after an import) announces a change to a source by name, or the source pushes. Every reader on the page, and on other viewers' pages through the host's PubSub, re-fetches. Components never need to know who else reads the same data. (macaw_compose#9.)
 
 ## 6. Running sources {#sources-running}
 

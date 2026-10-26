@@ -42,7 +42,7 @@ def render(:content, assigns),    do: ~H"<ul class=\"cards\">…</ul>"
   - `:container` renders an accessible pattern (a tab list, a disclosure, a dialog).
 - **Kind and mode are separate axes.** Kind is the argument; mode comes in the context. Most components render the same markup in every mode, and the runtime changes what it wraps around it.
 
-(composex#8, question 2.)
+(macaw_compose#8, question 2.)
 
 ## 3. Rendering rules {#components-rendering}
 
@@ -71,8 +71,8 @@ A **container** is a component of kind `:container` whose content is surfaces: t
 
 ## 6. Packaging {#components-packaging}
 
-Components ship in packages, which bring their own dependencies (composex never imports them) and register through the registry ([12](12-registry.md)). Some expected packages:
-- **visualize:** chart and board components;
+Components ship in packages, which bring their own dependencies (Macaw never imports them) and register through the registry ([12](12-registry.md)). Some expected packages:
+- **`macaw_charts`:** visualize's visuals (charts, maps) as components. visualize itself depends only on `macaw_layers` and `macaw_data`;
 - **metresis:** dashboard and panel components, plus its shaping functions, so remote hosts can draw them (metresis#556);
 - **a records library:** data-editing components ([13](13-writes.md));
 - **components built on ryutronic:** wizards, durable jobs, an assistant.

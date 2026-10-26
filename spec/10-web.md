@@ -48,17 +48,17 @@ What this asks of visualize (visualize#938):
   | `:modal` | a drawer that traps focus; background inert | `<dialog>` with `showModal()`, one static hook |
   | `:hide` | not shown | a class |
 
-- **Grid rows:** DOM order plus column classes, with `grid-auto-flow: dense`. It is accepted if it renders every visualize and metresis board fixture identically (composex#5).
+- **Grid rows:** DOM order plus column classes, with `grid-auto-flow: dense`. It is accepted if it renders every visualize and metresis board fixture identically (macaw_compose#5).
 - **Motion:** named animations in the stylesheet, removed under `prefers-reduced-motion`.
 - **Print:** the print layer compiles to `@media print`: chrome hidden, disclosures open, regions stacked.
 
-(composex#8, question 4.)
+(macaw_compose#8, question 4.)
 
 ## 4. Accessibility {#web-a11y}
 
-**The target is WCAG 2.2 AA.** Most of it is about how components fit together, so composex owns it. (composex#8, question 5.)
+**The target is WCAG 2.2 AA.** Most of it is about how components fit together, so Macaw owns it. (macaw_compose#8, question 5.)
 
-**Structure**, guaranteed by composex:
+**Structure**, guaranteed by Macaw:
 - a landmark element per region role, exactly one `main`, and labeled navs;
 - **heading levels come from context:** the page has the `<h1>`, and each surface and component renders its headings at the level it is given. Components never hard-code a level, so the outline is right for any arrangement;
 - skip links: to main, and to navigation when there is a sidebar;
@@ -70,7 +70,7 @@ What this asks of visualize (visualize#938):
 - Escape closes or leaves, and Enter or Space activates;
 - no traps, except `:modal`, which releases on Escape.
 
-**Focus after changes**, owned by composex:
+**Focus after changes**, owned by Macaw:
 
 | Change | Focus | Announcement |
 |---|---|---|

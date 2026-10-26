@@ -1,6 +1,6 @@
 # 09 — Stores and references {#stores}
 
-Documents live in **stores**: the host's database, files in git, or an object store (exio). composex reaches them through one behavior. (visualize.md C8; metresis.md C8.)
+Documents live in **stores**: the host's database, files in git, or an object store (exio). Macaw reaches them through one behavior. (visualize.md C8; metresis.md C8.)
 
 ## 1. The store behavior {#stores-behavior}
 
@@ -43,7 +43,7 @@ Goal 9: save configuration, and state where possible, and restore it on another 
 
 ## 4. Ids on object storage {#stores-object}
 
-Open (composex#4). visualize's per-kind sequences, which are never reused, are awkward on S3. The options are:
+Open (macaw_compose#4). visualize's per-kind sequences, which are never reused, are awkward on S3. The options are:
 - ids derived from object keys;
 - a manifest object that issues ids by conditional write;
 - content-addressed ids for immutable fragments.
