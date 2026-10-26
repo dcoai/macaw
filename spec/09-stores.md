@@ -20,10 +20,6 @@ The **context** says who is acting and from where, so entries are traceable. The
 - **Names are attributes, never identities:** a route path, a slug, a title. macaw_server's route path becomes an attribute of a page id.
 - **Versions are digests,** or the store's own object versions.
 - **A missing reference is a validation fault** when the document is loaded, at its path ([07](07-documents.md#documents-validation-time)). If an entry disappears **after** validation (deleted from the store while pages run), the site that referenced it is masked at render and reported; rendering never fails because of it.
-- **An import is a relocation:**
-  - every check runs before anything is written;
-  - new ids are issued, and references are rewritten through one table;
-  - it commits whole or not at all.
 - **A bundle takes the transitive closure.**
 - **A bundle carries definitions** (re-keyed on import), and the bindings inside them, **never source configuration, credentials or data.**
 
@@ -37,8 +33,8 @@ Goal 9: save configuration, and state where possible, and restore it on another 
   - data: sources re-read;
   - identity: the host's records stay with the host.
 - **Import is a relocation:**
-  - every check runs first (versions, migrations, validation, unknown names in the registry);
-  - new ids are issued, and references are rewritten;
+  - every check runs before anything is written (versions, migrations, validation, unknown names in the registry);
+  - new ids are issued, and references are rewritten through one table;
   - it commits whole or not at all, and every fault is reported.
 
 ## 4. Ids on object storage {#stores-object}

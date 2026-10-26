@@ -74,7 +74,7 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 
 - **A region holds surfaces in a flow.** A surface lays out its cells as a **flow** (sections, for prose) or a **12-column grid** (`x, y, w, h` in integer units, no overlaps, reading order by `y`, then `x`, then name), metresis's and visualize's grid. A grid stacks into reading order below its container breakpoint. (visualize.md C4; metresis.md C4.)
 - **A surface is reusable:** the same surface can appear on several pages, in a tab or in a drawer.
-- **A cell's settings are inline or referenced:** a component's whole settings in the cell (a complete visualize design), or a preset reference plus local overrides. Both stack and validate the same way ([07](07-documents.md#documents-everything)).
+- **A cell's settings are inline or referenced** ([07](07-documents.md#documents-everything)).
 - **Its title** takes the next heading level from context ([10](10-web.md#web-a11y)).
 
 ## 4. Persistent regions {#pages-persistent}

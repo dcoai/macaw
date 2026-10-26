@@ -143,8 +143,8 @@ Observation reports what a viewer did with a component, never what data they saw
 
 ## 6. The client bus {#web-bus}
 
-The **client bus** carries the `:local` scope ([03](03-state.md#state-scopes)) between components in one browser page. It is a static module in `macaw_live`, served from `'self'`.
+The **client bus** carries the `:local` scope ([03](03-state.md#state-scopes)) between components in one browser page. It is a static module, served from `'self'`, and like the announcer (§4) it is **found, not created per component**: `macaw_live` provides it when present; otherwise the first adopter hook to mount creates it under a fixed name, and every later component uses that one.
 - **Keyed by local scope name;** each component's hook publishes and subscribes only to the keys its component declares (`local`, [05](05-components.md#components-state)). Undeclared keys are refused.
 - **Domain values only** (a time, an identity, a window), never pixels, so components of different authors share a hover.
 - **It never reaches the server,** and nothing on it is recorded or persisted. A value that must count is turned into an event by the component.
-- visualize's `VisualizeSync` becomes this bus; standalone, visualize ships a compatible bus of its own (visualize#906).
+- visualize's `VisualizeSync` becomes this bus, so standalone charts and charts on a Macaw page share hover with each other and with other components (visualize#906).

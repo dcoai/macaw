@@ -105,28 +105,12 @@ def render(:content, assigns),    do: ~H"<ul class=\"cards\">…</ul>"
 
 - **Server first, complete without a socket.** Native HTML wherever it gives behavior: `<details>`, `popover`, `<dialog>`. (dcotek_web.md C3.)
 - **Size by container queries, never by viewport,** so one component works in any region ([10](10-web.md#web-responsive)). A component that lays out on the server (a chart computing scales and ticks) receives the **measured container size and root font size** in its context. Until the first measurement, it lays out at the size its placement declares.
-- **Colors through theme roles** ([11](11-themes.md)):
-  - drawing colors are theme roles and values derived from them (`lighten(:warning)`);
-  - data-carried colors (a `:color` column, a schema's value colors) are typed content, allowed only with a non-color cue and a contrast guard;
-  - literal colors are refused. A design language that permits them standalone (visualize's `colors: :open` profile) is validated under the **`:roles` profile** on a Macaw page ([01](01-vocabulary.md#vocab-documents)).
+- **Colors by the theme's rules** ([11](11-themes.md#themes-rules)): drawing colors from roles, data colors as typed content with a cue, literal colors refused under the `:roles` profile every Macaw page validates against.
 - **Headings at the level given by context,** never hard-coded ([10](10-web.md#web-a11y)).
 - **Links and navigation as events or host link helpers.** A component never navigates by itself; its placement maps events to actions ([06](06-pages.md#pages-actions)).
 - **Announcements are requested, never owned.** A component never renders a live region; it requests an announcement by name, from the server or from a hook ([10](10-web.md#web-a11y)).
-- **No inline `style` or `<style>`, no inline script, no script evaluation, nothing from another origin** ([10](10-web.md#web-csp)):
-  - a finite set of values is a class in a static stylesheet;
-  - a value per datum is an SVG presentation attribute;
-  - a finite set a document defines (a design's motion: transitions and keyframes) is a **generated stylesheet**, content-addressed and served from `'self'`, declared as an asset;
-  - a value that changes after the first paint, in live mode only, is set by a trusted hook through the CSSOM. **Every first render has a static form** (the root's size as `width`, `height` and `viewBox`), so socketless and neutral renders need no hook ([10](10-web.md#web-csp));
-  - this is the **one output path** for page markup; a standalone file (an output SVG) carries its own style instead, decided by the output target;
-  - media from another origin is fetched through a declared **proxy route**.
-- **Each mode has rules:**
-
-  | Mode | Rule |
-  |---|---|
-  | live | may enhance through hooks; a visual may draw marks on a `<canvas>` |
-  | socketless | complete HTML and SVG, never canvas; the first render from the deliveries |
-  | neutral | as socketless, with no hooks, no tokens and no live regions |
-  | print | as neutral, in the print theme, laid out in the print box |
+- **Styles and loads by the delivery rule** ([10](10-web.md#web-csp)): no inline `style` or `<style>`, no inline script or script evaluation, nothing from another origin. A component's part is to declare what the rule needs: its generated stylesheets as assets and its proxy routes (§1); and to give every first render a static form.
+- **Each mode's rules** are defined once, in [10](10-web.md#web-modes): canvas only in live mode, complete SVG and HTML otherwise, no hooks in neutral and print.
 
 - **The budget holds in every mode** (macaw_compose#29). Each slot's budget (§1.2) is evaluated at **that mode's size**, never the viewer's window:
   - socketless, neutral, and the first live render: the size the placement declares, since no measurement exists yet;
