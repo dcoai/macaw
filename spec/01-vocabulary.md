@@ -13,7 +13,9 @@
 | **region** | a named area of a template, with a landmark role; holds surfaces in a flow |
 | **persistent region** | a region that survives live navigation between pages, keeping its components' state and process |
 | **surface** | a reusable composed unit: cells in a grid or a flow, with its own state. A dashboard, a set of prose components, a table with filters. A visualize *board* is superseded by a surface with a grid; a metresis *dashboard bundle* is a surface published by metresis |
-| **cell** | a placement of a component in a surface: the component, its settings, its slot bindings, its place |
+| **cell** | a placement of a component in a surface: the component, its settings (inline, or a preset reference with overrides), its slot bindings, its actions, its place |
+| **action** | a placement's mapping from one of a component's events to an effect: `set` a state source, or `navigate` |
+| **page param** | a typed value a page accepts from its URL, with legal values |
 | **container** | a component kind whose content is surfaces: tabs, drawer, accordion, split |
 | **section** | a headed flow unit inside a prose surface |
 | **component** | a registered implementation of the component contract |
@@ -30,11 +32,18 @@
 | **state source** | a typed value held by the runtime, written by events, read like any source |
 | **export** | state an entity (surface, container, cell) publishes for others to bind to; others bind only to exports |
 | **slot** | a component's typed data input |
-| **binding** | slot → source (or export); owned by the host or the page document |
+| **binding** | slot → source (or export), or a bindable parameter → state source; owned by the host or the page document |
+| **parameter** | one typed setting of a component: type, default, legal values, `legal_for`, whether it is bindable, and documentation |
+| **budget** | the rows a component may draw for one slot, a function of its parameters and size; capped by the **host ceiling** |
+| **pooling** | one fetch for every reader of the same request: on a page, and across pages when the result doesn't depend on the viewer |
 | **schema** | `Data.Schema`: a source's typed field meanings, versioned by content hash |
 | **delivery** | one answer from a source: a table plus what was served |
 | **viewer** | the host's context for who is viewing; passed to sources and components, never stored |
-| **scope** | how long and how widely state lives: surface, page, region, session, viewer, shared |
+| **scope** | how long and how widely state lives: local, surface, page, region, session, viewer, shared |
+| **local scope** | interaction state held only in the browser, shared through the client bus, never recorded or persisted |
+| **client bus** | the browser-side channel through which components share local-scope keys, carrying domain values only |
+| **links** | a surface's declaration of which differently named identity fields are the same identity |
+| **preferences** | a viewer's display choices (theme, zone, units), held as state sources, never part of the viewer |
 | **change notification** | "this source's data changed; re-read it" |
 | **the page DAG** | every source, state source and export on a page as nodes, bindings as edges; acyclic |
 | **pulse** | one ranked recomputation of the marked nodes of the DAG |
@@ -43,7 +52,9 @@
 
 | Term | Meaning |
 |---|---|
-| **event** | the one interaction shape: which component instance, which element, what name, which identity, when, and whether visitor- or system-initiated |
+| **event** | the one interaction shape, `Macaw.Data.Event`: which component instance, which element, what name, which identity, what value, when, and whether visitor- or system-initiated; live, it may also carry the data row and the point |
+| **recorded form** | an event without its data row or point: what records, observation and state snapshots see |
+| **printout** | a component's prepared output with its data, for print and export; never a record |
 | **view** | a page in a particular state |
 | **view path** | a visit as a sequence of views |
 | **step** | a visitor-initiated change on a view path: navigation (a new page) or a view change (a selection, an opened tab) |
@@ -80,3 +91,9 @@
 | visualize | a design's internal "layout" | **frame grid** |
 | visualize | hierarchy and network layouts | **graph layouts** |
 | visualize | `Chart.Schema` | renamed (visualize#893) |
+| visualize | `Visualize.Event` | **event** (`Macaw.Data.Event`, visualize#941) |
+| visualize | a design's `:var` | **parameter** |
+| visualize | `drill` | **cell actions** |
+| visualize | sync group | **local scope** key |
+| visualize | `Board.Snapshot` | **printout** (`Visualize.Printout`, visualize#947) |
+| visualize | `Board.Export` | **output** (`Visualize.Output`) |

@@ -75,6 +75,7 @@ layer :print,       on: :site, do: [hide(:header), hide(:sidebar), hide(:footer)
 
 - **A region holds surfaces in a flow.** A surface lays out its cells as a **flow** (sections, for prose) or a **12-column grid** (`x, y, w, h` in integer units, no overlaps, reading order by `y`, then `x`, then name), metresis's and visualize's grid. A grid stacks into reading order below its container breakpoint. (visualize.md C4; metresis.md C4.)
 - **A surface is reusable:** the same surface can appear on several pages, in a tab or in a drawer.
+- **A cell's settings are inline or referenced:** a component's whole settings in the cell (a complete visualize design), or a preset reference plus local overrides. Both stack and validate the same way ([07](07-documents.md#documents-everything)).
 - **Its title** takes the next heading level from context ([10](10-web.md#web-a11y)).
 
 ## 4. Persistent regions {#pages-persistent}
@@ -86,6 +87,44 @@ A region marked `persistent: true` survives live navigation between pages that s
 - **Navigation** changes the page (live, or a full load when the plans differ; dcotek_web#130).
 - **A view change** stays on the page: a selection, an opened tab or drawer, a sorted table.
 - Both are steps on a view path ([08](08-records.md)).
+
+### Cell actions {#pages-actions}
+
+**A component emits events and never decides what they mean.** Its **placement** decides, by declaring **actions**: each maps one of the component's declared events to one of two effects (macaw_compose#22, R9).
+
+```yaml
+cells:
+  latency:
+    component: visual
+    settings: {ref: service_latency}
+    actions:
+      - on: pick
+        set: {state: focus, value: {event: identity}}
+      - on: pick
+        navigate: {to: {page: service}, params: {service: {event: [identity, service]}}}
+```
+
+- **`set`** writes a state source from the event's fields: a view change, applied by the runtime as if the state's own event had been emitted.
+- **`navigate`** goes to a typed reference ([09](09-stores.md#stores-references)) with params taken from the event's fields: a navigation step, performed by the host's navigation behavior. The library never navigates.
+- **Event fields** are named as paths into the event ([02](02-sources.md#sources-event)): `{event: identity}`, `{event: [identity, service]}`, `{event: value}`, or `{event: [row, field]}`. A value read from `row` is used live and never recorded; the record holds the resulting step.
+- **Several actions on one event run in their declared order,** so one pick may select and then navigate.
+- **Validated with the page:** the event must be one the component declares, the state must accept the value's type, and a `navigate` action's params are checked against the target page's declared params, by type and legal values.
+
+visualize's `drill` is an action table: `{:datum, field}` becomes `{event: [row, field]}` or `{event: identity}`, a drill to the same board with variables becomes `set`, and a drill to another board becomes `navigate` (visualize#947).
+
+### Page params {#pages-params}
+
+A page declares the **params** it accepts, as parameters ([05](05-components.md#components-parameters)): typed, with a default and legal values, read from the URL path or query by the host's router.
+
+```yaml
+page: "/service/:service"
+params:
+  service: {type: category, values_from: "services.name"}
+```
+
+- Params are validated before anything renders; an illegal value is a `404`-class refusal, never a fault inside a component.
+- State sources read them with `initial: {:param, "service"}` ([03](03-state.md#state-sources)), and source requests may bind them.
+- A `navigate` action's params are validated against them (§5).
 
 ## 6. A runtime page builder (out of scope for v1) {#pages-runtime}
 

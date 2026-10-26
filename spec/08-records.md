@@ -11,7 +11,9 @@ home ──click──▶ about ──select Elixir──▶ about [Elixir] ─�
 ```
 
 - **Steps** are visitor-initiated: navigation (a new page) and view changes (a selection, an opened tab).
-- **Markers** are system-initiated changes (pushed data, a timer, another viewer's edit), recorded on the timeline but not counted as the visitor's actions.
+- **Markers** are system-initiated changes (pushed data, a timer, another viewer's edit, a paused animation), recorded on the timeline but not counted as the visitor's actions.
+
+Which is which comes from the event's `initiator` ([02](02-sources.md#sources-event)). An event on a data element resolves against the drawing it landed on, or is dropped (the drawn-token rule), so a step never records an item the visitor didn't see.
 
 Choosing any step shows the page as it was there. The path and the replay are one view. Click paths (dcotek_web#54) become view paths.
 
@@ -19,12 +21,20 @@ Choosing any step shows the page as it was there. The path and the replay are on
 
 - **Base snapshots:** the **neutral** render of a page version, content-addressed and shared by every visit.
   - It is stored **by part and assembled:** the chrome rendered by a given template stack is stored once, and a page's snapshot is an assembly of part hashes. The record still *means* "the whole page as seen".
-  - Its assets are captured too.
+  - Its assets are captured too, including generated content-addressed stylesheets ([10](10-web.md#web-csp)).
 
   (dcotek_web.md C7.)
-- **Semantic state events,** not LiveView diffs: "selected Elixir". Each names the component instance, the state, the value, the time, and the initiator. Diffs are tied to template and LiveView versions, are larger, and carry everything rendered.
+- **Semantic state events,** not LiveView diffs: "selected Elixir". Each is the **recorded form** of an event (`Event.recordable/1`, [02](02-sources.md#sources-event)): the component instance, the element, the name, the identity, the value, the time and the initiator. The payload data an event carries live (`row`, `point`) is delivered to the host and never recorded. Diffs are tied to template and LiveView versions, are larger, and carry everything rendered.
 - **Source requests:** params, window and `as_of`. **No data is stored.**
 - **Definitions by digest:** the page, its template stack and its surfaces ([07](07-documents.md)).
+
+**Records never embed printouts.** A **printout** is a component's prepared output with its data (a visual's design, deliveries, now, window and theme), used for print and export. Whole-page output in print mode assembles the components' printouts, and is an export, never a record. Three values, three rules (macaw_compose#22, R16):
+
+| Value | Holds | Data? |
+|---|---|---|
+| printout | prepared output and deliveries | carries data; never a record |
+| record | digests, recorded events, requests | never |
+| state snapshot ([03](03-state.md#state-snapshots)) | interaction state | never |
 
 **Replay** re-renders the base snapshot, applies the state events up to the chosen step, and re-runs the components. Replay runs no scripts in the frame. (dcotek_web.md C7.)
 
