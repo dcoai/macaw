@@ -14,12 +14,12 @@ Macaw is a family of building blocks for live, data-driven applications. Togethe
 | [05 — Components](05-components.md) | the component contract, kinds, drawn states, isolation, containers | `macaw_compose` |
 | [06 — Pages](06-pages.md) | pages, templates, layers and masks, regions, surfaces, persistent regions, the runtime builder (deferred) | `macaw_compose` |
 | [07 — Documents](07-documents.md) | the document kernel, fragments and stacking, composable data, validation time | `macaw_layers` |
-| [08 — Records](08-records.md) | view paths, base snapshots and events, attention, requery, the two stores | `macaw_compose` |
+| [08 — Records](08-records.md) | view paths, base renders and events, attention, requery, the two stores | `macaw_compose` |
 | [09 — Stores](09-stores.md) | the store behavior, typed references, bundles, portability | `macaw_layers` |
 | [10 — The web](10-web.md) | CSP, rendering modes, responsive layout, accessibility | `macaw_compose`, `macaw_live` |
 | [11 — Themes](11-themes.md) | one theme system, delivery, runtime switching, user themes | `macaw_layers` |
-| [12 — Registry](12-registry.md) | explicit registration, the conformance kits | `macaw_compose` (source kit: `macaw_data`) |
-| [13 — Writes](13-writes.md) | the four seams; what belongs to `macaw_records` | `macaw_compose`, `macaw_records` |
+| [12 — Registry](12-registry.md) | explicit registration, the conformance kits (one per contract) | `macaw_compose` (source kit: `macaw_data`) |
+| [13 — Writes](13-writes.md) | the four seams; what belongs to `macaw_edit` | `macaw_compose`, `macaw_edit` |
 | [14 — Open questions](14-open.md) | by experiment, deferred, and in the adopting projects | all |
 
-**Sources:** requirements from the adopting projects are in [`design/requirements/`](../design/requirements/) (`visualize.md`, `metresis.md`, `dcotek_web.md`), cited in each file as `<project>.md C<n>`. The first draft of the model, written under the working name "composex", is kept as [`design/study-draft-1.md`](../design/study-draft-1.md).
+**Sources:** requirements from the adopting projects are in [`design/requirements/`](../design/requirements/) (`visualize.md`, `metresis.md`, `dcotek_web.md`), cited in each file as `<project>.md C<n>`. `dcotek_web` is the former name of **macaw_server**, the content server (renamed 2026-10-26); its requirements file and citations keep the old name, and its issues are cited as `macaw#<n>`. The first draft of the model, written under the working name "composex", is kept as [`design/study-draft-1.md`](../design/study-draft-1.md).

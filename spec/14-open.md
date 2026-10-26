@@ -12,14 +12,14 @@
 | Question | Issue | Needed when |
 |---|---|---|
 | ids on object storage | macaw_compose#4 | an exio-backed store is built |
-| the records library's shapes (actions, change sets, conflict display, how writes are recorded) | macaw_compose#9 | the records library starts |
-| edges of the page DAG crossing processes (persistent regions) | — | the live layer is built |
+| `macaw_edit`'s shapes (operations, change sets, conflict display, how writes are recorded) | macaw_compose#9 | `macaw_edit` starts |
+| edges of the page DAG crossing processes (persistent regions) | — | `macaw_live` is built |
 | a runtime page builder | — | after v1 ([06](06-pages.md#pages-runtime)) |
 
 ## In the adopting projects {#open-adopters}
 
 | Project | Questions | Issue |
 |---|---|---|
-| dcotek_web | live navigation when pages' observation plans differ; where token emphasis lives, and whether it narrows down share chains; the PDF résumé as a page view or an event; content in exio (spec amendment) and when it is snapshotted | dcotek_web#130 |
+| macaw_server | live navigation when pages' observation plans differ; where token emphasis lives, and whether it narrows down share chains; the PDF résumé as a page view or an event; content in exio (spec amendment) and when its base render is taken | macaw#130 |
 | metresis | placing a single panel; what a click means on a public page; a read-only alerts scope; a comparison source | metresis#556 |
 | visualize | settled by macaw_compose#22: shared vs per-viewer state is scopes plus cross-page pooling, and the re-scoping is visualize#940's amendments. Open there: the board deprecation release (one release, the owner's choice) and the details of the board-to-surface migration | visualize#940, #947 |

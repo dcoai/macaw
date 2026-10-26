@@ -4,9 +4,9 @@ A **source** is anything a component's slot reads. One contract serves feeds, qu
 
 ## 1. The data model {#sources-data}
 
-- **`Data.Table`:** columnar typed data, the currency of deliveries, derived sources and components. Row lists are accepted at the edge. (From visualize #916; visualize.md C1.)
+- **`Data.Table`:** columnar typed data, the currency of deliveries, derived sources and components. Row lists are accepted at the edge. (visualize.md C1.)
 - **`Data.Schema`:** each field's **meaning**: `type` (`:time | :number | :category | :text | :color`), and where known `unit` (UCUM), `quantity`, `label`, `order`, `status`, `polarity`, `continuity`, `bounds`, `identity`, and declared `values` with names and colors. (visualize.md C1.)
-- **A schema gives data colors, never drawing colors.** A `:color` field, or a color on a declared value (a team's color), is **content**: it may be shown only with a non-color cue (a glyph, a label or a dash) and under a contrast guard against the surface, and it is never the sole carrier of meaning. Drawing colors come from the theme's roles ([11](11-themes.md#themes-rules); macaw_compose#22, decision 7).
+- **A schema gives data colors, never drawing colors.** A `:color` field, or a color on a declared value (a team's color), is **content**: it may be shown only with a non-color cue (a glyph, a label or a dash) and under a contrast guard against the background, and it is never the sole carrier of meaning. Drawing colors come from the theme's roles ([11](11-themes.md#themes-rules); macaw_compose#22, decision 7).
 - **A schema's version is the SHA-256 of a canonical encoding.** A delivery names the version, and a push sends the schema before rows made under it. (visualize.md C1; metresis.md C1.)
 - **Identity is declared** (`identity: true`, composite allowed), never guessed. Selection, `latest` and per-identity derivations read it. (visualize.md C1.)
 - **Units and quantities** come from one vocabulary (visualize's), so nothing translates between two. (metresis.md C1.)
@@ -66,12 +66,12 @@ Push is optional and declared:
 
 ## 5. Change notification {#sources-change}
 
-**"This source's data changed; re-read it."** Any writer (a records component after a commit, a host after an import) announces a change to a source by name, or the source pushes. Every reader on the page, and on other viewers' pages through the host's PubSub, re-fetches. Components never need to know who else reads the same data. (macaw_compose#9.)
+**"This source's data changed; re-read it."** Any writer (an editing component after a commit, a host after an import) announces a change to a source by name, or the source pushes. Every reader on the page, and on other viewers' pages through the host's PubSub, re-fetches. Components never need to know who else reads the same data. (macaw_compose#9.)
 
 ## 6. Running sources {#sources-running}
 
 - **Pooling:** sources are named and pooled by the page. Several readers of the same source and request cost one fetch, at the largest budget among them, and each reader is reduced to its own budget (`reduced_by: :runtime`). (visualize.md C1.)
-- **Pooling across pages** is required in v1 (macaw_compose#22, decision 9). A request whose result doesn't depend on the viewer, as the source's `reveals` declares, is fetched once for every page making it, through the host's PubSub, and delivered to each. A `:shared` surface watched by many viewers then costs one fetch per pulse, as a visualize board does today. A request whose result depends on the viewer is never pooled across viewers.
+- **Pooling across pages** is required in v1 (macaw_compose#22, decision 9). A request whose result doesn't depend on the viewer, as the source's `reveals` declares, is fetched once for every page making it, through the host's PubSub, and delivered to each. A surface whose state is `:shared`, watched by many viewers, then costs one fetch per pulse, as a visualize board does today. A request whose result depends on the viewer is never pooled across viewers.
 - **The host ceiling** caps every slot's budget ([05](05-components.md#components-budget)). A host sets it once; a page may lower it, never raise it.
 - **Fetching never blocks the caller.** It runs out of process, with a liveness bound. The first render waits for a bounded time and then draws the loading state. (visualize.md C13 gap; dcotek_web.md C13.)
 - **`now` comes from the surface.** One instant per pulse keeps windows, freshness and ages consistent. (visualize.md C1.)
@@ -87,7 +87,7 @@ Every component emits interaction in **one struct**, `Macaw.Data.Event`, defined
 ```elixir
 %Event{
   name:      String.t(),               # a name the component declares
-  instance:  String.t(),               # the emitting placement's instance id
+  instance:  String.t(),               # the emitting instance's id (01)
   element:   %{frame: id, item: id, path: [id]},  # path innermost first
   identity:  %{field => value} | nil,  # the declared identity of the item, when it maps to data
   value:     term,                     # the event's own value: a window, a chosen option

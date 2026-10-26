@@ -12,7 +12,7 @@ Macaw exists for **composition effects**: components composed through it gain ef
 | `macaw_data` | the data model, sources, derived sources |
 | `macaw_compose` | state, the page DAG, components, pages and surfaces, records (this project) |
 | `macaw_live` | the LiveView runtime |
-| `macaw_records` | data-editing components (later) |
+| `macaw_edit` | data-editing components (later) |
 
 **visualize** keeps its own name and depends on `macaw_layers` and `macaw_data`. Its visuals are Macaw components from visualize itself, through an optional dependency on `macaw_compose`. Dependencies run one way: an adopter may depend on Macaw, never the reverse.
 
@@ -21,7 +21,7 @@ Macaw exists for **composition effects**: components composed through it gain ef
 Spec first. Nothing is implemented yet.
 
 - [`spec/README.md`](spec/README.md): the model for the whole family, by library.
-- [`design/requirements/`](design/requirements/): the requirement reports it was derived from, one per adopting project (visualize, metresis, dcotek_web).
+- [`design/requirements/`](design/requirements/): the requirement reports it was derived from, one per adopting project (visualize, metresis, and macaw_server under its former name, dcotek_web).
 
 Changes go through proposals (GitLab issues): `Research` while a direction is being shaped, `Proposal` when it is ready to evaluate.
 

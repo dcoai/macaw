@@ -32,7 +32,7 @@ regions:
 
 ## 2. Templates and layers {#pages-templates}
 
-A **template** is a registered, named arrangement of regions, with a landmark role per region and, per region, a default collapse behavior and a breakpoint. **Layers** stack on it, using visualize's fragment machinery (reused in Macaw, [07](07-documents.md#documents-fragments)):
+A **template** is a registered, named arrangement of regions, with its options declared as parameters ([05](05-components.md#components-parameters)), a landmark role per region and, per region, a default collapse behavior and a breakpoint. **Layers** stack on it, using visualize's fragment machinery (reused in Macaw, [07](07-documents.md#documents-fragments)):
 
 ```elixir
 template :site do
@@ -41,7 +41,7 @@ template :site do
                    collapse: :drawer, content: [surface: :site_menu]
   region :main,    role: :main
   region :footer,  role: :contentinfo
-  setting :sidebar, values: [:shown, :collapsed, :hidden], default: :shown
+  param :sidebar, values: [:shown, :collapsed, :hidden], default: :shown
 end
 
 layer :full_width,  on: :site, do: hide(:sidebar)
@@ -52,7 +52,7 @@ layer :print,       on: :site, do: [hide(:header), hide(:sidebar), hide(:footer)
 - **Merge rules per key:**
   - regions: `:deep` by name;
   - a region's content: `:override`;
-  - settings: `:override`;
+  - params: `:override`;
   - responsive rules and collapse: `:deep` (a layer can override one region's collapse).
 - **Masks** explicitly drop keys from below. A masked override is intended, so it raises no error, and `explain` names the mask. An unmasked collision on a conflicting key is an error, or a warning when a later layer silently undoes an earlier one.
 - **The stacked result is validated as a whole,** never layer by layer. It must have:
@@ -65,8 +65,8 @@ layer :print,       on: :site, do: [hide(:header), hide(:sidebar), hide(:footer)
   A failing stack fails validation, naming the layer at fault. A mask can redesign a page but never bypasses validation.
 - **Where layers come from:**
   - **registered layers**, authored with the template and tested, may be stacked by any page;
-  - **a page's own last layer** may only set declared settings and fill regions declared fillable.
-- **Print** is an automatic layer, stacked by the print and export mode.
+  - **a page's own last layer** may only set declared params and fill regions declared fillable.
+- **Print** is an automatic layer, stacked by the print mode and for output.
 - **One stack per page** replaces nested page and site templates.
 
 (macaw_compose#8, question 2.)
@@ -84,7 +84,7 @@ A region marked `persistent: true` survives live navigation between pages that s
 
 ## 5. Steps and navigation {#pages-steps}
 
-- **Navigation** changes the page (live, or a full load when the plans differ; dcotek_web#130).
+- **Navigation** changes the page (live, or a full load when the plans differ; macaw#130).
 - **A view change** stays on the page: a selection, an opened tab or drawer, a sorted table.
 - Both are steps on a view path ([08](08-records.md)).
 

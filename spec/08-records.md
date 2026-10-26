@@ -15,12 +15,12 @@ home ──click──▶ about ──select Elixir──▶ about [Elixir] ─�
 
 Which is which comes from the event's `initiator` ([02](02-sources.md#sources-event)). An event on a data element resolves against the drawing it landed on, or is dropped (the drawn-token rule), so a step never records an item the visitor didn't see.
 
-Choosing any step shows the page as it was there. The path and the replay are one view. Click paths (dcotek_web#54) become view paths.
+Choosing any step shows the page as it was there. The path and the replay are one view. Click paths (macaw#54) become view paths.
 
 ## 2. What is recorded {#records-content}
 
-- **Base snapshots:** the **neutral** render of a page version, content-addressed and shared by every visit.
-  - It is stored **by part and assembled:** the chrome rendered by a given template stack is stored once, and a page's snapshot is an assembly of part hashes. The record still *means* "the whole page as seen".
+- **Base renders:** the **neutral** render of a page version, content-addressed and shared by every visit.
+  - It is stored **by part and assembled:** the chrome rendered by a given template stack is stored once, and a page's base render is an assembly of part hashes. The record still *means* "the whole page as seen".
   - Its assets are captured too, including generated content-addressed stylesheets ([10](10-web.md#web-csp)).
 
   (dcotek_web.md C7.)
@@ -28,7 +28,7 @@ Choosing any step shows the page as it was there. The path and the replay are on
 - **Source requests:** params, window and `as_of`. **No data is stored.**
 - **Definitions by digest:** the page, its template stack and its surfaces ([07](07-documents.md)).
 
-**Records never embed printouts.** A **printout** is a component's prepared output with its data (a visual's design, deliveries, now, window and theme), used for print and export. Whole-page output in print mode assembles the components' printouts, and is an export, never a record. Three values, three rules (macaw_compose#22, R16):
+**Records never embed printouts.** A **printout** is a component's prepared output with its data (a visual's design, deliveries, now, window and theme), used for print and output. Whole-page output in print mode assembles the components' printouts, and is output, never a record. Three values, three rules (macaw_compose#22, R16):
 
 | Value | Holds | Data? |
 |---|---|---|
@@ -36,7 +36,7 @@ Choosing any step shows the page as it was there. The path and the replay are on
 | record | digests, recorded events, requests | never |
 | state snapshot ([03](03-state.md#state-snapshots)) | interaction state | never |
 
-**Replay** re-renders the base snapshot, applies the state events up to the chosen step, and re-runs the components. Replay runs no scripts in the frame. (dcotek_web.md C7.)
+**Replay** re-renders the base render, applies the state events up to the chosen step, and re-runs the components. Replay runs no scripts in the frame. (dcotek_web.md C7.)
 
 ## 3. Attention {#records-attention}
 
@@ -60,4 +60,4 @@ Choosing any step shows the page as it was there. The path and the replay are on
 - **Identity never enters Macaw.** The same record format works in any app, and a record can be shared without identifying anyone.
 - **Deletion and retention have one owner:** the host deletes the visit and the records linked to it.
 - **Replay gets its viewer from the host.**
-- **State values can themselves be personal** (a typed search, picked skills). So recording is declared per state source with the lowest capture level allowed, and is **closed by default**: a source or state source is recorded only when it declares it and the host enables it. dcotek_web's D6 (nothing finer than page level for anonymous visitors) applies to state values too.
+- **State values can themselves be personal** (a typed search, picked skills). So recording is declared per state source with the lowest capture level allowed, and is **closed by default**: a source or state source is recorded only when it declares it and the host enables it. macaw_server's D6 (nothing finer than page level for anonymous visitors) applies to state values too.

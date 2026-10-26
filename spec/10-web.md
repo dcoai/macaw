@@ -2,7 +2,7 @@
 
 ## 1. Content Security Policy {#web-csp}
 
-Every page must work under the strictest policy of the three adopters (dcotek_web's):
+Every page must work under the strictest policy of the three adopters (macaw_server's):
 
 ```
 script-src 'self' 'sha256-…'; style-src 'self'; connect-src 'self'; img-src 'self' data:;
@@ -11,12 +11,12 @@ object-src 'none'; base-uri 'none'; frame-ancestors 'none'
 
 - **No inline `style=` and no `<style>` elements.** LiveView applies diffs with `setAttribute`, so a nonce would not help either.
 - **No inline script and no `eval`/`new Function`.**
-- **Hooks are static files from `'self'`.** Only a host's own small inline script (dcotek_web's tracking plan) is hashed.
+- **Hooks are static files from `'self'`.** Only a host's own inline script, if it has one, is hashed.
 - **Nothing from another origin.**
 - **The delivery rule,** for everything a component styles or loads (macaw_compose#22, R12):
   1. a finite set of values becomes a **class** in a static stylesheet;
   2. a per-datum value becomes an **SVG presentation attribute** (not governed by CSP);
-  3. a finite set **defined at runtime by a document** (a design's motion: transitions and keyframes; a user's theme, [11](11-themes.md#themes-runtime)) becomes a **generated stylesheet**, content-addressed (`/assets/<hash>.css`), generated on demand and served from `'self'`. Its content is a pure function of the document, so the same document always yields the same file, and base snapshots capture it ([08](08-records.md#records-content));
+  3. a finite set **defined at runtime by a document** (a design's motion: transitions and keyframes; a user's theme, [11](11-themes.md#themes-runtime)) becomes a **generated stylesheet**, content-addressed (`/assets/<hash>.css`), generated on demand and served from `'self'`. Its content is a pure function of the document, so the same document always yields the same file, and base renders capture it ([08](08-records.md#records-content));
   4. a value that **changes after the first paint, in live mode** (an animation frame, a live resize, a drag) is set by a trusted hook through the CSSOM, which CSP allows. Nothing a first render needs is set this way;
   5. **no script evaluation,** anywhere;
   6. **media from another origin is proxied** through a same-origin route (§1.1).
@@ -25,7 +25,7 @@ object-src 'none'; base-uri 'none'; frame-ancestors 'none'
 
 **One output path for page markup.** The delivery rule is the only way any component, built in or adopted, writes markup into a page. There is no permissive styling profile. (A validation profile that permits literal colors in an adopter's own documents, such as visualize's `colors: :open`, is a different matter: it governs which colors a document may name, not how they are delivered, [11](11-themes.md#themes-rules).)
 
-**A self-contained document is not a page.** An exported SVG file, a PNG rendered from one, or a print-to-file export must render alone, and no page CSP applies to it, so it carries its own `<style>` inside the document. The output target decides, with no setting: markup for a page is strict, and a standalone document is self-contained.
+**A standalone file is not a page.** Output (an SVG file, a PNG rendered from one, a print-to-file PDF) must render alone, and no page CSP applies to it, so it carries its own `<style>` inside the document. The output target decides, with no setting: markup for a page is strict, and a standalone file is self-contained.
 
 What this asks of visualize (visualize#944): inline styles become classes, per-design motion becomes generated stylesheets, dark mode is the theme class, the `:js` canvas path is removed, map tiles come through the proxy, and every chart is complete SVG in the first render.
 
@@ -46,12 +46,12 @@ Macaw provides **one generic same-origin asset proxy** for media a component nee
 |---|---|---|
 | live | a connected LiveView | hooks attached; a visual may draw marks on a canvas |
 | socketless | bots, black holes, no JS, the first render | complete HTML and SVG, never canvas; native behaviors only; the first render from the deliveries |
-| neutral | base snapshots for records | no hooks, scripts, prefixes or per-viewer markup |
-| print | print and PDF export | the automatic print layer |
+| neutral | base renders for records | as socketless, with no hooks, scripts, tokens, live regions or per-viewer markup |
+| print | print and PDF output | as neutral, in the print theme and the automatic print layer, laid out in the print box |
 
 ## 3. Responsive layout {#web-responsive}
 
-- **Templates compile to static CSS at build time,** like themes. The markup carries classes and landmark elements only, and layers change classes, never CSS. There is one stylesheet per site, generated from the stacks in use, served from `'self'` and snapshotted.
+- **Templates compile to static CSS at build time,** like themes. The markup carries classes and landmark elements only, and layers change classes, never CSS. There is one stylesheet per site, generated from the stacks in use, served from `'self'` and captured with each base render.
 - **The template responds to the viewport** (media queries). **Components respond to their region** (container queries; each region is a CSS container). **Components never size by viewport.**
 - **Breakpoints are in `rem`,** following the visitor's font size, with a shared default set (narrow, wide) that templates use or extend.
 - **Collapse behaviors per region on narrow screens.** The template sets the default, and a layer can override it per region:
@@ -85,12 +85,12 @@ Macaw provides **one generic same-origin asset proxy** for media a component nee
 - **composite widgets are one tab stop** with arrows inside (charts, grids, tree menus, tab sets);
 - Escape closes or leaves, and Enter or Space activates;
 - no traps, except `:modal`, which releases on Escape.
-- **Key bindings are focus-scoped.** A component handles keys while focus is inside it. **Page-wide shortcuts** go only through the **page-shortcut layer**, which the composition owns (macaw_compose#22, decision 13):
+- **Key bindings are focus-scoped.** A component handles keys while focus is inside it. **Page-wide shortcuts** go only through the **page-shortcut registry**, which the page owns (macaw_compose#22, decision 13):
   - a component declares the shortcuts it offers (a key, an action name, a description); the page accepts or drops each, and validation refuses two on one key;
   - every single-character shortcut can be turned off or remapped by the viewer, through a `shortcuts` preference state source ([03](03-state.md#state-sources)), as WCAG 2.1.4 requires;
-  - the layer lists the active shortcuts for assistive technology and in a help dialog.
+  - the registry lists the active shortcuts for assistive technology and in a help dialog.
 
-  A visualize scene's `capture: :page` (visualize#620) declares its keys to this layer.
+  A visualize scene's `capture: :page` (visualize#620) declares its keys to this registry.
 
 **Focus after changes**, owned by Macaw:
 
@@ -102,8 +102,8 @@ Macaw provides **one generic same-origin asset proxy** for media a component nee
 | error | to the error summary or first invalid field | the error |
 | within a persistent region | kept | — |
 
-**One announcer per page** (macaw_compose#29): exactly one polite and one assertive live region, with **fixed, shared ids**, however many compositions and adopters the page holds.
-- **It is found, not rendered per composition.** `macaw_live` provides it when present. Otherwise the **first** adopter hook to mount (a standalone visualize chart, say) creates the two regions at the end of the body, and every later composition on the page reuses them. Two standalone charts, or a chart beside a Macaw surface, share one announcer.
+**One announcer per page** (macaw_compose#29): exactly one polite and one assertive live region, with **fixed, shared ids**, however many surfaces and standalone components the page holds.
+- **It is found, not rendered per surface.** `macaw_live` provides it when present. Otherwise the **first** adopter hook to mount (a standalone visualize chart, say) creates the two regions at the end of the body, and every later surface or component on the page reuses them. Two standalone charts, or a chart beside a Macaw surface, share one announcer.
 - **Components never render a live region of their own.** They request announcements by a name they declare (`announces`, [05](05-components.md#components-declares)):
   - **from the server,** as an event;
   - **from a hook,** as a DOM event, `macaw:announce`, with `{name, text, politeness}`. Every adopter dispatches this same event, standalone included, so a component behaves the same on a Macaw page and off one.

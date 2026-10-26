@@ -18,11 +18,11 @@ state "skills",
   - **`selection`:** a declared identity, `{field, value}` or a composite map, or nothing. A pick writes the item's declared identity ([02](02-sources.md#sources-event)), through the surface's `links` (§7). Components holding no selection draw unchanged; components sharing the identity draw `:selected` and `:muted`.
   - **`window`:** `nil` (everything), `%{last: duration}` or `%{from: t, to: t}`, in UTC, with an optional **`as_of`** that reads the data as it was then ([08](08-records.md#records-requery)). It applies only to slots whose source has a `:time` window field; others ignore it. A brush writes it; **reset** returns it to its initial value and is itself an event (`moved`). A scene's playhead is this window plus `as_of`.
   - **variables:** one state source per declared variable, typed like a parameter ([05](05-components.md#components-parameters)). A control writes it; a component reads it through a bound parameter.
-  - **preferences:** **`theme`**, **`zone`** (a time zone name), **`units`** (a unit system) and **`shortcuts`** (which page shortcuts are on, and their keys, [10](10-web.md#web-a11y)), at `:viewer` scope when the host knows the viewer and `:page` otherwise. They reach every component in its context, so one person's unit system follows them across every component on every page. (macaw_compose#22, R10.)
+  - **preferences:** **`theme`**, **`zone`** (a time zone name), **`units`** (a unit system) and **`shortcuts`** (which page shortcuts are on, and their keys; the page-shortcut registry, [10](10-web.md#web-a11y)), at `:viewer` scope when the host knows the viewer and `:page` otherwise. They reach every component in its context, so one person's unit system follows them across every component on every page. (macaw_compose#22, R10.)
   - a scene's **`camera`** and **`breakpoints`**, declared by the scene's component like any other state it writes.
 - **With no socket, the initial value is the rendered state,** so bots and no-JS visitors get a meaningful page. (dcotek_web.md C2.)
 - **Reading state:** a component reads a state source it doesn't write in one of two ways, and never by asking another component:
-  - **a parameter bound to it** (`bins: {:state, "bins"}`), delivered through the component's `state/3` transition ([05](05-components.md#components-states));
+  - **a parameter bound to it** (`bins: {:state, "bins"}`), delivered through the component's `bound/3` transition ([05](05-components.md#components-states));
   - **a slot bound to it,** read like any other source.
 
 ## 2. Scopes {#state-scopes}
@@ -53,13 +53,13 @@ Each has one owner:
 | **persistence:** survives a reload, a new page, a later visit | a host behavior: URL, session, token, database | **none** |
 | **recording:** what it was over time, for replay | a host behavior, capped by capture level | **none** (closed by default) |
 
-Persistence is for **interaction** state only. It is never how domain data is saved; that is the records library's job ([13](13-writes.md)). metresis persists in the URL; dcotek_web must not use the URL for visitor-specific state, and uses the session and token instead. (metresis.md C5; dcotek_web.md C1.)
+Persistence is for **interaction** state only. It is never how domain data is saved; that is `macaw_edit`'s job ([13](13-writes.md)). metresis persists in the URL; macaw_server must not use the URL for visitor-specific state, and uses the session and token instead. (metresis.md C5; dcotek_web.md C1.)
 
 ## 4. State snapshots {#state-snapshots}
 
-A **state snapshot** is the current value of every persisted state source in a set of scopes (a page, a session, a viewer), in the same shape as the state events in records ([08](08-records.md)). It can be exported and restored, alone or inside a bundle ([09](09-stores.md#stores-portable)).
+A **state snapshot** is the current value of every persisted state source in a set of scopes (a page, a session, a viewer), in the same shape as the state events in records ([08](08-records.md)). It can be saved and restored, alone or inside a bundle ([09](09-stores.md#stores-portable)).
 - Restoring validates each value against its state source's current schema. A value that no longer fits is dropped, and reported by path.
-- Values are restored for whoever restores them: a snapshot carries no identity.
+- Values are restored for whoever restores them: a state snapshot carries no identity.
 - Recording rules apply: a state source that may not be recorded is not exported either.
 
 ## 5. Exports {#state-exports}
@@ -91,7 +91,7 @@ Every source on a page is a node: feeds, derived sources, state sources and expo
 - **Computing is separate from rendering.** A hidden surface (a closed tab, an unopened drawer) still computes whatever others depend on; only its rendering waits.
 - **Provenance:** any value traces back through the graph ("why this number?").
 - **Validation time, not build time.** The graph is built by pure library functions whenever a page document is loaded. In v1 that is at build or boot, and a runtime builder could call the same functions ([06](06-pages.md#pages-runtime)).
-- **Across processes:** a persistent region runs in its own LiveView process, so edges into or out of it cross processes. The live layer carries marked changes between them (an engineering item, [14](14-open.md)).
+- **Across processes:** a persistent region runs in its own LiveView process, so edges into or out of it cross processes. `macaw_live` carries marked changes between them (an engineering item, [14](14-open.md)).
 
 ## 7. Links: identity equivalence {#state-links}
 

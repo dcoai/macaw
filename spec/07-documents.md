@@ -1,10 +1,10 @@
 # 07 — Documents {#documents}
 
-Every declarative value Macaw reads is a **document**: pages, surfaces, templates, layers, themes, visualize designs, component settings and records. One kernel validates them all. It starts from visualize's planned `Visualize.Document` (visualize#912), which moves to Macaw.
+Every declarative value Macaw reads is a **document**: pages, surfaces, templates, layers, themes, visualize designs, component settings and records. One kernel validates them all. It starts from visualize's `Visualize.Document`, which moves to Macaw ([00](00-overview.md#overview-order) step 2).
 
 ## 1. The kernel {#documents-kernel}
 
-- **One version line per document kind,** stamped as `"$version"`.
+- **One version line per document type,** stamped as `"$version"`.
 - **Gate order:**
   1. refuse a newer version by name (`{:newer_schema, needs, this}`) before anything else is read;
   2. check size limits before decoding;
@@ -17,13 +17,13 @@ Every declarative value Macaw reads is a **document**: pages, surfaces, template
 - **Unknown keys are refused by name** at their own spelling. (metresis.md C6.)
 - **Atom safety:**
   - names a document declares are strings;
-  - keys are decoded against the kind's tables;
+  - keys are decoded against the document type's tables;
   - closed vocabularies are looked up;
   - `String.to_existing_atom/1` is never used on document data.
 
   (visualize.md C6, D-195.)
 - **Map and JSON forms are exact inverses** for valid values. Values JSON can't express use one table of `$` tags. (visualize.md C6.)
-- **A canonical digest** (`Document.digest/1`) fingerprints any document independently of key order. Records and snapshots cite it. (visualize#912; metresis.md C6.)
+- **A canonical digest** (`Document.digest/1`) fingerprints any document independently of key order. Records, base renders and bundles cite it. (metresis.md C6.)
 - **Documents hold no functions, bindings or credentials.** (visualize.md C6.)
 - **Untrusted strings** are sanitized where read and escaped where written, and URLs are checked by a host policy. (visualize.md C6.)
 - **Fetched documents** (from exio or a database) are untrusted input: the same gates apply, and nothing is evaluated. (dcotek_web.md C6.)
