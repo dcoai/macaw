@@ -12,8 +12,37 @@ It is the shared layer beneath **visualize** (charts and boards), **metresis** (
 
 ### Goals
 
-1. **Composes components in any Phoenix LiveView app.** composex is the composition layer, not a framework a host is built around. Any LiveView mounts a surface with one call (as a LiveComponent, or with `live_render`), from a document plus a map of sources. It needs no host framework, database, tracking or router.
-2. **Every host concern is a behaviour with a working default.** The smallest app is a few lines; a host replaces only what it cares about.
+1. **Composition effects: the whole is greater than the sum of its parts.** This is why composex exists. Composed through composex, components gain effects that none of them can produce alone, for *every* combination of components, including combinations nobody planned.
+
+   **The principle: N + M, not N × M.** Without composition, making N components interact needs code for every pair, so it never happens. With composex, each component declares itself once (its slots, identity, state, events, observation and renders), and every combination works.
+
+   **The promised effects:**
+
+   | Effect | What happens | Provided by |
+   |---|---|---|
+   | cross-highlighting without wiring | a selection in one component (a picker, a chart, a table) highlights or filters every component sharing the identity, though none knows the others exist | state sources, declared identity (§2) |
+   | one time, one "now" | every component shows the same window and freshness; axes line up | the surface owns the window and the clock (§1, §2) |
+   | a write updates everything | data changed through one component updates every reader, on this page and on other viewers' | change notification |
+   | values derived across components | a value computed from several components' data, shown in another | derived sources (§3) |
+   | the whole view in one link | a shared link restores every component's state at once | host-owned persistence of state (§2) |
+   | whole-surface replay | what a viewer saw, across all components at a moment, is reproduced | records (§7) |
+   | "why this number?" | any shown value traces back through its derivations to its data | declared sources, derivations and bindings (§1, §3) |
+   | disclosure that matches | the host's privacy note, observation code and CSP hash are right for this exact combination | declared observation and reveals (§4, §10) |
+   | accessibility of the whole | landmarks, skip links, one focus order and keyboard movement across components | surfaces and templates own structure and order (§5) |
+   | one look | every component matches, and contrast is checked once | one theme, roles only (§9a) |
+   | consistent access | every component honors what this viewer may see, the same way | the viewer reaches every source and component (§1, §10) |
+   | shared fetching | components reading the same data cost one fetch, at the largest budget among them | sources named and pooled by the surface (§1) |
+   | whole-surface output | the surface prints or exports (a PDF résumé, an SVG board) as one document | every component's neutral render (§4) |
+   | an assistant that understands the page | an agent sees the surface's structure, state and declared actions, and acts within the same rules as a person | everything declared, nothing hidden in components |
+
+   **Two design rules follow:**
+   - **Every declaration must buy a composition effect.** A proposed addition to the component contract states which effect it enables: declared identity buys cross-highlighting, element ids buy attention maps, `reveals` buys correct disclosure, a neutral render buys replay and export. A declaration that buys nothing doesn't belong in the contract.
+   - **No back doors.** A component never communicates with another component directly, never fetches data outside a source, and never keeps state the runtime can't see. Each back door silently breaks an effect: the replay misses that state, the shared link drops it, the disclosure doesn't mention it. The contract makes the composable path the easy one, and the registry and tests make back doors visible.
+
+   **The test** is the example app (goal 7). Its components are written as if by different authors and none references another; a surface document alone assembles them. It must show the effects: the picker driving cards and a chart, a write refreshing a total, a shared link restoring the view, a replay, a correct disclosure, and one keyboard order across the page. **A component added later must join every effect with no change to the existing ones.** That is the N + M claim, tested.
+
+2. **Composes components in any Phoenix LiveView app.** composex is the composition layer, not a framework a host is built around. Any LiveView mounts a surface with one call (as a LiveComponent, or with `live_render`), from a document plus a map of sources. It needs no host framework, database, tracking or router.
+3. **Every host concern is a behaviour with a working default.** The smallest app is a few lines; a host replaces only what it cares about.
 
    | Concern | Behaviour | Default |
    |---|---|---|
@@ -23,11 +52,11 @@ It is the shared layer beneath **visualize** (charts and boards), **metresis** (
    | where state persists | state persistence | nowhere (per view, lost on leave) |
    | where a link or drill goes | navigation | an event to the host |
    | which credentials a source uses | the source's own configuration | none |
-3. **Complete without a socket.** A surface renders as complete server HTML (a dead render, or no JS), and the live layer only adds to it.
-4. **Strict web rules for every component:** nothing inline (`script-src` and `style-src` limited to the app's own files plus hashes), nothing from another origin, accessible, and honoring reduced motion (§9, §9a). A component that meets these works in any host, the strictest included.
-5. **No dependency on its adopters.** composex depends on none of visualize, metresis or dcotek_web; they depend on it. A CI check enforces it.
-6. **Proven by an example app** in this repository, using none of the three: a page composed from built-in components and an in-memory source, run in CI.
-7. **Open to third parties.** Built-in components and sources use the same public contracts as any package, through an explicit, default-closed registry (§9).
+4. **Complete without a socket.** A surface renders as complete server HTML (a dead render, or no JS), and the live layer only adds to it.
+5. **Strict web rules for every component:** nothing inline (`script-src` and `style-src` limited to the app's own files plus hashes), nothing from another origin, accessible, and honoring reduced motion (§9, §9a). A component that meets these works in any host, the strictest included.
+6. **No dependency on its adopters.** composex depends on none of visualize, metresis or dcotek_web; they depend on it. A CI check enforces it.
+7. **Proven by an example app** in this repository, using none of the three: a page composed from built-in components and an in-memory source, run in CI.
+8. **Open to third parties.** Built-in components and sources use the same public contracts as any package, through an explicit, default-closed registry (§9).
 
 ### Non-goals
 
