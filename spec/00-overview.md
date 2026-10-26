@@ -93,13 +93,20 @@ Other component packages (metresis's panels, components built on ryutronic) depe
 
 ## 5. Order of work {#overview-order}
 
-1. The document kernel, with the fragment and stacking machinery, in **`macaw_layers`** ([07](07-documents.md)). This absorbs visualize's planned extractions #880, #893 and #912.
-2. The data model and source contract, in **`macaw_data`** ([02](02-sources.md)). This absorbs visualize's #903 and #916.
-3. Derived sources in **`macaw_data`** ([04](04-derived.md)); state sources, exports and the page DAG in **`macaw_compose`** ([03](03-state.md)).
-4. Component, surface, template and container contracts, in **`macaw_compose`** ([05](05-components.md), [06](06-pages.md)).
-5. Themes in **`macaw_layers`** ([11](11-themes.md)), and the web rules in **`macaw_compose`** ([10](10-web.md)).
-6. The live layer, **`macaw_live`**.
-7. Adoption: visualize on `macaw_layers` and `macaw_data` (visualize#938, #939), with its visuals implementing the component contract (visualize#940), metresis on `macaw_data` (metresis#556), dcotek_web on `macaw_compose` and `macaw_live` (dcotek_web#130).
+**Macaw builds first what its adopters consume, in the order they consume it** (macaw_compose#28). visualize moves its generic core into `macaw_layers` and `macaw_data` once, and metresis migrates once, so neither is ever blocked on Macaw features no one uses yet.
+
+1. **`macaw_data`: the interaction event** ([02](02-sources.md#sources-event)). It unblocks visualize's Event v2 (visualize#941).
+2. **`macaw_layers`: the document kernel** ([07](07-documents.md)): Document and its faults, names and term tagging, the map and JSON forms, the digest. visualize's planned extractions (#880, #893, #912) are closed there as superseded by this step.
+3. **`macaw_data`: the data model** ([02](02-sources.md#sources-data)): the columnar Table (from visualize#916), Schema, Delivery, units, quantities and facts. `Schema.to_json/1` and `from_json/1` are public, so no adopter reads a hidden function (visualize#879).
+4. **`macaw_data`: the source contract and its conformance kit** ([02](02-sources.md)), a strict superset of `Visualize.Feed`, with the budget fields and `reduced_by`.
+5. **`macaw_data`: derived sources** ([04](04-derived.md)): the engine and sandbox, with `evaluate/4` (from visualize#881). **The sandbox's gates move with it** ([04](04-derived.md#derived-gates)); until `macaw_data` passes them, visualize keeps its own sandbox.
+6. **`macaw_data`: transforms, table operations and aggregates** ([04](04-derived.md#derived-operations)). Transforms that need geometry stay in visualize.
+7. **`macaw_layers`: themes** ([11](11-themes.md)), with an extension point for visualize's chart theme slots; and the fragment machinery: Fragment, Use, Composite, Store and Bundle ([07](07-documents.md#documents-fragments), [09](09-stores.md)).
+8. **Only then, `macaw_compose` and `macaw_live`**, starting with what adopters use optionally: the mode context, the announcer, the component conformance kit (visualize#946), and surfaces with a grid region, the target of the board migration (visualize#947) and of metresis's dashboards (metresis#452). State, the page DAG, pages and templates follow.
+
+**Each step is released before an adopter switches to it:** tagged in git, and depended on by tag. Until then the adopter keeps a field-identical interim definition, and switches by alias. Publishing to Hex is the owner's decision and comes later.
+
+**Adoption:** visualize on `macaw_layers` and `macaw_data`, with its visuals implementing the component contract (visualize#939, #940); metresis on `macaw_data` and, for its dashboards, Macaw surfaces, migrating once from where it paused (metresis#556, #452); macaw_server on `macaw_compose` and `macaw_live` (macaw#130).
 
 The CI dependency check (goal 6) and the example app (goal 7) are acceptance criteria of the first implementation proposal that ships code.
 

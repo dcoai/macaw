@@ -25,6 +25,16 @@ A **derived source** (visualize's *virtual source*) is computed from other sourc
 - **The output conforms to its declared schema,** or it is a fault.
 - **Context has no clock.** A source reads its inputs' schemas, their deliveries' served facts, and the variable state sources at its scope ([03](03-state.md#state-sources)).
 
+### Gates that ship with the sandbox {#derived-gates}
+
+The sandbox is the one place in the family that runs untrusted code, so it never loses a check in transit. When it moves from visualize to `macaw_data` (macaw_compose#28), it brings, and its CI runs:
+- **the checker's allowlist tests:** every refused construct above, refused by name and line;
+- **the reductions budget and the separate liveness bound,** each tested by a function that exceeds it (visualize#856, #857);
+- **the atom gate:** no atom is created from untrusted input. A check equal to visualize's `vis.atoms` (D-195) fails the build on any `String.to_atom/1` or `binary_to_atom` reachable from document or source data;
+- **the conformance and property tests** of the sandbox: generated inputs never crash the caller, never leak data values in faults, and always yield a schema-conforming output or a fault.
+
+Until `macaw_data` passes all of them, adopters keep their own sandbox.
+
 ## 2. Inputs {#derived-inputs}
 
 Inputs may be:
