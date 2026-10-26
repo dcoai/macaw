@@ -47,8 +47,12 @@ visualize's fragment machinery moves into Macaw and is used by every stackable d
 - templates, layers, themes and styles;
 - source declarations.
 
-Each stacks, masks, validates and explains the same way (§2). A configured component is a stack: its defaults, then a **preset** (a fragment), then the cell's local settings. So "why is this table sorted by date?" answers through `explain`, like any other value. This uniformity is what makes portability possible ([09](09-stores.md#stores-portable)), and what lets an AI author anything through one format.
+Each stacks, masks, validates and explains the same way (§2). A configured component is a stack: its defaults, then a **preset** (a fragment), then the cell's local settings. So "why is this table sorted by date?" answers through `explain`, like any other value.
+
+**A component's settings schema is made of parameters** ([05](05-components.md#components-parameters)): typed, with a default, legal values and documentation. One shape describes every component's options, so validation, builder forms and an AI author read the same thing.
+
+**A cell's settings may be inline or referenced.** A cell may carry a component's whole settings inline (a complete visualize design, for instance), or a reference to a preset plus local overrides. Both are the same stack and validate the same way. Inline settings keep a page in one document, which suits AI authoring; a reference keeps a shared design in the library, where every page using it follows its changes (macaw_compose#22, decision 3). This uniformity is what makes portability possible ([09](09-stores.md#stores-portable)), and what lets an AI author anything through one format.
 
 ## 4. Validation time {#documents-validation-time}
 
-Validation runs **whenever a document is loaded**, through pure functions. In v1 that is at build or boot. A broken shipped document fails the build, and a broken fetched document is refused, keeping the last good version. (metresis.md C6; dcotek_web.md C13.)
+Validation runs **whenever a document is loaded**, through pure functions. It includes each placed component's configured declarations ([05](05-components.md#components-declares)): `declarations(settings)` is called here, so slots, events, state writes, budgets and observation are known before anything renders. In v1 that is at build or boot. A broken shipped document fails the build, and a broken fetched document is refused, keeping the last good version. (metresis.md C6; dcotek_web.md C13.)

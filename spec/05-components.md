@@ -6,22 +6,73 @@ A **component** is a registered implementation of one public contract. Built-in 
 
 Each declaration buys a composition effect ([00](00-overview.md) goal 1, rule 1).
 
+**Two sorts of declaration** (macaw_compose#22, R2):
+- **Kinds are static.** A module declares them once, and the registry reads them without calling the component (§2).
+- **Everything else is configured.** It is the value of a pure function, `declarations(settings)`, called with the component's validated settings when the document is validated ([07](07-documents.md#documents-validation-time)). A component whose behavior is fixed returns the same value for any settings. A component whose behavior is data computes it: a visualize visual's slots, events and state writes follow from its design.
+
+`declarations/1` is pure: no I/O, no clock, no process. Equal settings give equal declarations. Because it runs at validation, the page DAG, the CSP plan, the observation plan and every budget ceiling exist before anything renders.
+
 | Declares | Buys |
 |---|---|
-| **settings schema**, which may depend on bound slot schemas (`legal_for`) | validated pages; type-legal options (metresis.md C3) |
+| **settings schema**, made of parameters (§1.1), which may depend on bound slot schemas (`legal_for`) | validated pages; type-legal options (metresis.md C3) |
 | **slots**: typed inputs with `requires` contracts, checkable before data flows | any source works; faults found at validation (visualize.md C1) |
-| **kinds** it renders as | correct placement and landmarks (§2) |
-| **state** it writes, and **exports** | interaction without wiring ([03](03-state.md)) |
-| **events** it emits, each marked visitor- or system-initiated | accurate view paths ([08](08-records.md)) |
-| **announcements** it may request | one coordinated announcer ([10](10-web.md#web-a11y)) |
-| **observation**, in the host's closed vocabulary | disclosure that matches (dcotek_web.md C3, C12) |
+| **kinds** it renders as (static) | correct placement and landmarks (§2) |
+| **state** it writes (`writes`), its **local state** (`local`), and **exports** (§1.3) | interaction without wiring ([03](03-state.md)) |
+| a **budget per slot** (§1.2) | correct fetch sizes; one hard bound per host ([02](02-sources.md#sources-delivery)) |
+| **events** it emits, in the shared event struct, each marked visitor- or system-initiated | accurate view paths ([08](08-records.md)) |
+| **announcements** it may request, by name (`announces`) | one coordinated announcer ([10](10-web.md#web-a11y)) |
+| **observation** it can emit (`observes`), a subset of the closed vocabulary | disclosure that matches (dcotek_web.md C3, C12; [10](10-web.md)) |
 | **element ids**, stable and derived from content structure | attention that aggregates across builds (dcotek_web.md C3) |
-| **reading load** of its sections | reading vs skimming (dcotek_web.md C3) |
+| **reading load** (§1.4) | reading vs skimming vs glancing (dcotek_web.md C3) |
 | **client hooks**, as static files from `'self'` | strict CSP ([10](10-web.md#web-csp)) |
-| **assets** (CSS, images) | self-contained base snapshots ([08](08-records.md)) |
-| **renders** in each mode: live, socketless, neutral, print | complete without a socket; replay; output |
+| **assets**: static files, and generated content-addressed stylesheets (§3) | self-contained base snapshots ([08](08-records.md)) |
+| **proxy routes** for media from another origin, mounted by the host | nothing from another origin ([10](10-web.md#web-csp)) |
+| **renders** in each mode: live, socketless, neutral, print (§3) | complete without a socket; replay; output |
 | **drawn states** | never blank; failures shown (§4) |
 | **required access**, if any | consistent gating |
+
+### 1.1 Parameters {#components-parameters}
+
+A component's settings schema is a map of **parameters**, one shape for every component, so the registry, the page validator, builder forms and an AI author read one form (macaw_compose#15):
+
+```elixir
+%{type: type,                      # a data-model type (02 §1)
+  default: value,
+  values: [value] | nil,           # a closed list of legal values, or nil
+  legal_for: {slot, field, fact} | nil,  # legal values follow from a bound slot's schema
+  bindable: false,                 # may this parameter be bound to state?
+  doc: "…"}
+```
+
+A parameter's value in a document is a literal, or, when the parameter is `bindable`, a **binding to a state source**: `bins: {:state, "bins"}` ([03](03-state.md#state-sources)). Binding is closed by default: a parameter is bindable only when its component says so.
+
+- **Declarations never read a bindable parameter,** so a binding can never change the page's shape after validation. The budget is the one exception (§1.2): it is a function evaluated at runtime, under a ceiling fixed at validation.
+- **A change to a bound parameter re-applies the component:** the runtime passes the new value through `state/3` (§4). It re-fetches only when the slot's budget changes.
+- A design variable in visualize is a parameter (visualize#889); old untyped variables migrate as type `:term`.
+
+### 1.2 Budget per slot {#components-budget}
+
+A component that draws rows declares, for each slot, a **row budget** as a function of its parameters and its measured size: `budget(slot, params, size) → rows`. visualize's derivation (plot width by mark type, with a design override, its D-226, D-227 and D-230) is one implementation.
+
+- **A host ceiling caps every slot.** A slot whose budget exceeds the ceiling is handed no rows, and the component draws `over_budget` (§4).
+- **Sources are pooled at the largest budget** among their readers, and each reader is reduced to its own, reporting how ([02](02-sources.md#sources-delivery), `reduced_by`).
+- A component without a budget declaration reads at the host ceiling.
+
+### 1.3 State a component writes and reads {#components-state}
+
+- **`writes`** names the state sources a component writes and the type of value each takes: `writes: [selection: :identity, window: :x_window]`. A component writes them **only by emitting events** ([03](03-state.md)); the runtime applies the event.
+- **`local`** names keys in the `:local` scope it shares through the client bus, with the domain type each carries: `local: [hover: :x_domain, brush_band: :x_window]` ([03](03-state.md#state-scopes)). Pixels never travel on the bus.
+- **Exports** are values others may read ([03](03-state.md#state-exports)).
+- **A component reads state it doesn't write** through a parameter binding (§1.1) or a slot bound to the state source. It never reads another component.
+
+### 1.4 Reading load {#components-reading}
+
+Every component declares its reading load, so attention analysis ([08](08-records.md#records-attention)) treats a chart differently from an article:
+- **`:glance`:** a value, a chart's shape. The default for components that aren't prose.
+- **`:scan`:** a table, a list, a visual over many items.
+- **`:read`:** prose sections, which may also give word counts.
+
+It may depend on settings: visualize derives `:scan` for visuals over many items from its summary's counts.
 
 ## 2. Kinds {#components-kinds}
 
@@ -35,7 +86,7 @@ def render(:content, assigns),    do: ~H"<ul class=\"cards\">…</ul>"
 ```
 
 - **The region or container selects the clause.** A cell is valid only where its placement's kind is one of the component's kinds. That is checked at validation, so a missing clause never fails at runtime.
-- **Declared kinds are checked against the clauses at compile time,** and the registry reads them without calling the component.
+- **Kinds are the only static declaration.** They are checked against the clauses at compile time, and the registry reads them without calling the component.
 - **Each kind carries rules the output is checked against:**
   - `:navigation` renders a labeled `<nav>` of links;
   - `:control` renders real form controls;
@@ -47,17 +98,45 @@ def render(:content, assigns),    do: ~H"<ul class=\"cards\">…</ul>"
 ## 3. Rendering rules {#components-rendering}
 
 - **Server first, complete without a socket.** Native HTML wherever it gives behavior: `<details>`, `popover`, `<dialog>`. (dcotek_web.md C3.)
-- **Size by container queries, never by viewport,** so one component works in any region ([10](10-web.md#web-responsive)).
-- **Colors through theme roles only,** never literals ([11](11-themes.md)).
+- **Size by container queries, never by viewport,** so one component works in any region ([10](10-web.md#web-responsive)). A component that lays out on the server (a chart computing scales and ticks) receives the **measured container size and root font size** in its context. Until the first measurement, it lays out at the size its placement declares.
+- **Colors through theme roles** ([11](11-themes.md)):
+  - drawing colors are theme roles and values derived from them (`lighten(:warning)`);
+  - data-carried colors (a `:color` column, a schema's value colors) are typed content, allowed only with a non-color cue and a contrast guard;
+  - literal colors are refused. A design language that permits them standalone (visualize's `colors: :open` profile) is validated under the **`:roles` profile** on a Macaw page.
 - **Headings at the level given by context,** never hard-coded ([10](10-web.md#web-a11y)).
-- **Links and navigation as events or host link helpers.** A component never navigates by itself.
-- **No inline `style` or `<style>`, no inline script, nothing from another origin** ([10](10-web.md#web-csp)).
+- **Links and navigation as events or host link helpers.** A component never navigates by itself; its placement maps events to actions ([06](06-pages.md)).
+- **Announcements are requested, never owned.** A component never renders a live region; it requests an announcement by name, from the server or from a hook ([10](10-web.md#web-a11y)).
+- **No inline `style` or `<style>`, no inline script, no script evaluation, nothing from another origin** ([10](10-web.md#web-csp)):
+  - a finite set of values is a class in a static stylesheet;
+  - a value per datum is an SVG presentation attribute;
+  - a finite set a document defines (a design's motion: transitions and keyframes) is a **generated stylesheet**, content-addressed and served from `'self'`, declared as an asset;
+  - a dynamic value is set by a trusted hook through the CSSOM;
+  - media from another origin is fetched through a declared **proxy route**.
+- **Each mode has rules:**
 
-## 4. Drawn states and isolation {#components-states}
+  | Mode | Rule |
+  |---|---|
+  | live | may enhance through hooks; a visual may draw marks on a `<canvas>` |
+  | socketless | complete HTML and SVG, never canvas; the first render from the deliveries, reduced to the budget |
+  | neutral | as socketless, with no hooks and no tokens |
+  | print | as neutral, in the print theme |
+
+## 4. Drawn states, the runtime value and isolation {#components-states}
 
 - **Every component is always in exactly one drawn state:** `crashed`, `down`, `invalid`, `over_budget`, `loading`, `no_data`, `stale`, `capped` or `live`, in that precedence. Each has a theme role, a glyph and words, and is never blank. (visualize.md C3.)
 - **Pure components** (Markdown, cards) render in the page's process.
-- **Components with server work** run as **contained cells**: a heap-limited process each, restarted by its surface with a backoff (100 ms doubling to 10 s, reset after 30 s alive), shown as `crashed` meanwhile. A component's crash never takes down the page that carries the visitor's observation. (visualize.md C13; dcotek_web.md C13.)
+- **A component with server work is a pure value with transitions** (macaw_compose#22, R6):
+
+  ```
+  init(settings, ctx)              → state
+  delivery(state, slot, delivery)  → state
+  size(state, size)                → state
+  state(state, name, value)        → state      # a bound parameter or state source changed
+  render(kind, assigns)            → markup
+  ```
+
+  The **context** carries the mode, the measured container size and root font size, the heading level, the instance id, the theme, and the viewer's preferences (`zone`, `units`; [03](03-state.md#state-sources)). The behavior lives in `macaw_compose`. The **process** around the value is the host's: under Macaw, `macaw_live`'s contained cell; in an adopter's own host, whatever it uses (a LiveView's assigns, a test). The value never knows which.
+- **Contained cells** hold that value: a heap-limited process each, restarted by its surface with a backoff (100 ms doubling to 10 s, reset after 30 s alive), shown as `crashed` meanwhile. A component's crash never takes down the page that carries the visitor's observation. (visualize.md C13; dcotek_web.md C13.)
 - **Embedded applications** (dcotek_web#9's demos) are a container kind running a nested LiveView with its own limits.
 
 ## 5. Containers {#components-containers}
@@ -67,12 +146,19 @@ A **container** is a component of kind `:container` whose content is surfaces: t
 - Panes **render** lazily, but **compute** whatever other nodes depend on ([03](03-state.md#state-dag)).
 - **Opening a pane is a view change** (a step), never navigation.
 - Each container type follows its accessibility pattern ([10](10-web.md#web-a11y)).
+- **A container may position its panes by its own coordinate model.** A visualize scene is one visual; the live elements embedded in it (a terminal, a chart) are its panes, placed in scene coordinates. Its camera and playhead are state sources ([03](03-state.md#state-sources)), so they are recorded and shareable like any other state. (macaw_compose#22, R20.)
 - **Nesting** is only through containers, to a **depth of 3** (surface → container → surface …). A surface's grid never directly contains a grid.
 
 ## 6. Packaging {#components-packaging}
 
-Components ship in packages, which bring their own dependencies (Macaw never imports them) and register through the registry ([12](12-registry.md)). Some expected packages:
-- **`macaw_visualize`:** visualize's visuals (charts, maps, scenes) as components. visualize itself depends only on `macaw_layers` and `macaw_data`;
+Components ship in packages, which bring their own dependencies (Macaw never imports them) and register through the registry ([12](12-registry.md)).
+
+**Built in,** in `macaw_compose`: content components using the same contract as any package:
+- **prose** (Markdown) and **cards**;
+- **the table:** an HTML `<table>` of kind `:content`, with a caption, header cells with scope, sortable columns as real buttons, a budget per slot, reading load `:scan`, and rows that write `selection` by identity. Dashboards (metresis#452, visualize#755) and the records library share it (macaw_compose#22, decision 10).
+
+**Expected packages:**
+- **visualize:** its visuals (charts, maps, scenes) implement the contract **from visualize itself**, as `Visualize.Macaw.*` in `visualize_live`, compiled when `macaw_compose` is present ([00](00-overview.md) goal 6; visualize#946). Its visual table stays for standalone use and image export;
 - **metresis:** dashboard and panel components, plus its shaping functions, so remote hosts can draw them (metresis#556);
 - **a records library:** data-editing components ([13](13-writes.md));
 - **components built on ryutronic:** wizards, durable jobs, an assistant.
