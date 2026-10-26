@@ -66,7 +66,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 ## 3. Non-goals {#overview-non-goals}
 
 - **A web framework.** Routing, sessions, sites and endpoints are the host's.
-- **An identity or access system.** The viewer arrives from the host.
+- **An identity or access system,** in the composition libraries. The viewer arrives from the host; `macaw_auth` is a separate host library a host may use for it (§4).
 - **An analytics or tracking system.** Components declare what they would observe; the host decides and collects.
 - **A charting library or a data store.** Charts are components (visualize). Data stores are sources (metresis, exio, a database).
 - **Data-editing machinery.** Drafts, change sets and transactions belong to a component library on top, `macaw_edit` ([13](13-writes.md)).
@@ -89,6 +89,17 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 **visualize's visuals are Macaw components, from visualize itself.** visualize depends **optionally** on `macaw_compose` (goal 6), the way it already depends on Phoenix and Nx. When `macaw_compose` is present, `visualize_live` compiles `Visualize.Macaw.*`, which implements the component contract around visualize designs; without it, visualize builds and runs standalone. There is no adapter package (visualize#940, macaw_compose#22).
 
 Other component packages (metresis's panels, components built on ryutronic) depend on `macaw_compose` and bring their own dependencies; Macaw never imports them.
+
+**Host libraries.** Every deployable project also carried the same host-side code: request guards, configuration on the data volume, secrets, release tasks, the control script, and authentication. Implemented separately, the copies drifted, security fixes included (macaw_compose#32–#34). These are implemented once, as host libraries in the same family:
+
+| Package | Module | Holds | Depends on |
+|---|---|---|---|
+| **`macaw_plug`** | `Macaw.Plug` | the client address behind trusted proxies, rate limiting, security headers and CSP hashing | Plug |
+| **`macaw_host`** | `Macaw.Host` | the literal `config.exs` on the data volume, generated secrets, release tasks, health, build info, and the `<app>-ctl` generator | OTP; `ecto_sql` optionally |
+| **`macaw_auth`** | `Macaw.Auth` | authentication: a narrow contract (the current user, plugs and hooks, sessions and revocation) and its native backend (passwords, LDAP, sessions, throttling, TOTP) | `macaw_plug`, Plug; Ecto, Phoenix LiveView optionally |
+| **`macaw_auth_ash`** | `Macaw.Auth.Ash` | the same contract over AshAuthentication, and the native LDAP source as an Ash strategy | `macaw_auth`, AshAuthentication |
+
+**They sit outside the composition model.** `macaw_layers`, `macaw_data`, `macaw_compose` and `macaw_live` never depend on them, and an identity or access system stays a non-goal of composition (§3): the viewer still arrives from the host ([00](00-overview.md#overview-goals) goal 3), which may get it from `macaw_auth` through `Macaw.Auth.viewer/1`. A host uses any of them alone; they are released by git tag like the rest of the family.
 
 **Boards are superseded.** A visualize board is a surface with a grid region: shared window and selection are state sources, virtual sources are derived sources, drill is a cell action ([06](06-pages.md)). Its runtime moves into `macaw_compose` and `macaw_live`; visualize keeps drawing visuals, with their printouts and output. visualize ships a board-to-surface migration behind its optional dependency (visualize#947).
 
