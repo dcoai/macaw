@@ -110,16 +110,20 @@ def render(:content, assigns),    do: ~H"<ul class=\"cards\">…</ul>"
   - a finite set of values is a class in a static stylesheet;
   - a value per datum is an SVG presentation attribute;
   - a finite set a document defines (a design's motion: transitions and keyframes) is a **generated stylesheet**, content-addressed and served from `'self'`, declared as an asset;
-  - a dynamic value is set by a trusted hook through the CSSOM;
+  - a value that changes after the first paint, in live mode only, is set by a trusted hook through the CSSOM. **Every first render has a static form** (the root's size as `width`, `height` and `viewBox`), so socketless and neutral renders need no hook ([10](10-web.md#web-csp));
+  - this is the **one output path** for page markup; a self-contained document (an exported SVG file) carries its own style instead, decided by the output target;
   - media from another origin is fetched through a declared **proxy route**.
 - **Each mode has rules:**
 
   | Mode | Rule |
   |---|---|
   | live | may enhance through hooks; a visual may draw marks on a `<canvas>` |
-  | socketless | complete HTML and SVG, never canvas; the first render from the deliveries, reduced to the budget |
-  | neutral | as socketless, with no hooks and no tokens |
-  | print | as neutral, in the print theme |
+  | socketless | complete HTML and SVG, never canvas; the first render from the deliveries |
+  | neutral | as socketless, with no hooks, no tokens and no live regions |
+  | print | as neutral, in the print theme, laid out in the print box |
+
+- **The budget holds in every mode** (macaw_compose#29). Each slot's budget (§1.2) is evaluated at **that mode's size**: the measured container live and socketless, the print box for print, never the viewer's window. The host ceiling applies in every mode, and no mode hands a component unbudgeted rows.
+- **Every drawn state has a static render** (§4), `over_budget` included, so neutral and print show it without hooks.
 
 ## 4. Drawn states, the runtime value and isolation {#components-states}
 

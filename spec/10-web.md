@@ -17,9 +17,15 @@ object-src 'none'; base-uri 'none'; frame-ancestors 'none'
   1. a finite set of values becomes a **class** in a static stylesheet;
   2. a per-datum value becomes an **SVG presentation attribute** (not governed by CSP);
   3. a finite set **defined at runtime by a document** (a design's motion: transitions and keyframes; a user's theme, [11](11-themes.md#themes-runtime)) becomes a **generated stylesheet**, content-addressed (`/assets/<hash>.css`), generated on demand and served from `'self'`. Its content is a pure function of the document, so the same document always yields the same file, and base snapshots capture it ([08](08-records.md#records-content));
-  4. a dynamic value is set by a trusted hook through the CSSOM, which CSP allows;
+  4. a value that **changes after the first paint, in live mode** (an animation frame, a live resize, a drag) is set by a trusted hook through the CSSOM, which CSP allows. Nothing a first render needs is set this way;
   5. **no script evaluation,** anywhere;
   6. **media from another origin is proxied** through a same-origin route (§1.1).
+
+**Every first render has a static form** (macaw_compose#29). Every value a first render needs is a class, a presentation attribute, an attribute of the root (its size as `width`, `height` and `viewBox`), or a rule in a static or generated stylesheet. So socketless and neutral renders are the final state, needing no hook and no CSSOM.
+
+**One output path for page markup.** The delivery rule is the only way any component, built in or adopted, writes markup into a page. There is no permissive styling profile. (A validation profile that permits literal colors in an adopter's own documents, such as visualize's `colors: :open`, is a different matter: it governs which colors a document may name, not how they are delivered, [11](11-themes.md#themes-rules).)
+
+**A self-contained document is not a page.** An exported SVG file, a PNG rendered from one, or a print-to-file export must render alone, and no page CSP applies to it, so it carries its own `<style>` inside the document. The output target decides, with no setting: markup for a page is strict, and a standalone document is self-contained.
 
 What this asks of visualize (visualize#944): inline styles become classes, per-design motion becomes generated stylesheets, dark mode is the theme class, the `:js` canvas path is removed, map tiles come through the proxy, and every chart is complete SVG in the first render.
 
@@ -96,11 +102,13 @@ Macaw provides **one generic same-origin asset proxy** for media a component nee
 | error | to the error summary or first invalid field | the error |
 | within a persistent region | kept | — |
 
-**One announcer per composition** (a surface, or an adopter's standalone component, such as a visualize chart outside Macaw): one polite and one assertive live region. Components never render a live region of their own. They request announcements by a name they declare (`announces`, [05](05-components.md#components-declares)):
-- **from the server,** as an event;
-- **from a hook,** as a DOM event, `macaw:announce`, with `{name, text, politeness}`, which the announcer hook (`macaw_live`) receives.
-
-The announcer queues, merges and rate-limits requests, and drops undeclared names. A visual's keyboard readout is such a request (visualize#945).
+**One announcer per page** (macaw_compose#29): exactly one polite and one assertive live region, with **fixed, shared ids**, however many compositions and adopters the page holds.
+- **It is found, not rendered per composition.** `macaw_live` provides it when present. Otherwise the **first** adopter hook to mount (a standalone visualize chart, say) creates the two regions at the end of the body, and every later composition on the page reuses them. Two standalone charts, or a chart beside a Macaw surface, share one announcer.
+- **Components never render a live region of their own.** They request announcements by a name they declare (`announces`, [05](05-components.md#components-declares)):
+  - **from the server,** as an event;
+  - **from a hook,** as a DOM event, `macaw:announce`, with `{name, text, politeness}`. Every adopter dispatches this same event, standalone included, so a component behaves the same on a Macaw page and off one.
+- The announcer queues, merges and rate-limits requests, and drops undeclared names. A visual's keyboard readout is such a request (visualize#945).
+- **Neutral mode has no live regions.** A visual's description and data table are its reading there.
 
 **Every component:**
 - real elements;
