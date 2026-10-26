@@ -28,6 +28,7 @@ Each declaration buys a composition effect ([00](00-overview.md) goal 1, rule 1)
 | **assets**: static files, and generated content-addressed stylesheets (§3) | self-contained base renders ([08](08-records.md)) |
 | **proxy routes** for media from another origin, mounted by the host | nothing from another origin ([10](10-web.md#web-csp)) |
 | **renders** in each mode: live, socketless, neutral, print (§3) | complete without a socket; replay; output |
+| **isolation**: `:pure` (renders in the page's process) or `:contained` (has server work, held by a contained cell, §4) | a crash never takes down the page |
 | **drawn states** | never blank; failures shown (§4) |
 | **required access**, if any | consistent gating |
 
@@ -36,13 +37,18 @@ Each declaration buys a composition effect ([00](00-overview.md) goal 1, rule 1)
 A component's settings schema is a map of **parameters**, one shape for every component, so the registry, the page validator, builder forms and an AI author read one form (macaw_compose#15):
 
 ```elixir
-%{type: type,                      # a data-model type (02 §1)
+%{type: type,                      # a data-model type (02 §1), {:document, type}, or :term
   default: value,
   values: [value] | nil,           # a closed list of legal values, or nil
-  legal_for: {slot, field, fact} | nil,  # legal values follow from a bound slot's schema
+  legal_for: {slot, field, fact} | nil,  # legal values follow from a bound slot's described schema
   bindable: false,                 # may this parameter be bound to state?
   doc: "…"}
 ```
+
+**Types.** A parameter's `type` is one of:
+- a **data-model type** (`:time`, `:number`, `:category`, `:text`, `:color`, `:point`, [02](02-sources.md#sources-data));
+- **`{:document, type}`**, a nested document of a document type ([01](01-vocabulary.md#vocab-documents)), validated by its own kernel rules: how a whole visualize design is a cell's settings;
+- **`:term`**, any value the component validates itself in `declarations/1`, allowed only for documents migrated from untyped forms (visualize's old variables), never for new parameters.
 
 A parameter's value in a document is a literal, or, when the parameter is `bindable`, a **binding to a state source**: `bins: {:state, "bins"}` ([03](03-state.md#state-sources)). Binding is closed by default: a parameter is bindable only when its component says so.
 
@@ -72,7 +78,7 @@ Every component declares its reading load, so attention analysis ([08](08-record
 - **`:scan`:** a table, a list, a visual over many items.
 - **`:read`:** prose sections, which may also give word counts.
 
-It may depend on settings: visualize derives `:scan` for visuals over many items from its summary's counts.
+It may depend on settings, never on delivered data, since it is a declaration: visualize derives `:scan` from a design that draws a table or many series, `:glance` otherwise.
 
 ## 2. Kinds {#components-kinds}
 
@@ -85,7 +91,7 @@ def render(:navigation, assigns), do: ~H"<nav aria-label={@label}><ul>…</ul></
 def render(:content, assigns),    do: ~H"<ul class=\"cards\">…</ul>"
 ```
 
-- **The region or container selects the clause.** A cell is valid only where its placement's kind is one of the component's kinds. That is checked at validation, so a missing clause never fails at runtime.
+- **A cell names its `kind`,** defaulting from where it sits: `:navigation` in a region whose role is navigation, `:content` elsewhere, and the container's pane kind inside a container. Validation checks that the kind is one the component offers and is allowed in that region, so a missing clause never fails at runtime.
 - **Kinds are the only static declaration.** They are checked against the clauses at compile time, and the registry reads them without calling the component.
 - **Each kind carries rules the output is checked against:**
   - `:navigation` renders a labeled `<nav>` of links;
@@ -131,8 +137,8 @@ def render(:content, assigns),    do: ~H"<ul class=\"cards\">…</ul>"
 ## 4. Drawn states, the runtime value and isolation {#components-states}
 
 - **Every component is always in exactly one drawn state:** `crashed`, `down`, `invalid`, `loading`, `no_data`, `stale`, `capped` or `live`, in that precedence. `capped` says the rows drawn are fewer than the data: the source capped them, the runtime reduced them, or the component drew fewer than it was handed. Each has a theme role, a glyph and words, and is never blank. (visualize.md C3.)
-- **Pure components** (Markdown, cards) render in the page's process.
-- **A component with server work is a pure value with transitions** (macaw_compose#22, R6):
+- **`:pure` components** (Markdown, cards) render in the page's process.
+- **A `:contained` component, one with server work, is a pure value with transitions** (macaw_compose#22, R6):
 
   ```
   init(settings, ctx)              → value

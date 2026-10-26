@@ -6,9 +6,9 @@ Documents live in **stores**: the host's database, files in git, or an object st
 
 ```elixir
 @callback list(context)            :: {:ok, [entry]} | {:error, reason}
-@callback get(id, context)         :: {:ok, entry} | {:error, :not_found | reason}
+@callback get(ref, context)        :: {:ok, entry} | {:error, :not_found | reason}   # ref = {type, id}
 @callback put(entry, context)      :: {:ok, id} | {:error, reason}
-@callback delete(id, context)      :: :ok | {:error, reason}
+@callback delete(ref, context)     :: :ok | {:error, reason}
 @callback import(bundle, context)  :: {:ok, %{old_id => new_id}} | {:error, [fault]}
 ```
 
@@ -19,7 +19,7 @@ The **context** says who is acting and from where, so entries are traceable. The
 - **References are typed ids:** `{type, id}`, the type a document type ([01](01-vocabulary.md#vocab-documents)). A reference of the wrong type is refused before resolution.
 - **Names are attributes, never identities:** a route path, a slug, a title. macaw_server's route path becomes an attribute of a page id.
 - **Versions are digests,** or the store's own object versions.
-- **A missing reference masks its own site** and is reported. Rendering never fails because of it.
+- **A missing reference is a validation fault** when the document is loaded, at its path ([07](07-documents.md#documents-validation-time)). If an entry disappears **after** validation (deleted from the store while pages run), the site that referenced it is masked at render and reported; rendering never fails because of it.
 - **An import is a relocation:**
   - every check runs before anything is written;
   - new ids are issued, and references are rewritten through one table;

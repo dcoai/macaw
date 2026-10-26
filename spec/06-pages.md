@@ -39,14 +39,13 @@ template :site do
   region :header,  role: :banner
   region :sidebar, role: :navigation, persistent: true, fillable: true,
                    collapse: :drawer, content: [surface: :site_menu]
-  region :main,    role: :main
+  region :main,    role: :main, fillable: true
   region :footer,  role: :contentinfo
   param :sidebar, values: [:shown, :collapsed, :hidden], default: :shown
 end
 
 layer :full_width,  on: :site, do: hide(:sidebar)
 layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
-layer :print,       on: :site, do: [hide(:header), hide(:sidebar), hide(:footer)]
 ```
 
 - **Merge rules per key:**
@@ -66,7 +65,7 @@ layer :print,       on: :site, do: [hide(:header), hide(:sidebar), hide(:footer)
 - **Where layers come from:**
   - **registered layers**, authored with the template and tested, may be stacked by any page;
   - **a page's own last layer** may only set declared params and fill regions declared fillable.
-- **Print** is an automatic layer, stacked by the print mode and for output.
+- **Print** is an automatic layer, stacked by the print mode and for output: it hides every region but `main` and opens disclosures. A template may declare its own `print:` layer in its place.
 - **One stack per page** replaces nested page and site templates.
 
 (macaw_compose#8, question 2.)
@@ -122,7 +121,7 @@ params:
   service: {type: category, values_from: "services.name"}
 ```
 
-- Params are validated before anything renders; an illegal value is a `404`-class refusal, never a fault inside a component.
+- Params are validated before anything renders; an illegal value is a `404`-class refusal, never a fault inside a component. A `values_from` param is checked against the source's current values at that moment ([07](07-documents.md#documents-validation-time)).
 - State sources read them with `initial: {:param, "service"}`, and source requests bind them like state (`params: %{service: {:param, "service"}}`, [03](03-state.md#state-sources)).
 - A `navigate` action's params are validated against them (§5).
 

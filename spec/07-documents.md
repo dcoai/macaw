@@ -6,13 +6,13 @@ Every declarative value Macaw reads is a **document**: pages, surfaces, template
 
 - **One version line per document type,** stamped as `"$version"`.
 - **Gate order:**
-  1. refuse a newer version by name (`{:newer_schema, needs, this}`) before anything else is read;
-  2. check size limits before decoding;
-  3. migrate step by step, purely;
-  4. validate.
+  1. check the encoded size in bytes;
+  2. decode with `depth` and `items` limits, by a decoder that stops at a limit, never one that builds the whole value first;
+  3. refuse a newer version by name (`{:newer_schema, needs, this}`) before anything else of the value is read;
+  4. migrate step by step, purely;
+  5. validate, counting `depth` and `items` again after migration.
 
-  A document with no stamp reads as current. (visualize.md C6; metresis.md C6.)
-- **Size limits:** `depth` and `items` are checked before decoding, and the counts after migration. A host may tighten them. (visualize.md C6.)
+  A document with no stamp reads as current. A host may tighten every limit. (visualize.md C6; metresis.md C6.)
 - **Every fault is reported, never just the first,** as `{path, reason}`, ordered by path, worded by one formatter. (All three projects.)
 - **Unknown keys are refused by name** at their own spelling. (metresis.md C6.)
 - **Atom safety:**
@@ -55,4 +55,6 @@ Each stacks, masks, validates and explains the same way (§2). A configured comp
 
 ## 4. Validation time {#documents-validation-time}
 
-Validation runs **whenever a document is loaded**, through pure functions. It includes each placed component's configured declarations ([05](05-components.md#components-declares)): `declarations(settings)` is called here, so slots, events, state writes, budget functions and observation are known before anything renders. (A budget's value depends on the measured size, so it is computed at render, clamped to the host ceiling.) In v1 that is at build or boot. A broken shipped document fails the build, and a broken fetched document is refused, keeping the last good version. (metresis.md C6; dcotek_web.md C13.)
+Validation runs **whenever a document is loaded**, through pure functions, in two passes:
+- **The static pass**, at load: shapes and types, closed `values`, references, the page DAG, the CSP and observation plans, and `legal_for`, whose schemas come from each source's `describe`, answered at boot and cached ([02](02-sources.md#sources-contract)). No I/O and no viewer.
+- **The request-time check**, for legal values that come from data (`values_from`): a page param against the source's current values before render, an illegal one refused as `404`; a state value at each change, an illegal one refused while the state keeps its value. It runs with the request's viewer, through the source. The static pass includes each placed component's configured declarations ([05](05-components.md#components-declares)): `declarations(settings)` is called here, so slots, events, state writes, budget functions and observation are known before anything renders. (A budget's value depends on the measured size, so it is computed at render, clamped to the host ceiling.) In v1 that is at build or boot. A broken shipped document fails the build, and a broken fetched document is refused, keeping the last good version. (metresis.md C6; dcotek_web.md C13.)

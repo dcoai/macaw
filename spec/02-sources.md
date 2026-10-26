@@ -91,7 +91,7 @@ Every component emits interaction in **one struct**, `Macaw.Data.Event`, defined
 %Event{
   name:      String.t(),               # a name the component declares
   instance:  String.t(),               # the emitting instance's id (01)
-  element:   %{frame: id, item: id, path: [id]},  # path innermost first
+  element:   %{frame: id | nil, item: id | nil, path: [id]},  # path innermost first
   identity:  %{field => value} | nil,  # the declared identity of the item, when it maps to data
   value:     term,                     # the event's own value: a window, a chosen option
   initiator: :visitor | :system,
@@ -102,6 +102,7 @@ Every component emits interaction in **one struct**, `Macaw.Data.Event`, defined
 }
 ```
 
+- **`element`** locates what was acted on. `item` is the element's stable id ([05](05-components.md#components-declares)); `path` lists its enclosing elements, innermost first (a prose component's sections, a visual's marks); `frame` is set only by components with an inner coordinate tree (a visual's frame), and is `nil` otherwise.
 - **`initiator`** separates the steps of a view path (a visitor did something) from its markers (the system did something) ([08](08-records.md#records-paths)). A paused animation is a system event.
 - **The recorded form,** `Event.recordable/1`, drops `row` and `point`. Records, observation and state snapshots only ever see the recorded form, so **row values never reach them**. The `identity` and the event's own `value` do, and they can be personal; whether they are recorded is decided per state source by capture level ([08](08-records.md#records-stores)).
 - **The drawn-token rule:** an event on an element that maps to data resolves against the drawing it landed on. Each drawing carries a token; an event whose token is not the current drawing's is dropped, never resolved against newer data. (visualize D-170.)

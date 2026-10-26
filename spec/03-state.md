@@ -6,7 +6,7 @@ Interaction is state, and state is a source. A selection, a time window, a varia
 
 ```elixir
 state "skills",
-  schema:  [skill: {:category, values_from: "projects.tags"}],
+  schema:  [skill: {:category, values_from: "projects.tags"}],   # legal values from data: checked at each change (07 §4)
   multi:   true, max: 3,
   scope:   :surface,
   initial: {:host, :emphasis},   # a literal, a page param {:param, "service"}, or a value supplied by the host

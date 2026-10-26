@@ -3,12 +3,12 @@
 ## 1. The registry {#registry-model}
 
 A host enables what pages may name, by package.
-- **The registry is explicit and closed by default.** A host enables **packages** by name in configuration. Nothing is enabled implicitly, and a package that is merely loaded is not enabled.
+- **The registry is explicit and closed by default.** A host enables **packages** by name in configuration. Nothing is enabled implicitly, and a package that is merely loaded is not enabled. `macaw_compose`'s built-in components are a package too, enabled like any other.
 - **Members are derived within an enabled package.** The members of each behavior (the one list: components, templates, layers, sources, transforms, aggregates, marks, frame types and hooks) are the package's modules that implement it, reported by the package's `__members__/0`. A runtime that can't introspect calls it from an explicit list. So a host decides which code documents can reach, and a package author never maintains a second list (macaw_compose#22, R17).
 - **Each member registers through its behavior's introspection function.** Duplicate names fail at boot, naming both modules and their packages.
 - **Names in documents are strings,** matched by spelling. No atom is made from them.
 - **An unknown name is a validation fault at its path,** naming the package that provides it if known.
-- **Hooks:** each package contributes its hooks as static files from `'self'`, which may import sibling files of the same package. There is no build step and no third-party JS.
+- **Hooks:** each package contributes its hooks as static files from `'self'`, which may import sibling files of the same package. Macaw adds no build step and no third-party JS. A LiveView hook runs only once it is registered in the host's `LiveSocket`, so the host imports the enabled packages' hooks in its own JS: `macaw_live` provides one module that collects them, generated from the registry.
 
 (visualize.md C9; dcotek_web.md C9.)
 

@@ -51,7 +51,7 @@ Macaw provides **one generic same-origin asset proxy** for media a component nee
 
 ## 3. Responsive layout {#web-responsive}
 
-- **Templates compile to static CSS at build time,** like themes. The markup carries classes and landmark elements only, and layers change classes, never CSS. There is one stylesheet per site, generated from the stacks in use, served from `'self'` and captured with each base render.
+- **Templates compile to static CSS at build time,** like themes. The markup carries classes and landmark elements only, and layers change classes, never CSS. There is one stylesheet per site, compiled from **every registered template and layer**, not from the stacks in use, so a page fetched at runtime that stacks registered layers is styled too. A fetched page may add only its own last layer (params and fills, [06](06-pages.md#pages-templates)), which adds no CSS. The stylesheet is served from `'self'` and captured with each base render.
 - **The template responds to the viewport** (media queries). **Components respond to their region** (container queries; each region is a CSS container). **Components never size by viewport.**
 - **Breakpoints are in `rem`,** following the visitor's font size, with a shared default set (narrow, wide) that templates use or extend.
 - **Collapse behaviors per region on narrow screens.** The template sets the default, and a layer can override it per region:
@@ -96,7 +96,7 @@ Macaw provides **one generic same-origin asset proxy** for media a component nee
 
 | Change | Focus | Announcement |
 |---|---|---|
-| navigation | to the new `<h1>` | the page title |
+| navigation | to the new `<h1>`, unless focus was inside a persistent region, where it stays | the page title |
 | view change | stays | the result ("12 projects match") |
 | system update | never moves | only if declared important; rate-limited |
 | error | to the error summary or first invalid field | the error |

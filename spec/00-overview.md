@@ -53,7 +53,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 
 4. **Complete without a socket.** A page renders as complete server HTML, and `macaw_live` only adds to it.
 5. **Strict web rules for every component:**
-   - nothing inline: `script-src` and `style-src` limited to the app's own files plus hashes;
+   - nothing inline: `script-src` limited to the app's own files plus the hash of a host's own inline script, `style-src` to the app's own files;
    - nothing from another origin;
    - WCAG 2.2 AA ([10](10-web.md)).
 
