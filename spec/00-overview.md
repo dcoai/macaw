@@ -21,17 +21,19 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
    | the whole view in one link | a shared link restores every component's state | host-owned persistence ([03](03-state.md#state-persistence)) |
    | whole-page replay | what a viewer saw, across everything on the page, at any step | records ([08](08-records.md)) |
    | "why this number?" | any shown value traces back through its derivations to its data | the declared graph ([03](03-state.md#state-dag)) |
-   | disclosure that matches | the host's privacy note, observation code and CSP hash are right for this exact combination | declared observation ([05](05-components.md)) |
+   | disclosure that matches | the host's privacy note, observation code and CSP hash are right for this exact combination | declared observation, from one closed vocabulary ([05](05-components.md), [10](10-web.md)) |
    | accessibility of the whole | one outline, one tab order, one announcer, landmarks | pages and templates own structure ([10](10-web.md#web-a11y)) |
-   | one look | every component matches; contrast is checked once | one theme, roles only ([11](11-themes.md)) |
+   | one look | every component matches; contrast is checked once | one theme; drawing colors come from its roles ([11](11-themes.md)) |
    | consistent access | every component honors what this viewer may see | the viewer reaches every source ([02](02-sources.md)) |
-   | shared fetching | components reading the same data cost one fetch | sources pooled by the page ([02](02-sources.md)) |
-   | whole-page output | the page prints or exports as one document | every component's neutral render ([05](05-components.md)) |
+   | shared fetching | components reading the same data cost one fetch, and so do pages making the same viewer-independent request | sources pooled by the page and across pages ([02](02-sources.md)) |
+   | whole-page output | the page prints or exports as one document | every component's neutral render and printout ([05](05-components.md), [08](08-records.md)) |
    | an assistant that understands the page | an agent sees structure, state and declared actions, and acts within a person's rules | everything declared |
 
    **Two design rules follow:**
    - **Every declaration must buy a composition effect.** A proposed addition to a contract states which effect it enables, or it doesn't belong.
    - **No back doors.** A component never communicates with another directly, never fetches outside a source, and never keeps state the runtime can't see. Each back door silently breaks an effect.
+
+     **A declared local scope is not a back door.** Fast interaction state (hover, a brush band in flight) may stay in the browser in the `:local` scope ([03](03-state.md)). Components share it only through the client bus, and each declares what it reads and writes there, so the runtime knows the scope exists, who shares it and what it carries.
 
    **The test** is the example app (goal 7). Its components are written as if by different authors, none references another, and a page document alone assembles them. It shows the effects, and **a component added later joins every effect with no change to the existing ones.**
 
@@ -39,7 +41,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 
 3. **Every host concern is a behavior with a working default.** The smallest app is a few lines; a host replaces only what it cares about.
 
-   | Concern | Behaviour | Default |
+   | Concern | Behavior | Default |
    |---|---|---|
    | who is viewing | viewer | none (anonymous) |
    | what is observed | observation | nothing |
@@ -55,7 +57,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
    - WCAG 2.2 AA ([10](10-web.md)).
 
    A component that meets these works in any host.
-6. **No dependency on its adopters.** No Macaw library depends on visualize, metresis or dcotek_web; they depend on Macaw. visualize and `macaw_compose` never depend on each other (§4). A CI check enforces both rules.
+6. **Dependencies run one way.** No Macaw library depends on an adopter (visualize, metresis, macaw_server or any other). An adopter may depend on a Macaw library, and may do so **optionally**: it compiles its Macaw integration only when that library is present, and builds, tests and runs without it. A CI check forbids every edge from a Macaw library to an adopter; edges from adopters to Macaw are theirs to choose (§4).
 7. **Proven by an example app** in this repository, using none of the three, run in CI with accessibility and keyboard checks.
 8. **Open to third parties.** Built-in components and sources use the same public contracts as any package, through an explicit, default-closed registry ([12](12-registry.md)).
 9. **Portable: save and restore, right where you were.** Configuration travels as a **bundle**, and state as a **state snapshot**. Restored on another machine, the same pages, configuration and state come back, re-attached to whoever restores them ([09](09-stores.md#stores-portable)). This works because everything configurable is composable data ([07](07-documents.md#documents-everything)).
@@ -76,18 +78,18 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 | Package | Module | Holds | Depends on |
 |---|---|---|---|
 | **`macaw_layers`** | `Macaw.Layers` | the document kernel; fragments, use sites, composites, stacking, masks, `explain`; the library (store, bundle); **themes**: document, roles, registry, stylesheet compilation, contrast ([07](07-documents.md), [09](09-stores.md), [11](11-themes.md)) | nothing; no Phoenix |
-| **`macaw_data`** | `Macaw.Data` | the data model (Table, Schema, Delivery, units, quantities, facts); the **source contract**, push, the source conformance kit; **derived sources** ([02](02-sources.md), [04](04-derived.md)) | `macaw_layers` |
-| **`macaw_compose`** | `Macaw.Compose` | sources on pages, state sources, exports, the page DAG; components, kinds, cells, containers; pages, templates, layers, regions, surfaces; records; the registry; the component conformance kit ([03](03-state.md), [05](05-components.md), [06](06-pages.md), [08](08-records.md), [10](10-web.md), [12](12-registry.md), [13](13-writes.md)) | `macaw_layers`, `macaw_data` |
+| **`macaw_data`** | `Macaw.Data` | the data model (Table, Schema, Delivery, units, quantities, facts); the **interaction event** and its recorded form; the **source contract**, push, the source conformance kit; **derived sources**; the **transform** and **aggregate** behaviors and the table operations ([02](02-sources.md), [04](04-derived.md)) | `macaw_layers` |
+| **`macaw_compose`** | `Macaw.Compose` | sources on pages, state sources, exports, the page DAG; components, kinds, cells, containers; the built-in content components, the table among them; pages, templates, layers, regions, surfaces; records; the registry; the component conformance kit ([03](03-state.md), [05](05-components.md), [06](06-pages.md), [08](08-records.md), [10](10-web.md), [12](12-registry.md), [13](13-writes.md)) | `macaw_layers`, `macaw_data` |
 | **`macaw_live`** | `Macaw.Live` | the LiveView runtime: mounting, page and surface processes, contained cells, persistent regions, static hooks, focus, the announcer | `macaw_compose`, Phoenix LiveView |
 | `macaw_records` (later) | `Macaw.Records` | drafts, change sets, sinks, the Ecto adapter, the effect discipline ([13](13-writes.md)) | `macaw_compose` |
 
 **visualize stays visualize.** It holds more than charts (geo and maps, scenes, the design builder) and is a product built on the blocks, not one of them. It depends on `macaw_layers` and `macaw_data`, and registers its theme slots into Macaw's themes. It may be folded into Macaw later, but not yet.
 
-**visualize and `macaw_compose` never depend on each other.** Visuals reach pages through a small adapter, **`macaw_visualize`**, which depends on both and implements the component contract around visualize designs.
+**visualize's visuals are Macaw components, from visualize itself.** visualize depends **optionally** on `macaw_compose` (goal 6), the way it already depends on Phoenix and Nx. When `macaw_compose` is present, `visualize_live` compiles `Visualize.Macaw.*`, which implements the component contract around visualize designs; without it, visualize builds and runs standalone. There is no adapter package (visualize#940, macaw_compose#22).
 
 Other component packages (metresis's panels, components built on ryutronic) depend on `macaw_compose` and bring their own dependencies; Macaw never imports them.
 
-**Boards are superseded.** A visualize board is a surface with a grid region: shared window and selection are state sources, virtual sources are derived sources, drill is navigation. Its runtime moves into `macaw_compose` and `macaw_live`; visualize keeps drawing visuals and exports.
+**Boards are superseded.** A visualize board is a surface with a grid region: shared window and selection are state sources, virtual sources are derived sources, drill is a cell action ([06](06-pages.md)). Its runtime moves into `macaw_compose` and `macaw_live`; visualize keeps drawing visuals, with their printouts and exports. visualize ships a board-to-surface migration behind its optional dependency (visualize#947).
 
 ## 5. Order of work {#overview-order}
 
@@ -97,10 +99,10 @@ Other component packages (metresis's panels, components built on ryutronic) depe
 4. Component, surface, template and container contracts, in **`macaw_compose`** ([05](05-components.md), [06](06-pages.md)).
 5. Themes in **`macaw_layers`** ([11](11-themes.md)), and the web rules in **`macaw_compose`** ([10](10-web.md)).
 6. The live layer, **`macaw_live`**.
-7. Adoption: visualize on `macaw_layers` and `macaw_data` (visualize#938, #939), metresis on `macaw_data` (metresis#556), dcotek_web on `macaw_compose` and `macaw_live` (dcotek_web#130).
+7. Adoption: visualize on `macaw_layers` and `macaw_data` (visualize#938, #939), with its visuals implementing the component contract (visualize#940), metresis on `macaw_data` (metresis#556), dcotek_web on `macaw_compose` and `macaw_live` (dcotek_web#130).
 
 The CI dependency check (goal 6) and the example app (goal 7) are acceptance criteria of the first implementation proposal that ships code.
 
 ## 6. Status {#overview-status}
 
-Spec only; nothing is implemented. Decisions are recorded on macaw_compose#1 (the anchor), #2 (vocabulary), #3 (state), #8 (templates), #9 (writes) and #10 (composition effects). Open and deferred questions are in [14](14-open.md).
+Spec only; nothing is implemented. Decisions are recorded on macaw_compose#1 (the anchor), #2 (vocabulary), #3 (state), #8 (templates), #9 (writes), #10 (composition effects) and #22 (agreement with visualize; the analysis is [`design/visualize-alignment.md`](../design/visualize-alignment.md)). Open and deferred questions are in [14](14-open.md).
