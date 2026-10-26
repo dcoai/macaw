@@ -5,7 +5,8 @@ A **source** is anything a component's slot reads. One contract serves feeds, qu
 ## 1. The data model {#sources-data}
 
 - **`Data.Table`:** columnar typed data, the currency of deliveries, derived sources and components. Row lists are accepted at the edge. (visualize.md C1.)
-- **`Data.Schema`:** each field's **meaning**: `type` (`:time | :number | :category | :text | :color`), and where known `unit` (UCUM), `quantity`, `label`, `order`, `status`, `polarity`, `continuity`, `bounds`, `identity`, and declared `values` with names and colors. (visualize.md C1.)
+- **`Data.Schema`:** each field's **meaning**: `type` (`:time | :number | :category | :text | :color | :point`, a `:point` being a geographic position), and where known `unit` (UCUM), `quantity`, `label`, `order`, `status`, `polarity`, `continuity`, `bounds`, `identity`, `window`, and declared `values` with names and colors. (visualize.md C1.)
+- **The window field** is the field a request's window applies to: the one marked `window: true`, else the schema's first `:time` field. A `box` window applies to a `:point` window field. A schema with neither has no window field, and requests to it carry none.
 - **A schema gives data colors, never drawing colors.** A `:color` field, or a color on a declared value (a team's color), is **content**: it may be shown only with a non-color cue (a glyph, a label or a dash) and under a contrast guard against the background, and it is never the sole carrier of meaning. Drawing colors come from the theme's roles ([11](11-themes.md#themes-rules); macaw_compose#22, decision 7).
 - **A schema's version is the SHA-256 of a canonical encoding.** A delivery names the version, and a push sends the schema before rows made under it. (visualize.md C1; metresis.md C1.)
 - **Identity is declared** (`identity: true`, composite allowed), never guessed. Selection, `latest` and per-identity derivations read it. (visualize.md C1.)
@@ -17,13 +18,14 @@ A **source** is anything a component's slot reads. One contract serves feeds, qu
 @callback describe(source, context) ::
   {:ok, %Description{
      schema:   Data.Schema.t(),
-     params:   ParamSchema.t(),
+     params:   %{String.t() => parameter},   # parameters, as 05 §1.1 defines them
      supports: [:window | :box | :latest | :budget | :push | :as_of],
-     reveals:  Disclosure.t()
+     reveals:  Disclosure.t(),
+     viewer_independent: boolean()          # default false; see §6
    }} | {:error, reason}
 
 @callback fetch(source, %Request{
-     params:  %{String.t() => term},   # validated against ParamSchema before the call
+     params:  %{String.t() => term},   # validated against the description's params before the call
      window:  nil | window | box,      # meaningful only when the schema has a window field
      budget:  nil | pos_integer,       # rows
      as_of:   nil | DateTime.t(),      # only if supports :as_of
@@ -35,11 +37,13 @@ A **source** is anything a component's slot reads. One contract serves feeds, qu
 @optional_callbacks subscribe: 2, unsubscribe: 2
 ```
 
-- **`params`** use the same type vocabulary as `Data.Schema`, with **legal values**. For example, metresis's aggregation is a category whose values are `legal(metric)`, so no consumer can ask for an aggregation the type forbids. (metresis.md C1.)
+- **`describe/2`** takes the host's configuration for the source as its `context`, **never a viewer**: what a source is doesn't depend on who asks. So it is answered at boot and cached until the source's schema version changes, and validation reads it without I/O ([07](07-documents.md#documents-validation-time)).
+- **`params`** are **parameters** ([05](05-components.md#components-parameters)), the one shape for every typed option, with the same type vocabulary as `Data.Schema` and **legal values**. For example, metresis's aggregation is a category whose values are `legal(metric)`, so no consumer can ask for an aggregation the type forbids. (metresis.md C1.)
 - **`supports`:** every capability is optional. Macaw finishes a window, box, latest or budget that the source did not honor, and reports it. (visualize.md C1, D-140.)
 - **Window-less sources are allowed** (thresholds, projects, fragments). (metresis.md C1; dcotek_web.md C1.)
 - **The budget never widens the window.** A source may refuse to split a bucket's keys, delivering nothing rather than a partial distribution. (metresis.md C1.)
-- **`reveals`** declares what a result tells about the data or the viewer. Hosts generate disclosure from it. (dcotek_web.md C12.)
+- **`reveals`** declares what a result tells about the data or the viewer. Hosts generate disclosure from it, and from nothing else. (dcotek_web.md C12.)
+- **`viewer_independent`** declares that the source answers every viewer the same. It only allows pooling across viewers (§6), which fetches with the anonymous viewer, so a wrong declaration shows everyone the anonymous answer and never one person's rows to another.
 - **The viewer is an argument, not a setting.** A source may refuse, filter or tease by it. Macaw never writes a viewer to a document, delivery or record. (dcotek_web.md C11; visualize.md C11.)
 - **Preferences are state, not part of the viewer.** A viewer's display preferences (`theme`, `zone`, `units`) are state sources ([03](03-state.md#state-sources)), persisted like any other state and passed to components in their context. The viewer argument carries identity and access only.
 - **Errors are values.** A source never raises. (visualize.md C1; metresis.md C1.)
@@ -48,8 +52,7 @@ A **source** is anything a component's slot reads. One contract serves feeds, qu
 
 A delivery reports what it actually served:
 - `served`: the window, resolution, `capped`, `reduced_by`, the params, and a note (for example, "coarsened from raw");
-- `reduced_by` says who brought the rows within budget: `:source` (the source honored the budget), `:runtime` (Macaw reduced a pooled delivery to this reader's budget, or finished a budget the source didn't honor) or `:component` (the component reduced further while drawing, and reports it);
-- `over_budget`: true when the slot's budget exceeded the host ceiling, so no rows were handed over ([05](05-components.md#components-budget));
+- `reduced_by` says who brought the rows within budget: `:source` (the source honored the budget) or `:runtime` (Macaw reduced a pooled delivery to this reader's budget, finished a budget the source didn't honor, or clamped a budget to the host ceiling). A component that draws fewer rows than it was handed says so in its own drawn state, `capped` ([05](05-components.md#components-states)), not in the delivery;
 - `origin`: the source, a digest of the request, and `as_of` when used.
 
 Absence is never zero: a source never fills a gap with 0. (metresis.md C1.)
@@ -66,13 +69,13 @@ Push is optional and declared:
 
 ## 5. Change notification {#sources-change}
 
-**"This source's data changed; re-read it."** Any writer (an editing component after a commit, a host after an import) announces a change to a source by name, or the source pushes. Every reader on the page, and on other viewers' pages through the host's PubSub, re-fetches. Components never need to know who else reads the same data. (macaw_compose#9.)
+**"This source's data changed; re-read it."** Any writer (an editing component after a commit, a host after an import) announces a change to a source by name, or the source pushes. Every reader on the page, and on other pages through the notification behavior ([00](00-overview.md#overview-goals) goal 3), re-fetches. Components never need to know who else reads the same data. (macaw_compose#9.)
 
 ## 6. Running sources {#sources-running}
 
 - **Pooling:** sources are named and pooled by the page. Several readers of the same source and request cost one fetch, at the largest budget among them, and each reader is reduced to its own budget (`reduced_by: :runtime`). (visualize.md C1.)
-- **Pooling across pages** is required in v1 (macaw_compose#22, decision 9). A request whose result doesn't depend on the viewer, as the source's `reveals` declares, is fetched once for every page making it, through the host's PubSub, and delivered to each. A surface whose state is `:shared`, watched by many viewers, then costs one fetch per pulse, as a visualize board does today. A request whose result depends on the viewer is never pooled across viewers.
-- **The host ceiling** caps every slot's budget ([05](05-components.md#components-budget)). A host sets it once; a page may lower it, never raise it.
+- **Pooling across pages** is required in v1 (macaw_compose#22, decision 9). A request to a source that declares itself `viewer_independent` is fetched **once, with the anonymous viewer**, for every page making it, and delivered to each through the notification behavior. Fetching as the anonymous viewer makes the result independent of the viewer by construction, whatever the source does with the viewer. A surface whose state is `:shared`, watched by many viewers, then costs one fetch per pulse, as a visualize board does today. A source that doesn't declare it is never pooled across viewers.
+- **The host ceiling** clamps every slot's budget ([05](05-components.md#components-budget)). A host sets it once; a page may lower it, never raise it.
 - **Fetching never blocks the caller.** It runs out of process, with a liveness bound. The first render waits for a bounded time and then draws the loading state. (visualize.md C13 gap; dcotek_web.md C13.)
 - **`now` comes from the surface.** One instant per pulse keeps windows, freshness and ages consistent. (visualize.md C1.)
 

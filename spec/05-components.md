@@ -54,7 +54,7 @@ A parameter's value in a document is a literal, or, when the parameter is `binda
 
 A component that draws rows declares, for each slot, a **row budget** as a function of its parameters and its measured size: `budget(slot, params, size) → rows`. visualize's derivation (plot width by mark type, with a design override, its D-226, D-227 and D-230) is one implementation.
 
-- **A host ceiling caps every slot.** A slot whose budget exceeds the ceiling is handed no rows, and the component draws `over_budget` (§4).
+- **The host ceiling clamps every slot.** A slot whose budget exceeds the ceiling reads at the ceiling, reported as `reduced_by: :runtime` ([02](02-sources.md#sources-delivery)), and draws those rows. A component is never handed nothing because it asked for too much.
 - **Sources are pooled at the largest budget** among their readers, and each reader is reduced to its own, reporting how ([02](02-sources.md#sources-delivery), `reduced_by`).
 - A component without a budget declaration reads at the host ceiling.
 
@@ -122,12 +122,15 @@ def render(:content, assigns),    do: ~H"<ul class=\"cards\">…</ul>"
   | neutral | as socketless, with no hooks, no tokens and no live regions |
   | print | as neutral, in the print theme, laid out in the print box |
 
-- **The budget holds in every mode** (macaw_compose#29). Each slot's budget (§1.2) is evaluated at **that mode's size**: the measured container live and socketless, the print box for print, never the viewer's window. The host ceiling applies in every mode, and no mode hands a component unbudgeted rows.
-- **Every drawn state has a static render** (§4), `over_budget` included, so neutral and print show it without hooks.
+- **The budget holds in every mode** (macaw_compose#29). Each slot's budget (§1.2) is evaluated at **that mode's size**, never the viewer's window:
+  - socketless, neutral, and the first live render: the size the placement declares, since no measurement exists yet;
+  - live, after the first measurement: the measured container;
+  - print: the print box. The host ceiling applies in every mode, and no mode hands a component unbudgeted rows.
+- **Every drawn state has a static render** (§4), so neutral and print show it without hooks.
 
 ## 4. Drawn states, the runtime value and isolation {#components-states}
 
-- **Every component is always in exactly one drawn state:** `crashed`, `down`, `invalid`, `over_budget`, `loading`, `no_data`, `stale`, `capped` or `live`, in that precedence. Each has a theme role, a glyph and words, and is never blank. (visualize.md C3.)
+- **Every component is always in exactly one drawn state:** `crashed`, `down`, `invalid`, `loading`, `no_data`, `stale`, `capped` or `live`, in that precedence. `capped` says the rows drawn are fewer than the data: the source capped them, the runtime reduced them, or the component drew fewer than it was handed. Each has a theme role, a glyph and words, and is never blank. (visualize.md C3.)
 - **Pure components** (Markdown, cards) render in the page's process.
 - **A component with server work is a pure value with transitions** (macaw_compose#22, R6):
 

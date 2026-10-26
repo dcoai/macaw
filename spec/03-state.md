@@ -1,6 +1,6 @@
 # 03 — State, exports and the page DAG {#state}
 
-Interaction is state, and state is a source. A selection, a time window, a variable, a set of chosen skills and an open menu branch are **state sources**: typed values held by the runtime, written by events, and read like any other source.
+Interaction is state, and state is a source. A selection, a time window, a variable, a set of chosen skills and an open menu branch are **state sources**: typed values held by the runtime, written by events, and read like any other source. State sources and exports satisfy the source contract ([02](02-sources.md#sources-contract)), which is how slots and derived sources ([04](04-derived.md#derived-inputs)) read them.
 
 ## 1. State sources {#state-sources}
 

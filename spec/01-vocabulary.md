@@ -36,7 +36,7 @@
 | **binding** | slot → source (or export), or a bindable parameter → state source; owned by the host or the page document |
 | **parameter** | one typed entry in a settings schema (a component's, a page's params, a template's options): type, default, legal values, `legal_for`, whether it is bindable, and documentation |
 | **settings** | the parameter values a component is given: its defaults, a preset, and the cell's own values, stacked |
-| **budget** | the rows a component may draw for one slot, a function of its parameters and size; capped by the **host ceiling** |
+| **budget** | the rows a component may draw for one slot, a function of its parameters and size; clamped to the **host ceiling** |
 | **pooling** | one fetch for every reader of the same request: on a page, and across pages when the result doesn't depend on the viewer |
 | **schema** | `Data.Schema`: a source's typed field meanings, versioned by content hash |
 | **delivery** | one answer from a source: a table plus what was served |

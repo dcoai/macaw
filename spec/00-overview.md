@@ -49,6 +49,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
    | where state persists | persistence | nowhere |
    | what is recorded | recording | nothing (closed by default) |
    | where a link or drill goes | navigation | an event to the host |
+| how a change reaches other pages and nodes | notification: change notification and cross-page pooling ([02](02-sources.md#sources-change)) | this node only, through a `Registry`; a host plugs in its PubSub to reach other nodes |
 
 4. **Complete without a socket.** A page renders as complete server HTML, and `macaw_live` only adds to it.
 5. **Strict web rules for every component:**

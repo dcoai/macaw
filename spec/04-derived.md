@@ -4,13 +4,18 @@ A **derived source** (visualize's *virtual source*) is computed from other sourc
 
 ## 1. The model {#derived-model}
 
-- **A derived source is data:** `%{id, from: [{name, window}], schema, elixir | function, per}`. It contains no function value, and has map and JSON forms.
+- **A derived source is data:** `%{id, from: [{name, window}], schema, body, per}`. It contains no function value, and has map and JSON forms.
+  - `from` names its inputs, each with the window it reads them at;
+  - `schema` is its declared output;
+  - `body` is either `{:elixir, text}`, stored source text, or `{:defsource, module, name}`, a host function by reference;
+  - `per` is `nil` (one call over all inputs) or `:identity`: the function is called **once per entity** of its identity input, grouped by the input's declared identity ([02](02-sources.md#sources-data)), entities in order of first appearance, a row with no identity dropped. The calls for every entity are **one** bounded call. Each entity's answer carries the entity's identity, and the answers are joined into one output, held to the schema.
+- **A per-identity source joins onto its input's readers.** A slot bound to the input is handed rows carrying, beside their own fields, each per-identity source's output fields for that row's identity, named `<id>.<field>` (`health.state`), `nil` where the output has no entry yet. The slot's schema gains those fields as the output describes them, so a component's legend and checks see their declared values. (visualize spec/15 §14.4, D-194.)
 - **Its function is either:**
   - **stored** Elixir source text: untrusted, checked and sandboxed; or
   - a **host** `defsource` in a registered module: trusted but bounded.
 
   It is never a mini-language.
-- **The checker:** exactly one `fn` of arity 1 (inputs) or 2 (inputs, context), against an explicit allowlist of `{module, function, arity}`, generated from the transforms and aggregates registered by enabled packages (§5). It refuses:
+- **The checker:** exactly one `fn` of arity 1 (inputs) or 2 (inputs, context), against an explicit allowlist of `{module, function, arity}`, generated from the transforms and aggregates registered by enabled packages, except those that declare `needs` (§5). It refuses:
   - `send`, `receive`, `spawn`, `try`, `raise` and `apply`;
   - `import`, `quote`, sigils, struct literals and module atoms;
   - dynamic calls.
@@ -23,7 +28,7 @@ A **derived source** (visualize's *virtual source*) is computed from other sourc
   - heap: 10,000,000 words.
 - **Faults never carry data values.** The last good output survives a fault.
 - **The output conforms to its declared schema,** or it is a fault.
-- **Context has no clock.** A source reads its inputs' schemas, their deliveries' served facts, and the variable state sources at its scope ([03](03-state.md#state-sources)).
+- **Context has no clock.** A source reads its inputs' schemas and their deliveries' served facts. Anything else it depends on (a variable, a selection) is an input like any other.
 
 ### Gates that ship with the sandbox {#derived-gates}
 
@@ -37,11 +42,7 @@ Until `macaw_data` passes all of them, adopters keep their own sandbox.
 
 ## 2. Inputs {#derived-inputs}
 
-Inputs may be:
-- feeds;
-- other derived sources;
-- **state sources**;
-- **exports** ([03](03-state.md#state-exports)).
+Inputs are **sources, by name**: anything that satisfies the source contract ([02](02-sources.md#sources-contract)). That covers feeds and other derived sources, and, on a Macaw page, state sources and exports, which `macaw_compose` makes satisfy the contract ([03](03-state.md#state-sources)). `macaw_data` knows nothing of pages; it sees named sources.
 
 The function may take all of a scope's inputs together. metresis's series naming is computed once over every metric's feed. (metresis.md C2.)
 
@@ -67,5 +68,5 @@ The operations a visualize design applies to its data and the operations a deriv
 
 A computation can therefore move between a design and a derived source unchanged, and a metresis feed and a visualize chart reduce data the same way.
 
-- **Transforms that need geometry** (they declare `needs: [:frame]` or `needs: [:projection]`: layouts, geographic operations) stay in the package that draws, and register through the registry like any other member ([12](12-registry.md)).
+- **Transforms that need geometry** (they declare `needs: [:frame]` or `needs: [:projection]`: layouts, geographic operations) stay in the package that draws, and register through the registry like any other member ([12](12-registry.md)). A derived source has no frame, so they are never on its allowlist.
 - **The sandbox allowlist is generated** from the registered members of enabled packages, never written by hand, so enabling a package is the only way to widen it.
