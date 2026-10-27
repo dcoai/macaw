@@ -118,6 +118,8 @@ Other component packages (metresis's panels, components built on ryutronic) depe
 
 **Each step is released before an adopter switches to it:** tagged in git, and depended on by tag. Until then the adopter keeps a field-identical interim definition, and switches by alias. Publishing to Hex is the owner's decision and comes later.
 
+**An adopter published on Hex switches at Hex publication** (owner, 2026-10-27; #55). Hex refuses a package with a runtime git dependency, so visualize, which is on Hex, can't depend on a foundation by git tag without stopping its own releases. It keeps its field-identical interim definition until the foundation is published on Hex, and **checks it against the real one** through a dev/test-only git dependency (which Hex ignores, as it does visualize's extla dependency): a test asserts the two definitions' fields are identical, so they can't drift. Adopters not on Hex (metresis's server, macaw_server, the host libraries) switch at the git tag.
+
 **Adoption:** visualize on `macaw_layers` and `macaw_data`, with its visuals implementing the component contract (visualize#939, #940); metresis on `macaw_data` and, for its dashboards, Macaw surfaces, migrating once from where it paused (metresis#556, #452); macaw_server on `macaw_compose` and `macaw_live` (macaw#130).
 
 The CI dependency check (goal 6) and the example app (goal 7) are acceptance criteria of the first implementation proposal that ships code.
