@@ -20,6 +20,7 @@
 | **container** | a component kind whose content is surfaces: tabs, drawer, accordion, split |
 | **section** | a headed flow unit inside a prose surface |
 | **component** | a registered implementation of the component contract |
+| **component contract** | what a component declares, its kinds, drawn states and transitions, and the context it renders in; `macaw_component`'s, so a component needs no core ([05](05-components.md#components-libraries)) |
 | **kind** | a role a component can render as: `:navigation`, `:content`, `:control`, `:container`. One `render(kind, assigns)` clause per kind |
 | **mode** | how something is being rendered: live, socketless, neutral (for records), print ([10](10-web.md#web-modes)) |
 
@@ -81,6 +82,7 @@
 | **bundle** | the transitive closure of documents a page needs, portable between stores; never credentials, data or identity. Writing one is the only "export" of documents |
 | **state snapshot** | current values of persisted state sources by scope; restorable, carrying no identity |
 | **preset** | a fragment of component settings, stacked between a component's defaults and a cell's local settings |
+| **core** | the `macaw` package: page composition (state, pages, cells, records, the host side of the registry), built on the libraries other projects share ([00](00-overview.md#overview-packaging)) |
 | **registry** | the explicit, default-closed set of packages a host enables, and the members derived from them ([12](12-registry.md#registry-model)) |
 | **conformance kit** | tests shipped in the library that any author of a contract's implementations runs: one kit per contract, extended by **check sets** |
 | **profile** | a validation rule set for which colors a document may name: `:roles` on Macaw pages, `:open` in an adopter standalone ([macaw_layers 04](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/04-themes.md#themes-rules)) |

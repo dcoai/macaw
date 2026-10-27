@@ -80,15 +80,26 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 |---|---|---|---|
 | **`macaw_layers`** | `Macaw.Layers` | the document kernel; fragments, use sites, composites, stacking, masks, `explain`; the library (store, bundle); **themes**: document, roles, registry, stylesheet compilation, contrast ([macaw_layers' spec](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/README.md)) | nothing; no Phoenix |
 | **`macaw_data`** | `Macaw.Data` | the data model (Table, Schema, Delivery, units, quantities, facts); the **interaction event** and its recorded form; the **source contract**, push, the source conformance kit; **derived sources**; the **transform** and **aggregate** behaviors and the table operations ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md), [macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md)) | `macaw_layers` |
-| **`macaw_compose`** | `Macaw.Compose` | sources on pages, state sources, exports, the page DAG; components, kinds, cells, containers; the built-in content components, the table among them; pages, templates, layers, regions, surfaces; records; the registry; the component conformance kit ([03](03-state.md), [05](05-components.md), [06](06-pages.md), [08](08-records.md), [10](10-web.md), [12](12-registry.md), [13](13-writes.md)) | `macaw_layers`, `macaw_data` |
-| **`macaw_live`** | `Macaw.Live` | the LiveView runtime: mounting, page and surface processes, contained cells, persistent regions, static hooks, focus, the announcer, the client bus, the page-shortcut registry, the asset proxy | `macaw_compose`, Phoenix LiveView |
-| `macaw_edit` (later) | `Macaw.Edit` | drafts, change sets, sinks, the Ecto adapter, the effect discipline ([13](13-writes.md)) | `macaw_compose` |
+| **`macaw_component`** | `Macaw.Component` | the component contract: what a component declares, kinds and their output rules, the rendering rules, drawn states, the `:contained` value's transitions; the context a component renders in; the standard state a component may write; the rendering modes' rules; the package side of the registry; the component conformance kit and its check sets ([05](05-components.md) §1–4, [10](10-web.md#web-modes), [12](12-registry.md)) | `macaw_layers`, `macaw_data` |
+| **`macaw`** | `Macaw` | **the core: page composition.** Sources on pages, state sources, exports, the page DAG; cells and containers; the built-in content components, the table among them; pages, templates, layers, regions, surfaces; records; the host side of the registry; the template and layer checks ([03](03-state.md), [05](05-components.md) §5–6, [06](06-pages.md), [08](08-records.md), [10](10-web.md), [11](11-themes.md), [12](12-registry.md), [13](13-writes.md)) | `macaw_layers`, `macaw_data`, `macaw_component` |
+| **`macaw_live`** | `Macaw.Live` | the LiveView runtime: mounting, page and surface processes, contained cells, persistent regions, static hooks, focus, the announcer, the client bus, the page-shortcut registry, the asset proxy | `macaw`, Phoenix LiveView |
+| `macaw_edit` (later) | `Macaw.Edit` | drafts, change sets, sinks, the Ecto adapter, the effect discipline ([13](13-writes.md)) | `macaw` |
+
+**What another library uses lives in its own library** (owner, 2026-10-27; #137). `macaw_layers`, `macaw_data` and `macaw_component` are shared: visualize, metresis and other component packages use them without the core. **`macaw` is the core** the way `phoenix` is its family's: it holds only what composing pages needs, and owns the `Macaw` namespace, so its modules name the concept directly (`Macaw.Page`, `Macaw.State`, `Macaw.Surface`). Dependencies run one way:
+
+```
+macaw_layers ← macaw_data ← macaw_component ← macaw ← macaw_live ← macaw_edit
+                                  ↑
+             visualize, metresis, other component packages (optionally)
+```
+
+The core was planned as `macaw_compose`; its repository keeps that name until the rename (macaw_compose#141), and issues are cited by it. **The contract is unstable until two implementers pass its kit**, the core's table and visualize's visuals (visualize#946); until then it is released at 0.x, and its documentation says so.
 
 **visualize stays visualize.** It holds more than charts (geo and maps, scenes, the design builder) and is a product built on the blocks, not one of them. It depends on `macaw_layers` and `macaw_data`, and registers its theme roles into Macaw's themes. It may be folded into Macaw later, but not yet.
 
-**visualize's visuals are Macaw components, from visualize itself.** visualize depends **optionally** on `macaw_compose` (goal 6), the way it already depends on Phoenix and Nx. When `macaw_compose` is present, `visualize_live` compiles `Visualize.Macaw.*`, which implements the component contract around visualize designs; without it, visualize builds and runs standalone. There is no adapter package (visualize#940, macaw_compose#22).
+**visualize's visuals are Macaw components, from visualize itself.** visualize depends **optionally** on `macaw_component` (goal 6), the way it already depends on Phoenix and Nx, and never on the core. When `macaw_component` is present, `visualize_live` compiles `Visualize.Macaw.*`, which implements the component contract around visualize designs; without it, visualize builds and runs standalone. There is no adapter package (visualize#940, macaw_compose#22).
 
-Other component packages (metresis's panels, components built on ryutronic) depend on `macaw_compose` and bring their own dependencies; Macaw never imports them.
+Other component packages (metresis's panels, components built on ryutronic) depend on `macaw_component` and bring their own dependencies; Macaw never imports them.
 
 **Host libraries.** Every deployable project also carried the same host-side code: request guards, configuration on the data volume, secrets, release tasks, the control script, and authentication. Implemented separately, the copies drifted, security fixes included (macaw_compose#32–#34). These are implemented once, as host libraries in the same family:
 
@@ -99,9 +110,9 @@ Other component packages (metresis's panels, components built on ryutronic) depe
 | **`macaw_auth`** | `Macaw.Auth` | authentication: a narrow contract (the current user, plugs and hooks, sessions and revocation) and its native backend (passwords, LDAP, sessions, throttling, TOTP) | `macaw_plug`, Plug, Phoenix, Phoenix LiveView and PubSub, Ecto (all required since #51); the password hasher, bcrypt or Argon2, is the host's choice |
 | **`macaw_auth_ash`** | `Macaw.Auth.Ash` | the same contract over AshAuthentication, and the native LDAP source as an Ash strategy | `macaw_auth`, AshAuthentication |
 
-**They sit outside the composition model.** `macaw_layers`, `macaw_data`, `macaw_compose` and `macaw_live` never depend on them, and an identity or access system stays a non-goal of composition (§3): the viewer still arrives from the host ([00](00-overview.md#overview-goals) goal 3), which may get it from `macaw_auth` through `Macaw.Auth.viewer/1`. A host uses any of them alone; they are released by git tag like the rest of the family.
+**They sit outside the composition model.** `macaw_layers`, `macaw_data`, `macaw_component`, `macaw` and `macaw_live` never depend on them, and an identity or access system stays a non-goal of composition (§3): the viewer still arrives from the host ([00](00-overview.md#overview-goals) goal 3), which may get it from `macaw_auth` through `Macaw.Auth.viewer/1`. A host uses any of them alone; they are released by git tag like the rest of the family.
 
-**Boards are superseded.** A visualize board is a surface with a grid region: shared window and selection are state sources, virtual sources are derived sources, drill is a cell action ([06](06-pages.md)). Its runtime moves into `macaw_compose` and `macaw_live`; visualize keeps drawing visuals, with their printouts and output. visualize ships a board-to-surface migration behind its optional dependency (visualize#947).
+**Boards are superseded.** A visualize board is a surface with a grid region: shared window and selection are state sources, virtual sources are derived sources, drill is a cell action ([06](06-pages.md)). Its runtime moves into `macaw` and `macaw_live`; visualize keeps drawing visuals, with their printouts and output. visualize ships a board-to-surface migration behind its optional dependency (visualize#947).
 
 ### 4.1 How a Macaw library is built {#overview-library-rule}
 
@@ -125,13 +136,16 @@ The rest of each repository follows the family's conventions: private on GitLab,
 5. **`macaw_data`: derived sources** ([macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md)): the engine and sandbox, with `evaluate/4` (from visualize#881). **The sandbox's gates move with it** ([macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md#derived-gates)); until `macaw_data` passes them, visualize keeps its own sandbox.
 6. **`macaw_data`: transforms, table operations and aggregates** ([macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md#derived-operations)). Transforms that need geometry stay in visualize.
 7. **`macaw_layers`: themes** ([macaw_layers 04](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/04-themes.md)), with an extension point for visualize's chart theme roles; and the fragment machinery: Fragment, Use, Composite, Store and Bundle ([macaw_layers 02](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/02-fragments.md#documents-fragments), [macaw_layers 03](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/03-stores.md)).
-8. **Only then, `macaw_compose` and `macaw_live`**, starting with what adopters use optionally: the mode context, the announcer, the component conformance kit (visualize#946), and surfaces with a grid region, the target of the board migration (visualize#947) and of metresis's dashboards (metresis#452). State, the page DAG, pages and templates follow.
+8. **Only then, `macaw_component`, `macaw` and `macaw_live`** (#137), starting with what adopters use optionally:
+   1. **`macaw_component`:** the contract, the context and the mode rules, kinds, drawn states and the component conformance kit, which visualize's visuals implement (visualize#946);
+   2. **`macaw`:** surfaces with a grid region, the target of the board migration (visualize#947) and of metresis's dashboards (metresis#452); then state, the page DAG, pages and templates;
+   3. **`macaw_live`:** the runtime around them, the announcer among it.
 
 **Each step is released before an adopter switches to it:** tagged in git, and depended on by tag. Until then the adopter keeps a field-identical interim definition, and switches by alias. Publishing to Hex is the owner's decision and comes later.
 
 **An adopter published on Hex switches at Hex publication** (owner, 2026-10-27; #55). Hex refuses a package with a runtime git dependency, so visualize, which is on Hex, can't depend on a foundation by git tag without stopping its own releases. It keeps its field-identical interim definition until the foundation is published on Hex, and **checks it against the real one** through a dev/test-only git dependency (which Hex ignores, as it does visualize's extla dependency): a test asserts the two definitions' fields are identical, so they can't drift. Adopters not on Hex (metresis's server, macaw_server, the host libraries) switch at the git tag.
 
-**Adoption:** visualize on `macaw_layers` and `macaw_data`, with its visuals implementing the component contract (visualize#939, #940); metresis on `macaw_data` and, for its dashboards, Macaw surfaces, migrating once from where it paused (metresis#556, #452); macaw_server on `macaw_compose` and `macaw_live` (macaw#130).
+**Adoption:** visualize on `macaw_layers` and `macaw_data`, with its visuals implementing the component contract (visualize#939, #940); metresis on `macaw_data` and, for its dashboards, Macaw surfaces, migrating once from where it paused (metresis#556, #452); macaw_server on `macaw` and `macaw_live` (macaw#130).
 
 The CI dependency check (goal 6) and the example app (goal 7) are acceptance criteria of the first implementation proposal that ships code.
 

@@ -2,6 +2,8 @@
 
 A **component** is a registered implementation of one public contract. Built-in and third-party components use the same contract ([00](00-overview.md) goal 8). A **cell** places a component in a surface.
 
+**Two libraries** (#137): §1–4, the contract, are `macaw_component`'s, so a component package implements them without the core; §5 and §6's built-in components are the core's, `macaw`. §7 settles where the contract names something the core runs.
+
 ## 1. What a component declares {#components-declares}
 
 Each declaration buys a composition effect ([00](00-overview.md) goal 1, rule 1).
@@ -134,7 +136,7 @@ def render(:content, assigns),    do: ~H"<ul class=\"cards\">…</ul>"
   render(kind, assigns)            → markup
   ```
 
-  The **context** carries the mode, the measured container size and root font size, the heading level, the instance id, the theme, and the viewer's preferences (`zone`, `units`; [03](03-state.md#state-sources)). The behavior lives in `macaw_compose`. The **process** around the value is the host's: under Macaw, `macaw_live`'s contained cell; in an adopter's own host, whatever it uses (a LiveView's assigns, a test). The value never knows which.
+  The **context** carries the mode, the measured container size and root font size, the heading level, the instance id, the theme, and the viewer's preferences (`zone`, `units`; [03](03-state.md#state-sources)). The behavior is `macaw_component`'s. The **process** around the value is the host's: under Macaw, `macaw_live`'s contained cell; in an adopter's own host, whatever it uses (a LiveView's assigns, a test). The value never knows which.
 - **Contained cells** hold that value: a heap-limited process each, restarted by its surface with a backoff (100 ms doubling to 10 s, reset after 30 s alive), shown as `crashed` meanwhile. A component's crash never takes down the page that carries the visitor's observation. (visualize.md C13; dcotek_web.md C13.)
 - **Embedded applications** (macaw#9's demos) are a container pattern running a nested LiveView with its own limits.
 
@@ -152,12 +154,27 @@ A **container** is a component of kind `:container` whose content is surfaces: t
 
 Components ship in packages, which bring their own dependencies (Macaw never imports them) and register through the registry ([12](12-registry.md)).
 
-**Built in,** in `macaw_compose`: content components using the same contract as any package:
+**Built in,** in `macaw`: content components using the same contract as any package:
 - **prose** (Markdown) and **cards**;
 - **the table:** an HTML `<table>` of kind `:content`, with a caption, header cells with scope, sortable columns as real buttons, a budget per slot, reading load `:scan`, and rows that write `selection` by identity. Dashboards (metresis#452, visualize#755) and `macaw_edit` share it (macaw_compose#22, decision 10).
 
 **Expected packages:**
-- **visualize:** its visuals (charts, maps, scenes) implement the contract **from visualize itself**, as `Visualize.Macaw.*` in `visualize_live`, compiled when `macaw_compose` is present ([00](00-overview.md) goal 6; visualize#946). Its visual table stays for standalone use and image output;
+- **visualize:** its visuals (charts, maps, scenes) implement the contract **from visualize itself**, as `Visualize.Macaw.*` in `visualize_live`, compiled when `macaw_component` is present ([00](00-overview.md) goal 6; visualize#946). Its visual table stays for standalone use and image output;
 - **metresis:** dashboard and panel components, plus its shaping functions, so remote hosts can draw them (metresis#556);
 - **`macaw_edit`:** data-editing components ([13](13-writes.md));
 - **components built on ryutronic:** wizards, durable jobs, an assistant.
+
+## 7. The contract and the core {#components-libraries}
+
+The contract names four things the core runs. In each, **`macaw_component` owns the shape a component declares or receives, and `macaw` owns the behavior** (#137), so a component compiles and passes its kit with no core present, and another host (a plain LiveView, a test) can hold it.
+
+| Case | `macaw_component` | `macaw` |
+|---|---|---|
+| **State** (§1.3) | the standard state names and value types a component may declare in `writes`, and the `local` keys' domain types; events as `Macaw.Data.Event`; the `bound/3` transition | state sources and scopes, applying emitted events, parameter and slot bindings, the page DAG ([03](03-state.md)) |
+| **Context** (§4) | the context's fields (mode, measured size and root font size, heading level, instance id, theme, preferences) and the rules for using them (§3) | computing each instance's context on a page |
+| **Containers** (§5) | kind `:container`, its output rules, and rendering the panes it is handed | panes as surfaces, lazy render and DAG compute, nesting depth, the built-in containers |
+| **Cell actions** ([06](06-pages.md#pages-actions)) | declared event names, unique within a component (§1) | mapping a placement's events to actions |
+
+- **A shape the contract owns is never redefined by the core.** The core reads it from `macaw_component`, so a component and the page that holds it agree by construction.
+- **A host other than the core supplies the context and holds the value itself,** as §4 already requires: the value never knows which host it is in.
+- **Nothing in the contract needs a process, a state source or a page.** A proposed addition that does belongs to the core.

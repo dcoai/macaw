@@ -42,6 +42,8 @@ Macaw provides **one generic same-origin asset proxy** for media a component nee
 
 ## 2. Rendering modes {#web-modes}
 
+The modes and each mode's rules are `macaw_component`'s (#137): a component renders socketless, neutral and print without a page. Choosing a page's mode is the core's and `macaw_live`'s.
+
 | Mode | Use | Notes |
 |---|---|---|
 | live | a connected LiveView | hooks attached; a visual may draw marks on a canvas |
