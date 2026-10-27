@@ -17,6 +17,8 @@ Macaw exists for **composition effects**: components composed through it gain ef
 
 **visualize** keeps its own name and depends on `macaw_layers` and `macaw_data`. Its visuals are Macaw components from visualize itself, through an optional dependency on `macaw_compose`. Dependencies run one way: an adopter may depend on Macaw, never the reverse.
 
+Every Macaw library is built the same way: its own spec, surfex as a CI gate, depdep in CI, and extla models only for state-managing GenServers ([spec/00 §4.1](spec/00-overview.md#overview-library-rule)).
+
 ## Status
 
 Spec first. Nothing is implemented yet.

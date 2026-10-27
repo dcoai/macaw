@@ -103,6 +103,17 @@ Other component packages (metresis's panels, components built on ryutronic) depe
 
 **Boards are superseded.** A visualize board is a surface with a grid region: shared window and selection are state sources, virtual sources are derived sources, drill is a cell action ([06](06-pages.md)). Its runtime moves into `macaw_compose` and `macaw_live`; visualize keeps drawing visuals, with their printouts and output. visualize ships a board-to-surface migration behind its optional dependency (visualize#947).
 
+### 4.1 How a Macaw library is built {#overview-library-rule}
+
+Every Macaw library, the host libraries included, is built the same way, from its first commit (owner, 2026-10-27; #61). A new library starts with all of it:
+
+1. **Its own spec**, in its own repository's `spec/`: complete, not a summary, each section naming the public functions it governs and carrying test hints. Sections that wait in this repository for a library not yet created move with it, anchors unchanged. Links between repositories' specs are full URLs, checked by `ci/spec_links.exs` (against a sibling checkout where present, by shape otherwise), which every repository's CI runs.
+2. **surfex** as a hard CI gate (`mix surfex.status`), a dev/test-only dependency: code counts as implementing a spec unit only when a test for that unit failed and then passed against it, or a reviewed test passes. Code that predates a library's adoption is adopted by review (`mix surfex.validate` with a note).
+3. **depdep** in CI as the only dependency cache, set up as visualize's is: `scripts/depdep.exs`, a pull before `mix deps.get` and a push after a green build, the store named by the DCOTek group's `DEPDEP_*` variables (never set per project), no runner `cache:`. A store that can't be reached degrades to a cold build, never a failed one.
+4. **extla** models **only where they make sense**: the GenServers that manage state and its transitions, where correctness depends on message orderings no example test explores. Each model is checked in CI, and the running process checked against it. A library with no such process has no model; nothing else is modeled.
+
+The rest of each repository follows the family's conventions: private on GitLab, fast-forward merges with a green pipeline required, released by git tag (Hex later, the owner's decision), CI on the DCOTek runner, format, compile with warnings as errors, tests and American spelling as gates. A library that depends on another by git tag is added to that library's CI job-token allowlist (by numeric project id).
+
 ## 5. Order of work {#overview-order}
 
 **Macaw builds first what its adopters consume, in the order they consume it** (macaw_compose#28). visualize moves its generic core into `macaw_layers` and `macaw_data` once, and metresis migrates once, so neither is ever blocked on Macaw features no one uses yet.
