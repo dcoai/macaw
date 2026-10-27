@@ -15,11 +15,14 @@ Macaw is a family of building blocks for live, data-driven applications. Togethe
 | [macaw_data 02 — Derived sources](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md) | checked, bounded, deterministic functions over sources | `macaw_data` (moved, #62) |
 | [05 — Components](05-components.md) | the component contract, kinds, drawn states, isolation, containers | `macaw_compose` |
 | [06 — Pages](06-pages.md) | pages, templates, layers and masks, regions, surfaces, persistent regions, the runtime builder (deferred) | `macaw_compose` |
-| [07 — Documents](07-documents.md) | the document kernel, fragments and stacking, composable data, validation time | `macaw_layers` |
+| [macaw_layers 01 — The document kernel](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/01-kernel.md) | names, vocabularies, faults, version lines, the gates, the forms and tags, the digest | `macaw_layers` (moved, #95) |
+| [macaw_layers 02 — Fragments and stacking](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/02-fragments.md) | fragments, composites, use sites, stacking, masks, `explain` | `macaw_layers` (moved, #95) |
+| [07 — Documents](07-documents.md) | composable data, validation time | `macaw_compose` |
 | [08 — Records](08-records.md) | view paths, base renders and events, attention, requery, the two stores | `macaw_compose` |
-| [09 — Stores](09-stores.md) | the store behavior, typed references, bundles, portability | `macaw_layers` |
+| [macaw_layers 03 — Stores](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/03-stores.md) | the store behavior, typed references, bundles, portability | `macaw_layers` (moved, #95) |
 | [10 — The web](10-web.md) | CSP, rendering modes, responsive layout, accessibility | `macaw_compose`, `macaw_live` |
-| [11 — Themes](11-themes.md) | one theme system, delivery, runtime switching, user themes | `macaw_layers` |
+| [macaw_layers 04 — Themes](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/04-themes.md) | one theme system: rules and delivery | `macaw_layers` (moved, #95) |
+| [11 — Themes](11-themes.md) | switching at runtime, user themes | `macaw_compose`, `macaw_live` |
 | [12 — Registry](12-registry.md) | explicit registration, the conformance kits (one per contract) | `macaw_compose` (source kit: `macaw_data`) |
 | [13 — Writes](13-writes.md) | the four seams; what belongs to `macaw_edit` | `macaw_compose`, `macaw_edit` |
 | [14 — Open questions](14-open.md) | by experiment, deferred, and in the adopting projects | all |

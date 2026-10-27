@@ -83,7 +83,7 @@
 | **preset** | a fragment of component settings, stacked between a component's defaults and a cell's local settings |
 | **registry** | the explicit, default-closed set of packages a host enables, and the members derived from them ([12](12-registry.md#registry-model)) |
 | **conformance kit** | tests shipped in the library that any author of a contract's implementations runs: one kit per contract, extended by **check sets** |
-| **profile** | a validation rule set for which colors a document may name: `:roles` on Macaw pages, `:open` in an adopter standalone ([11](11-themes.md#themes-rules)) |
+| **profile** | a validation rule set for which colors a document may name: `:roles` on Macaw pages, `:open` in an adopter standalone ([macaw_layers 04](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/04-themes.md#themes-rules)) |
 
 ## 5. Terms that changed in the adopting projects {#vocab-adopters}
 

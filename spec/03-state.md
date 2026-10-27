@@ -6,7 +6,7 @@ Interaction is state, and state is a source. A selection, a time window, a varia
 
 ```elixir
 state "skills",
-  schema:  [skill: {:category, values_from: "projects.tags"}],   # legal values from data: checked at each change (07 §4)
+  schema:  [skill: {:category, values_from: "projects.tags"}],   # legal values from data: checked at each change (07 §2)
   multi:   true, max: 3,
   scope:   :surface,
   initial: {:host, :emphasis},   # a literal, a page param {:param, "service"}, or a value supplied by the host
@@ -62,7 +62,7 @@ Persistence is for **interaction** state only. It is never how domain data is sa
 
 ## 4. State snapshots {#state-snapshots}
 
-A **state snapshot** is the current value of every persisted state source in a set of scopes (a page, a session, a viewer), in the same shape as the state events in records ([08](08-records.md)). It can be saved and restored, alone or inside a bundle ([09](09-stores.md#stores-portable)).
+A **state snapshot** is the current value of every persisted state source in a set of scopes (a page, a session, a viewer), in the same shape as the state events in records ([08](08-records.md)). It can be saved and restored, alone or inside a bundle ([macaw_layers 03](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/03-stores.md#stores-portable)).
 - Restoring validates each value against its state source's current schema. A value that no longer fits is dropped, and reported by path.
 - Values are restored for whoever restores them: a state snapshot carries no identity.
 - A snapshot holds what **persistence** holds, not what recording allows: a state source that persists is in it. A state source can opt out with `snapshot: false` (a typed search, anything personal), and it is then left out of snapshots even when it persists. Recording rules are separate ([08](08-records.md#records-stores)).

@@ -1,45 +1,8 @@
 # 07 — Documents {#documents}
 
-Every declarative value Macaw reads is a **document**: pages, surfaces, templates, layers, themes, visualize designs, component settings and records. One kernel validates them all. It starts from visualize's `Visualize.Document`, which moves to Macaw ([00](00-overview.md#overview-order) step 2).
+Every declarative value Macaw reads is a **document**: pages, surfaces, templates, layers, themes, visualize designs, component settings and records. One kernel reads them all: the **document kernel**, specified in [macaw_layers 01](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/01-kernel.md#documents-kernel). It generalizes what visualize built for its designs, spread over `Visualize.Chart.Migration`, `Chart.Limits`, `Chart.Codec.Tags`, `Chart.Codec`, `Chart.Validator`, `Chart.Names` and `Visualize.Vocabulary` ([00](00-overview.md#overview-order) step 2). **Fragments and stacking** are specified in [macaw_layers 02](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/02-fragments.md#documents-fragments). Both moved to `macaw_layers` with its repository (#95); what stays here is how pages and components use documents.
 
-## 1. The kernel {#documents-kernel}
-
-- **One version line per document type,** stamped as `"$version"`.
-- **Gate order:**
-  1. check the encoded size in bytes;
-  2. decode with `depth` and `items` limits, by a decoder that stops at a limit, never one that builds the whole value first;
-  3. refuse a newer version by name (`{:newer_schema, needs, this}`) before anything else of the value is read;
-  4. migrate step by step, purely;
-  5. validate, counting `depth` and `items` again after migration.
-
-  A document with no stamp reads as current. A host may tighten every limit. (visualize.md C6; metresis.md C6.)
-- **Every fault is reported, never just the first,** as `{path, reason}`, ordered by path, worded by one formatter. (All three projects.)
-- **Unknown keys are refused by name** at their own spelling. (metresis.md C6.)
-- **Atom safety:**
-  - names a document declares are strings;
-  - keys are decoded against the document type's tables;
-  - closed vocabularies are looked up;
-  - `String.to_existing_atom/1` is never used on document data.
-
-  (visualize.md C6, D-195.)
-- **Map and JSON forms are exact inverses** for valid values. Values JSON can't express use one table of `$` tags. (visualize.md C6.)
-- **A canonical digest** (`Document.digest/1`) fingerprints any document independently of key order. Records, base renders and bundles cite it. (metresis.md C6.)
-- **Documents hold no functions, credentials or source configuration.** They do hold bindings, which name sources and state by name only ([01](01-vocabulary.md#vocab-data)). (visualize.md C6.)
-- **Untrusted strings** are sanitized where read and escaped where written, and URLs are checked by a host policy. (visualize.md C6.)
-- **Fetched documents** (from exio or a database) are untrusted input: the same gates apply, and nothing is evaluated. (dcotek_web.md C6.)
-
-## 2. Fragments and stacking {#documents-fragments}
-
-visualize's fragment machinery moves into Macaw and is used by every stackable document: templates and layers, styles, themes and designs. It comprises:
-- **fragments** and **composites;**
-- **use sites,** resolved `ref → local → mask → bind → stack`;
-- **`stack/1`,** a cascade, and **`compose/2`,** a union, each under **per-key merge rules** (`:concat`, `:union`, `:deep`, `:override`);
-- **masks,** which explicitly drop keys from below;
-- **`explain/1`,** provenance for any value: which layer or fragment set it.
-
-(visualize.md C4, C7; macaw_compose#8.)
-
-## 3. Everything is composable data {#documents-everything}
+## 1. Everything is composable data {#documents-everything}
 
 **Every configurable thing is a document of the fragment shape,** and there is no second configuration format (owner, 2026-10-26). That covers:
 - pages, surfaces and cells;
@@ -47,13 +10,13 @@ visualize's fragment machinery moves into Macaw and is used by every stackable d
 - templates, layers, themes and styles;
 - source declarations.
 
-Each stacks, masks, validates and explains the same way (§2). A configured component is a stack: its defaults, then a **preset** (a fragment), then the cell's local settings. So "why is this table sorted by date?" answers through `explain`, like any other value.
+Each stacks, masks, validates and explains the same way ([macaw_layers 02](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/02-fragments.md#documents-fragments)). A configured component is a stack: its defaults, then a **preset** (a fragment), then the cell's local settings. So "why is this table sorted by date?" answers through `explain`, like any other value.
 
 **A component's settings schema is made of parameters** ([05](05-components.md#components-parameters)): typed, with a default, legal values and documentation. One shape describes every component's options, so validation, builder forms and an AI author read the same thing.
 
-**A cell's settings may be inline or referenced.** A cell may carry a component's whole settings inline (a complete visualize design, for instance), or a reference to a preset plus local overrides. Both are the same stack and validate the same way. Inline settings keep a page in one document, which suits AI authoring; a reference keeps a shared design in the library, where every page using it follows its changes (macaw_compose#22, decision 3). This uniformity is what makes portability possible ([09](09-stores.md#stores-portable)), and what lets an AI author anything through one format.
+**A cell's settings may be inline or referenced.** A cell may carry a component's whole settings inline (a complete visualize design, for instance), or a reference to a preset plus local overrides. Both are the same stack and validate the same way. Inline settings keep a page in one document, which suits AI authoring; a reference keeps a shared design in the library, where every page using it follows its changes (macaw_compose#22, decision 3). This uniformity is what makes portability possible ([macaw_layers 03](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/03-stores.md#stores-portable)), and what lets an AI author anything through one format.
 
-## 4. Validation time {#documents-validation-time}
+## 2. Validation time {#documents-validation-time}
 
 Validation runs **whenever a document is loaded**, through pure functions, in two passes:
 - **The static pass**, at load: shapes and types, closed `values`, references, the page DAG, the CSP and observation plans, and `legal_for`, whose schemas come from each source's `describe`, answered at boot and cached ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-contract)). No I/O and no viewer.

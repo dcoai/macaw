@@ -23,7 +23,7 @@ object-src 'none'; base-uri 'none'; frame-ancestors 'none'
 
 **Every first render has a static form** (macaw_compose#29). Every value a first render needs is a class, a presentation attribute, an attribute of the root (its size as `width`, `height` and `viewBox`), or a rule in a static or generated stylesheet. So socketless and neutral renders are the final state, needing no hook and no CSSOM.
 
-**One output path for page markup.** The delivery rule is the only way any component, built in or adopted, writes markup into a page. There is no permissive styling profile. (A validation profile that permits literal colors in an adopter's own documents, such as visualize's `colors: :open`, is a different matter: it governs which colors a document may name, not how they are delivered, [11](11-themes.md#themes-rules).)
+**One output path for page markup.** The delivery rule is the only way any component, built in or adopted, writes markup into a page. There is no permissive styling profile. (A validation profile that permits literal colors in an adopter's own documents, such as visualize's `colors: :open`, is a different matter: it governs which colors a document may name, not how they are delivered, [macaw_layers 04](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/04-themes.md#themes-rules).)
 
 **A standalone file is not a page.** Output (an SVG file, a PNG rendered from one, a print-to-file PDF) must render alone, and no page CSP applies to it, so it carries its own `<style>` inside the document. The output target decides, with no setting: markup for a page is strict, and a standalone file is self-contained.
 

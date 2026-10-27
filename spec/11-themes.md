@@ -2,23 +2,9 @@
 
 **One theme system styles every surface, the site included** (decided, owner, 2026-10-25). It is visualize's theme document: palettes, named whole styles and **roles** (good, warning, bad, info, neutral, selected, muted …). macaw_server's brand tokens become a theme, and metresis maps its UI framework's roles from it.
 
-## 1. Rules {#themes-rules}
+The theme document's **rules** and **delivery** are specified in [macaw_layers 04](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/04-themes.md), which moved with `macaw_layers`' repository (#95). What stays here is switching themes on a running page.
 
-- **Drawing colors are theme roles and tokens,** and values derived from them (`lighten(:warning)`), so contrast is checked on the theme. (metresis.md C3.)
-- **Data colors are typed content.** A `:color` column or a schema's value color (a team's color) may be shown only with a non-color cue (a glyph, a label or a dash) and under a contrast guard against the background; it is never the sole carrier of meaning ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-data); macaw_compose#22, decision 7).
-- **Literal colors are refused** under the **`:roles` profile**, which every Macaw page validates against. An adopter may offer a permissive profile standalone (visualize's `colors: :open`); on a Macaw page its documents validate as `:roles`.
-- **One theme per page.** A component's own theme setting (a visualize design's `theme`) is an override the page masks; standalone, it applies.
-- **Adopters register their theme roles** (visualize's mark roles) into the shared theme document, so one theme styles them.
-- **Contrast is checked once, on the theme,** for every theme offered ([10](10-web.md#web-a11y)).
-- **Themes stack** like any fragment ([07](07-documents.md#documents-fragments)).
-
-## 2. Delivery {#themes-delivery}
-
-- A theme compiles to **custom properties scoped by a class**, `.mw-theme-<name>` (`.mw-theme-dark`), in the site's static stylesheet, served from `'self'`. Adopters emit the same class, so a visualize chart standalone and on a page reads the same properties.
-- **"Auto"** follows `prefers-color-scheme` through a media query in that stylesheet; there is never a `<style>` element per component.
-- Per-mark and per-datum styles resolve on the server into SVG presentation attributes or classes.
-
-## 3. Switching at runtime {#themes-runtime}
+## 1. Switching at runtime {#themes-runtime}
 
 - A theme chooser is a control whose cell action sets the `theme` preference, a state source at `:viewer` scope, or `:session` for an anonymous visitor ([03](03-state.md#state-sources)).
 - A change swaps the root's theme class through an ordinary diff (classes are fine under CSP), and every component recolors.

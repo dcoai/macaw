@@ -107,7 +107,7 @@ def render(:content, assigns),    do: ~H"<ul class=\"cards\">…</ul>"
 
 - **Server first, complete without a socket.** Native HTML wherever it gives behavior: `<details>`, `popover`, `<dialog>`. (dcotek_web.md C3.)
 - **Size by container queries, never by viewport,** so one component works in any region ([10](10-web.md#web-responsive)). A component that lays out on the server (a chart computing scales and ticks) receives the **measured container size and root font size** in its context. Until the first measurement, it lays out at the size its placement declares.
-- **Colors by the theme's rules** ([11](11-themes.md#themes-rules)): drawing colors from roles, data colors as typed content with a cue, literal colors refused under the `:roles` profile every Macaw page validates against.
+- **Colors by the theme's rules** ([macaw_layers 04](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/04-themes.md#themes-rules)): drawing colors from roles, data colors as typed content with a cue, literal colors refused under the `:roles` profile every Macaw page validates against.
 - **Headings at the level given by context,** never hard-coded ([10](10-web.md#web-a11y)).
 - **Links and navigation as events or host link helpers.** A component never navigates by itself; its placement maps events to actions ([06](06-pages.md#pages-actions)).
 - **Announcements are requested, never owned.** A component never renders a live region; it requests an announcement by name, from the server or from a hook ([10](10-web.md#web-a11y)).
