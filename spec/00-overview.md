@@ -96,7 +96,7 @@ Other component packages (metresis's panels, components built on ryutronic) depe
 |---|---|---|---|
 | **`macaw_plug`** | `Macaw.Plug` | the client address behind trusted proxies, rate limiting, security headers and CSP hashing | Plug |
 | **`macaw_host`** | `Macaw.Host` | the literal `config.exs` on the data volume, generated secrets, release tasks, health, build info, and the `<app>-ctl` generator | OTP; `ecto_sql` optionally |
-| **`macaw_auth`** | `Macaw.Auth` | authentication: a narrow contract (the current user, plugs and hooks, sessions and revocation) and its native backend (passwords, LDAP, sessions, throttling, TOTP) | `macaw_plug`, Plug; Ecto, Phoenix LiveView optionally |
+| **`macaw_auth`** | `Macaw.Auth` | authentication: a narrow contract (the current user, plugs and hooks, sessions and revocation) and its native backend (passwords, LDAP, sessions, throttling, TOTP) | `macaw_plug`, Plug, Phoenix, Phoenix LiveView and PubSub, Ecto (all required since #51); the password hasher, bcrypt or Argon2, is the host's choice |
 | **`macaw_auth_ash`** | `Macaw.Auth.Ash` | the same contract over AshAuthentication, and the native LDAP source as an Ash strategy | `macaw_auth`, AshAuthentication |
 
 **They sit outside the composition model.** `macaw_layers`, `macaw_data`, `macaw_compose` and `macaw_live` never depend on them, and an identity or access system stays a non-goal of composition (§3): the viewer still arrives from the host ([00](00-overview.md#overview-goals) goal 3), which may get it from `macaw_auth` through `Macaw.Auth.viewer/1`. A host uses any of them alone; they are released by git tag like the rest of the family.
