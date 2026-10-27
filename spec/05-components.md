@@ -28,6 +28,8 @@ Each declaration buys a composition effect ([00](00-overview.md) goal 1, rule 1)
 | **assets**: static files, and generated content-addressed stylesheets (§3) | self-contained base renders ([08](08-records.md)) |
 | **proxy routes** for media from another origin, mounted by the host | nothing from another origin ([10](10-web.md#web-csp)) |
 | **renders** in each mode: live, socketless, neutral, print (§3) | complete without a socket; replay; output |
+
+**Event names are unique within one component's declarations.** The events a component declares are every event it emits, including those its runtime raises when its configuration enables them (a visual's `brush`, `select` and `pick`). So a configuration that declares one of those names beside the runtime's is a validation fault naming both ([07](07-documents.md#documents-validation-time)). A component kind's runtime names are reserved by being declared, for that kind only: another kind may use the same name for its own event. There is no namespace and no separate field. `initiator` already separates visitor from system, and one list of names is what view paths and records key on (macaw_compose#73, #91; visualize#955).
 | **isolation**: `:pure` (renders in the page's process) or `:contained` (has server work, held by a contained cell, §4) | a crash never takes down the page |
 | **drawn states** | never blank; failures shown (§4) |
 | **required access**, if any | consistent gating |
