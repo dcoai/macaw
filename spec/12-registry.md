@@ -26,6 +26,6 @@ Shipped in `lib/`, so any component or source author runs it, the way visualize'
   - complete socketless and neutral renders;
   - stable element ids.
 - **Templates and layers:** the stacked-result rules ([06](06-pages.md#pages-templates)).
-- **Check sets** add checks for a family of components. The **visual** check set: one tab stop; `role="img"` with a description and a data table beside it; the drawn-token rule ([02](02-sources.md#sources-event)); SVG, never canvas, in socketless and neutral modes.
+- **Check sets** add checks for a family of components. The **visual** check set: one tab stop; `role="img"` with a description and a data table beside it; the drawn-token rule ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-event)); SVG, never canvas, in socketless and neutral modes.
 - **Fixture documents:** a component whose declarations depend on its settings ([05](05-components.md#components-declares)) ships a fixture set of settings documents, one for each distinct declaration shape (for visualize: one per mark, frame kind, backend and scene), and the kit runs over every one.
 - **Adopters run it** in their own CI whenever `macaw_compose` is present (visualize#946).

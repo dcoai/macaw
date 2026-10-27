@@ -105,7 +105,7 @@ cells:
 
 - **`set`** writes a state source from the event's fields: a view change, applied by the runtime as an event on that state source.
 - **`navigate`** goes to a typed reference ([09](09-stores.md#stores-references)) with params taken from the event's fields: a navigation step, performed by the host's navigation behavior. The library never navigates.
-- **Event fields** are named as paths into the event ([02](02-sources.md#sources-event)): `{event: identity}`, `{event: [identity, service]}`, `{event: value}`, or `{event: [row, field]}`. Only the named field is read: the row itself is never recorded. A field written by `set` becomes that state source's value, recorded under its capture level like any other ([08](08-records.md#records-stores)); one used by `navigate` is recorded as the step's params.
+- **Event fields** are named as paths into the event ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-event)): `{event: identity}`, `{event: [identity, service]}`, `{event: value}`, or `{event: [row, field]}`. Only the named field is read: the row itself is never recorded. A field written by `set` becomes that state source's value, recorded under its capture level like any other ([08](08-records.md#records-stores)); one used by `navigate` is recorded as the step's params.
 - **Several actions on one event run in their declared order,** so one pick may select and then navigate.
 - **Validated with the page:** the event must be one the component declares, the state must accept the value's type, and a `navigate` action's params are checked against the target page's declared params, by type and legal values.
 

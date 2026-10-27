@@ -18,7 +18,7 @@ Each declaration buys a composition effect ([00](00-overview.md) goal 1, rule 1)
 | **slots**: typed inputs with `requires` contracts, checkable before data flows | any source works; faults found at validation (visualize.md C1) |
 | **kinds** it renders as (static) | correct placement and landmarks (§2) |
 | the **standard state** it writes (`writes`) and its **local state** (`local`) (§1.3) | interaction without wiring ([03](03-state.md)) |
-| a **budget per slot** (§1.2) | correct fetch sizes; one hard bound per host ([02](02-sources.md#sources-delivery)) |
+| a **budget per slot** (§1.2) | correct fetch sizes; one hard bound per host ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-delivery)) |
 | **events** it emits, by name, in the shared event struct; each emission carries its initiator | accurate view paths ([08](08-records.md)); cell actions ([06](06-pages.md#pages-actions)) |
 | **announcements** it may request, by name (`announces`) | one coordinated announcer ([10](10-web.md#web-a11y)) |
 | **observation** it can emit (`observes`), a subset of the closed vocabulary | disclosure that matches (dcotek_web.md C3, C12; [10](10-web.md#web-observation)) |
@@ -37,7 +37,7 @@ Each declaration buys a composition effect ([00](00-overview.md) goal 1, rule 1)
 A component's settings schema is a map of **parameters**, one shape for every component, so the registry, the page validator, builder forms and an AI author read one form (macaw_compose#15):
 
 ```elixir
-%{type: type,                      # a data-model type (02 §1), {:document, type}, or :term
+%{type: type,                      # a data-model type (macaw_data 01 §1), {:document, type}, or :term
   default: value,
   values: [value] | nil,           # a closed list of legal values, or nil
   legal_for: {slot, field, fact} | nil,  # legal values follow from a bound slot's described schema
@@ -46,7 +46,7 @@ A component's settings schema is a map of **parameters**, one shape for every co
 ```
 
 **Types.** A parameter's `type` is one of:
-- a **data-model type** (`:time`, `:number`, `:category`, `:text`, `:color`, `:point`, [02](02-sources.md#sources-data));
+- a **data-model type** (`:time`, `:number`, `:category`, `:text`, `:color`, `:point`, [macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-data));
 - **`{:document, type}`**, a nested document of a document type ([01](01-vocabulary.md#vocab-documents)), validated by its own kernel rules: how a whole visualize design is a cell's settings;
 - **`:term`**, any value the component validates itself in `declarations/1`, allowed only for documents migrated from untyped forms (visualize's old variables), never for new parameters.
 
@@ -60,8 +60,8 @@ A parameter's value in a document is a literal, or, when the parameter is `binda
 
 A component that draws rows declares, for each slot, a **row budget** as a function of its parameters and its measured size: `budget(slot, params, size) → rows`. visualize's derivation (plot width by mark type, with a design override, its D-226, D-227 and D-230) is one implementation.
 
-- **The host ceiling clamps every slot.** A slot whose budget exceeds the ceiling reads at the ceiling, reported as `reduced_by: :runtime` ([02](02-sources.md#sources-delivery)), and draws those rows. A component is never handed nothing because it asked for too much.
-- **Sources are pooled at the largest budget** among their readers, and each reader is reduced to its own, reporting how ([02](02-sources.md#sources-delivery), `reduced_by`).
+- **The host ceiling clamps every slot.** A slot whose budget exceeds the ceiling reads at the ceiling, reported as `reduced_by: :runtime` ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-delivery)), and draws those rows. A component is never handed nothing because it asked for too much.
+- **Sources are pooled at the largest budget** among their readers, and each reader is reduced to its own, reporting how ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-delivery), `reduced_by`).
 - A component without a budget declaration reads at the host ceiling.
 
 ### 1.3 State a component writes and reads {#components-state}

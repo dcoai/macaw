@@ -136,7 +136,7 @@ The menu pattern is a **disclosure navigation** (buttons with `aria-expanded` an
 
 Observation reports what a viewer did with a component, never what data they saw (macaw_compose#22, R14).
 - **One closed vocabulary:** `view`, `dwell`, `hover_item`, `focus_item`, `activate`, `select`, `brush`, `copy` and `scroll_into_view`.
-- **Each observation is an event in its recorded form** ([02](02-sources.md#sources-event)): the element and identity, never data values.
+- **Each observation is an event in its recorded form** ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-event)): the element and identity, never data values.
 - **A component declares** which it can emit (`observes`). **The host enables** a subset per page. **Nothing is emitted otherwise**, so an adopter used without a host plan reports nothing.
 - **Hover and focus are reported on enter and leave,** never on pointer motion; raw movement never reaches the server. The hover *position* that components share is `:local` state ([03](03-state.md#state-scopes)); a `hover_item` observation is a separate, enabled event.
 - The host's disclosure is generated from the enabled declarations, so it matches exactly what the page can report ([00](00-overview.md#overview-goals)).

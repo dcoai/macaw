@@ -5,7 +5,7 @@
 ## 1. Rules {#themes-rules}
 
 - **Drawing colors are theme roles and tokens,** and values derived from them (`lighten(:warning)`), so contrast is checked on the theme. (metresis.md C3.)
-- **Data colors are typed content.** A `:color` column or a schema's value color (a team's color) may be shown only with a non-color cue (a glyph, a label or a dash) and under a contrast guard against the background; it is never the sole carrier of meaning ([02](02-sources.md#sources-data); macaw_compose#22, decision 7).
+- **Data colors are typed content.** A `:color` column or a schema's value color (a team's color) may be shown only with a non-color cue (a glyph, a label or a dash) and under a contrast guard against the background; it is never the sole carrier of meaning ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-data); macaw_compose#22, decision 7).
 - **Literal colors are refused** under the **`:roles` profile**, which every Macaw page validates against. An adopter may offer a permissive profile standalone (visualize's `colors: :open`); on a Macaw page its documents validate as `:roles`.
 - **One theme per page.** A component's own theme setting (a visualize design's `theme`) is an override the page masks; standalone, it applies.
 - **Adopters register their theme roles** (visualize's mark roles) into the shared theme document, so one theme styles them.

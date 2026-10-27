@@ -33,7 +33,7 @@
 | **state source** | a typed value held by the runtime, written by events, read like any source |
 | **export** | state an entity (surface, container, cell) publishes for others to bind to; others bind only to exports |
 | **slot** | a component's typed data input |
-| **binding** | an edge of the page DAG declared in a document: a slot → a source or export; a bindable parameter → a state source; or a source request's param → a state source or page param. Owned by the page document; never the mapping from a source's name to its configuration, which is the host's **source configuration** ([02](02-sources.md#sources-credentials)) |
+| **binding** | an edge of the page DAG declared in a document: a slot → a source or export; a bindable parameter → a state source; or a source request's param → a state source or page param. Owned by the page document; never the mapping from a source's name to its configuration, which is the host's **source configuration** ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-credentials)) |
 | **parameter** | one typed entry in a settings schema (a component's, a page's params, a template's options): type, default, legal values, `legal_for`, whether it is bindable, and documentation |
 | **settings** | the parameter values a component is given: its defaults, a preset, and the cell's own values, stacked |
 | **budget** | the rows a component may draw for one slot, a function of its parameters and size; clamped to the **host ceiling** |

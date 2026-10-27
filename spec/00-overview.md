@@ -15,17 +15,17 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
    | Effect | What happens | Provided by |
    |---|---|---|
    | cross-highlighting without wiring | a selection in one component highlights or filters every component sharing the identity, though none knows the others | state sources, declared identity ([03](03-state.md)) |
-   | one time, one "now" | every component shows the same window and freshness | the surface owns window and clock ([02](02-sources.md)) |
-   | a write updates everything | data changed through one component updates every reader, here and on other viewers' pages | change notification ([02](02-sources.md#sources-change)) |
-   | values derived across components and surfaces | a value computed from several components' data, shown in another | derived sources, exports, the page DAG ([03](03-state.md), [04](04-derived.md)) |
+   | one time, one "now" | every component shows the same window and freshness | the surface owns window and clock ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md)) |
+   | a write updates everything | data changed through one component updates every reader, here and on other viewers' pages | change notification ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-change)) |
+   | values derived across components and surfaces | a value computed from several components' data, shown in another | derived sources, exports, the page DAG ([03](03-state.md), [macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md)) |
    | the whole view in one link | a shared link restores every component's state | host-owned persistence ([03](03-state.md#state-persistence)) |
    | whole-page replay | what a viewer saw, across everything on the page, at any step | records ([08](08-records.md)) |
    | "why this number?" | any shown value traces back through its derivations to its data | the declared graph ([03](03-state.md#state-dag)) |
    | disclosure that matches | the host's privacy note, observation code and CSP are right for this exact combination | declared observation, from one closed vocabulary ([05](05-components.md), [10](10-web.md#web-observation)) |
    | accessibility of the whole | one outline, one tab order, one announcer, landmarks | pages and templates own structure ([10](10-web.md#web-a11y)) |
    | one look | every component matches; contrast is checked once | one theme; drawing colors come from its roles ([11](11-themes.md)) |
-   | consistent access | every component honors what this viewer may see | the viewer reaches every source ([02](02-sources.md)) |
-   | shared fetching | components reading the same data cost one fetch, and so do pages making the same viewer-independent request | sources pooled by the page and across pages ([02](02-sources.md)) |
+   | consistent access | every component honors what this viewer may see | the viewer reaches every source ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md)) |
+   | shared fetching | components reading the same data cost one fetch, and so do pages making the same viewer-independent request | sources pooled by the page and across pages ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md)) |
    | whole-page output | the page prints, or is output, as one document | every component's neutral render and printout ([05](05-components.md), [08](08-records.md)) |
    | an assistant that understands the page | an agent sees structure, state and declared actions, and acts within a person's rules | everything declared |
 
@@ -49,7 +49,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
    | where state persists | persistence | nowhere |
    | what is recorded | recording | nothing (closed by default) |
    | where a link or drill goes | navigation | an event to the host |
-| how a change reaches other pages and nodes | notification: change notification and cross-page pooling ([02](02-sources.md#sources-change)) | this node only, through a `Registry`; a host plugs in its PubSub to reach other nodes |
+| how a change reaches other pages and nodes | notification: change notification and cross-page pooling ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-change)) | this node only, through a `Registry`; a host plugs in its PubSub to reach other nodes |
 
 4. **Complete without a socket.** A page renders as complete server HTML, and `macaw_live` only adds to it.
 5. **Strict web rules for every component:**
@@ -74,12 +74,12 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
 
 ## 4. The Macaw libraries {#overview-packaging}
 
-**Macaw** is a family of building blocks that lead to applications (macaw_compose#18). Each library is one package with a descriptive suffix:
+**Macaw** is a family of building blocks that lead to applications (macaw_compose#18). Each library is one package with a descriptive suffix, and **each has its own spec in its own repository** (#61): `macaw_data`'s is in dco-tek/macaw_data; the host libraries' in theirs; the rest are in this repository's spec/ until their repositories exist, and move with them.
 
 | Package | Module | Holds | Depends on |
 |---|---|---|---|
 | **`macaw_layers`** | `Macaw.Layers` | the document kernel; fragments, use sites, composites, stacking, masks, `explain`; the library (store, bundle); **themes**: document, roles, registry, stylesheet compilation, contrast ([07](07-documents.md), [09](09-stores.md), [11](11-themes.md)) | nothing; no Phoenix |
-| **`macaw_data`** | `Macaw.Data` | the data model (Table, Schema, Delivery, units, quantities, facts); the **interaction event** and its recorded form; the **source contract**, push, the source conformance kit; **derived sources**; the **transform** and **aggregate** behaviors and the table operations ([02](02-sources.md), [04](04-derived.md)) | `macaw_layers` |
+| **`macaw_data`** | `Macaw.Data` | the data model (Table, Schema, Delivery, units, quantities, facts); the **interaction event** and its recorded form; the **source contract**, push, the source conformance kit; **derived sources**; the **transform** and **aggregate** behaviors and the table operations ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md), [macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md)) | `macaw_layers` |
 | **`macaw_compose`** | `Macaw.Compose` | sources on pages, state sources, exports, the page DAG; components, kinds, cells, containers; the built-in content components, the table among them; pages, templates, layers, regions, surfaces; records; the registry; the component conformance kit ([03](03-state.md), [05](05-components.md), [06](06-pages.md), [08](08-records.md), [10](10-web.md), [12](12-registry.md), [13](13-writes.md)) | `macaw_layers`, `macaw_data` |
 | **`macaw_live`** | `Macaw.Live` | the LiveView runtime: mounting, page and surface processes, contained cells, persistent regions, static hooks, focus, the announcer, the client bus, the page-shortcut registry, the asset proxy | `macaw_compose`, Phoenix LiveView |
 | `macaw_edit` (later) | `Macaw.Edit` | drafts, change sets, sinks, the Ecto adapter, the effect discipline ([13](13-writes.md)) | `macaw_compose` |
@@ -107,12 +107,12 @@ Other component packages (metresis's panels, components built on ryutronic) depe
 
 **Macaw builds first what its adopters consume, in the order they consume it** (macaw_compose#28). visualize moves its generic core into `macaw_layers` and `macaw_data` once, and metresis migrates once, so neither is ever blocked on Macaw features no one uses yet.
 
-1. **`macaw_data`: the interaction event** ([02](02-sources.md#sources-event)). It unblocks visualize's Event v2 (visualize#941).
+1. **`macaw_data`: the interaction event** ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-event)). It unblocks visualize's Event v2 (visualize#941).
 2. **`macaw_layers`: the document kernel** ([07](07-documents.md)): Document and its faults, names and term tagging, the map and JSON forms, the digest. visualize's planned extractions (#880, #893, #912) are closed there as superseded by this step.
-3. **`macaw_data`: the data model** ([02](02-sources.md#sources-data)): the columnar Table (from visualize#916), Schema, Delivery, units, quantities and facts. `Schema.to_json/1` and `from_json/1` are public, so no adopter reads a hidden function (visualize#879).
-4. **`macaw_data`: the source contract and its conformance kit** ([02](02-sources.md)), a strict superset of `Visualize.Feed`, with the budget fields and `reduced_by`.
-5. **`macaw_data`: derived sources** ([04](04-derived.md)): the engine and sandbox, with `evaluate/4` (from visualize#881). **The sandbox's gates move with it** ([04](04-derived.md#derived-gates)); until `macaw_data` passes them, visualize keeps its own sandbox.
-6. **`macaw_data`: transforms, table operations and aggregates** ([04](04-derived.md#derived-operations)). Transforms that need geometry stay in visualize.
+3. **`macaw_data`: the data model** ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-data)): the columnar Table (from visualize#916), Schema, Delivery, units, quantities and facts. `Schema.to_json/1` and `from_json/1` are public, so no adopter reads a hidden function (visualize#879).
+4. **`macaw_data`: the source contract and its conformance kit** ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md)), a strict superset of `Visualize.Feed`, with the budget fields and `reduced_by`.
+5. **`macaw_data`: derived sources** ([macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md)): the engine and sandbox, with `evaluate/4` (from visualize#881). **The sandbox's gates move with it** ([macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md#derived-gates)); until `macaw_data` passes them, visualize keeps its own sandbox.
+6. **`macaw_data`: transforms, table operations and aggregates** ([macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md#derived-operations)). Transforms that need geometry stay in visualize.
 7. **`macaw_layers`: themes** ([11](11-themes.md)), with an extension point for visualize's chart theme roles; and the fragment machinery: Fragment, Use, Composite, Store and Bundle ([07](07-documents.md#documents-fragments), [09](09-stores.md)).
 8. **Only then, `macaw_compose` and `macaw_live`**, starting with what adopters use optionally: the mode context, the announcer, the component conformance kit (visualize#946), and surfaces with a grid region, the target of the board migration (visualize#947) and of metresis's dashboards (metresis#452). State, the page DAG, pages and templates follow.
 
