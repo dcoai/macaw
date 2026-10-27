@@ -139,7 +139,7 @@ The CI dependency check (goal 6) and the example app (goal 7) are acceptance cri
 
 Implemented and tagged, each with its own spec, surfex and CI (#61):
 - **`macaw_layers` v0.1.0:** the document kernel (step 2, #56);
-- **`macaw_data` v0.3.0:** the interaction event (order-of-work step 1), the data model (step 3, #57), and the source contract with its conformance kit (step 4, #58): the behavior, description, request and parameters, finishing, push and the kit. Running sources on pages (pooling across pages, change notification, fetching off the caller) waits for the page runtime ([#108](https://gitlab.conet.yarina.org/dco-tek/macaw_compose/-/issues/108));
+- **`macaw_data` v0.4.0:** the interaction event (order-of-work step 1), the data model (step 3, #57), the source contract with its conformance kit (step 4, #58), and derived sources with the sandbox and its gates (step 5, #82): the behavior, description, request and parameters, finishing, push and the kit. Running sources on pages (pooling across pages, change notification, fetching off the caller) waits for the page runtime ([#108](https://gitlab.conet.yarina.org/dco-tek/macaw_compose/-/issues/108));
 - **the host libraries:** `macaw_plug` v0.1.2, `macaw_host` v0.1.2, `macaw_auth` v0.4.0 and `macaw_auth_ash` v0.3.0.
 
 The rest is spec, built in the order of work (§5). Decisions are recorded on macaw_compose#1 (the anchor), #2 (vocabulary), #3 (state), #8 (templates), #9 (writes), #10 (composition effects) and #22 (agreement with visualize; the analysis is [`design/visualize-alignment.md`](../design/visualize-alignment.md)). Open and deferred questions are in [14](14-open.md).
