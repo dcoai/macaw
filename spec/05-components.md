@@ -36,7 +36,7 @@ Each declaration buys a composition effect ([00](00-overview.md) goal 1, rule 1)
 
 ### 1.1 Parameters {#components-parameters}
 
-A component's settings schema is a map of **parameters**, one shape for every component, so the registry, the page validator, builder forms and an AI author read one form (macaw_compose#15):
+A component's settings schema is a map of **parameters**, one shape for every component, so the registry, the page validator, builder forms and an AI author read one form (macaw_compose#15). **The shape, `conforms?/2` and its validation are `Macaw.Data.Parameter`'s**, specified in [macaw_data 01 §2.2](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-parameters): sources take parameters before any component exists, so macaw_data owns the shape and components use it (the owner's decision, 2026-10-27, #109). What follows is how components use it.
 
 ```elixir
 %{type: type,                      # a data-model type (macaw_data 01 §1), {:document, type}, or :term
