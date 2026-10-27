@@ -2,7 +2,7 @@
 
 Macaw is a family of building blocks for live, data-driven applications. Together they compose pages out of independent components, which share typed data and interactive state through one source contract. You declare the arrangement and the data flow in validated documents, and Macaw runs them per viewer on Phoenix LiveView: rendered on the server, safe under a strict security policy, and reproducible afterwards.
 
-**Status:** `macaw_data` v0.1.0 (the interaction event), `macaw_layers` v0.1.0 (the document kernel) and the host libraries are implemented; the rest is spec. Decisions are recorded on macaw_compose#1 and the issues it links.
+**Status:** `macaw_layers` v0.1.0 (the document kernel), `macaw_data` v0.3.0 (the interaction event, the data model, and the source contract with its kit) and the host libraries are implemented; the rest is spec. Decisions are recorded on macaw_compose#1 and the issues it links.
 
 **Each component has its own spec in its own repository** (owner, 2026-10-27; #61). This one holds the family's anchor (00 overview, 01 vocabulary, 14 open questions) and the specs of components that have no repository yet, each row naming its library; a component's sections move to its repository when the repository is created. Sections keep their anchors when they move, so links into them stay stable.
 
