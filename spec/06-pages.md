@@ -89,8 +89,6 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 
 ### 3.1 The surface document {#pages-surface-document}
 
-<!-- surfex: deferred #158: the surface document -->
-
 **`Macaw.Surface` is a surface:** `%Macaw.Surface{name, title, layout, cells}`, a document read through the kernel's gates ([macaw_layers 01 §5](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/01-kernel.md#kernel-gates)) and stacked as a fragment ([macaw_layers 02](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/02-fragments.md#fragments-types)).
 
 | Key | Value | Default |
@@ -105,21 +103,19 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 - **The version line** starts at 1 (`current/0`), with no migration step yet.
 - **As a fragment type,** `cells` is a `:union` by name and every other key an `:override`, so a layer stacked on a surface adds or replaces cells by name and overrides its title.
 
-```planned-test:surface-new
+```test:surface-new
 a surface builds from its keys with title and layout defaulted; a missing name or cells, an unknown key, a bad name, title, layout and every bad cell are faults at once by path; no atom is made from a name
 ```
 
-```planned-test:surface-forms
+```test:surface-forms
 a surface written to its map and JSON forms reads back equal through every gate; a document of a newer version, past a limit or with an unknown key is refused by the gate that catches it
 ```
 
-```planned-test:surface-fragment
+```test:surface-fragment
 stacking a layer on a surface adds and replaces cells by name and overrides the title
 ```
 
 ### 3.2 Cells {#pages-cells}
-
-<!-- surfex: deferred #158: the surface document -->
 
 **`Macaw.Surface.Cell` places one component:** `%Macaw.Surface.Cell{component, kind, settings, slots, place}`.
 
@@ -133,7 +129,7 @@ stacking a layer on a surface adds and replaces cells by name and overrides the 
 
 Cell names are names in the kernel's sense, unique within the surface (the map's keys).
 
-```planned-test:cells-shape
+```test:cells-shape
 a cell builds with its defaults, kind read from an atom or its spelling; a missing component or place, an unknown kind, settings or params that aren't plain data, a slot without a source and an unknown key are faults at their paths
 ```
 

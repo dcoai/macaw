@@ -9,8 +9,14 @@
   adoption: :trust,
   # Type specs document the functions' contracts; the functions carry the relation
   # (a test can exercise a function, never a type).
-  classes: [{"type", "types document the functions' contracts, which carry the relation"}],
-  rules: [%{class: "type", kinds: [:type]}],
+  classes: [
+    {"type", "types document the functions' contracts, which carry the relation"},
+    {"index", "the package's root module: documentation that maps the library, no behavior"}
+  ],
+  rules: [
+    %{class: "type", kinds: [:type]},
+    %{class: "index", kinds: [:module], name: ~r/\AMacaw\z/}
+  ],
   # Other libraries' modules the spec cites: real, outside this tree.
   known_external: %{
     "Macaw.Layers" => "macaw_layers, a library this one depends on",
@@ -39,9 +45,6 @@
   },
   # Modules the spec names that the core doesn't have yet, each with its issue.
   documented_absences: %{
-    {"Macaw", "spec/00-overview.md"} =>
-      "the core's root module, built with the surface document (#158)",
-    {"Macaw.Surface", "spec/00-overview.md"} => "built by #158",
     {"Macaw.Builtin", "spec/05-components.md"} => "built with the table (#163)",
     {"Macaw.Builtin.Table", "spec/05-components.md"} => "built by #163",
     {"Macaw.Grid.classes/1", "spec/06-pages.md"} => "built by #160",
@@ -51,10 +54,7 @@
     {"Macaw.Grid.stylesheet/0", "spec/06-pages.md"} => "built by #160",
     {"Macaw.Grid.stylesheet_path/0", "spec/06-pages.md"} => "built by #160",
     {"Macaw.Registry", "spec/06-pages.md"} => "built by #159",
-    {"Macaw.Surface", "spec/06-pages.md"} => "built by #158",
-    {"Macaw.Surface.Cell", "spec/06-pages.md"} => "built by #158",
     {"Macaw.Surface.fetch/2", "spec/06-pages.md"} => "built by #162",
-    {"Macaw.Surface.new/1", "spec/06-pages.md"} => "built by #158",
     {"Macaw.Surface.render/2", "spec/06-pages.md"} => "built by #162",
     {"Macaw.Surface.render/3", "spec/06-pages.md"} => "built by #162",
     {"Macaw.Surface.validate/3", "spec/06-pages.md"} => "built by #161",
