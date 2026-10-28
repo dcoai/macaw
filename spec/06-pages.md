@@ -170,25 +170,21 @@ an unknown component, an unoffered kind, bad settings, an unbound and an unknown
 
 ### 3.5 Fetching {#pages-surface-fetch}
 
-<!-- surfex: deferred #162: fetching and rendering -->
-
-**`Macaw.Surface.fetch/2`** of a validated surface and an `env` answers each cell's deliveries and drawn state, `%{cell => %{deliveries: %{slot => delivery}, drawn: state}}`. `env` is a keyword list: `viewer:` (the host's viewer, opaque, `nil` the anonymous one), `now:` (required: the surface's now, never a clock read), `ceiling:` (the host's row ceiling, required), `width:` (the surface's width in CSS pixels, `1200` by default), `row_height:` (`64`), and `timeout:` (ms, `5_000`).
-- **Budgets:** each slot's budget is `Macaw.Component.budget/4` at the cell's declared size (§3.3), clamped by `Macaw.Data.Source.Finish.ceiling/2` ([macaw_data 01 §6.1](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-budgets)); a clamped slot's delivery says `reduced_by: :runtime`.
+**`Macaw.Surface.fetch/2`** of a validated surface and an `env` answers each cell's deliveries and drawn state, `%{cell => %{deliveries: %{slot => delivery}, drawn: state}}`. `env` is a keyword list: `sources:` (the host's sources by name, as given to `validate/3`, required), `viewer:` (the host's viewer, opaque, `nil` the anonymous one), `now:` (required: the surface's now, never a clock read), `ceiling:` (the host's row ceiling, required), `width:` (the surface's width in CSS pixels, `1200` by default), `row_height:` (`64`), and `timeout:` (ms, `5_000`).
+- **Budgets:** each slot's budget is `Macaw.Component.budget/4` at the cell's declared size (§3.3) (a component's bad budget draws its cell `invalid` and fetches nothing for that slot), clamped by `Macaw.Data.Source.Finish.ceiling/2` ([macaw_data 01 §6.1](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-budgets)); a clamped slot's delivery says `reduced_by: :runtime`.
 - **Pooling within the surface:** slots bound to one source with equal params cost one fetch, at the largest of their budgets (`Finish.pooled/1`), and each slot is reduced to its own (`Finish.reduce`). Pooling across pages is #108's.
 - **Fetching never blocks or crashes the caller:** each fetch runs in a process of its own (`Macaw.Data.Bounded`), the fetches concurrently, each bounded by `timeout:`; the delivery is finished by `Macaw.Data.Source.Finish.finish/4` against the description.
 - **Drawn states** ([macaw_component 02 §6](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/02-rendering.md#components-states)), the highest of its slots': a fetch that answers an error or whose process exits is `down`; one that hasn't answered within `timeout:` is `loading`; a delivery `capped` or `reduced_by` anything is `capped`; one with no rows is `no_data`; otherwise `live`. A cell with no slots is `live`.
 
-```planned-test:fetch-budgets
+```test:fetch-budgets
 each slot is fetched at its budget at its cell's size, clamped to the ceiling and marked runtime when clamped; slots sharing a source and params are fetched once at the largest budget and each reduced to its own
 ```
 
-```planned-test:fetch-drawn
+```test:fetch-drawn
 a source error, a crashed fetch, a hung fetch, a capped or reduced delivery and an empty one draw down, down, loading, capped and no_data; a cell's state is its slots' highest; a cell without slots is live
 ```
 
 ### 3.6 Rendering a surface {#pages-surface-render}
-
-<!-- surfex: deferred #162: fetching and rendering -->
 
 **`Macaw.Surface.render/3`** of a validated surface, its fetched deliveries and an `env` is the surface's markup, a `Phoenix.HTML` safe value, in the mode `env` names (`mode:`, `:socketless` by default), with `theme:` (`Macaw.Layers.Theme.default/0`), `heading_level:` (the surface title's level, `2`), `now:`, `width:` and `row_height:` as for fetching:
 
@@ -206,11 +202,11 @@ a source error, a crashed fetch, a hung fetch, a capped or reduced delivery and 
 - **A component's raise is the caller's to take**, as the contract says ([macaw_component 01 §1](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-behavior)): a host isolates a component by process (`macaw_live`'s contained cell); this render does not catch it.
 - `Macaw.Surface.render/2` fetches and renders in one call.
 
-```planned-test:render-markup
+```test:render-markup
 a surface renders its title at its level and its cells in reading order, each with its grid classes and instance id, nothing inline, in every mode
 ```
 
-```planned-test:render-cells
+```test:render-cells
 each cell renders with its context: its instance, declared size, heading level below the title, theme and now; its drawn state and deliveries, or a contained component's value through its transitions
 ```
 

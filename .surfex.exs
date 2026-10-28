@@ -47,9 +47,6 @@
   documented_absences: %{
     {"Macaw.Builtin", "spec/05-components.md"} => "built with the table (#163)",
     {"Macaw.Builtin.Table", "spec/05-components.md"} => "built by #163",
-    {"Macaw.Surface.fetch/2", "spec/06-pages.md"} => "built by #162",
-    {"Macaw.Surface.render/2", "spec/06-pages.md"} => "built by #162",
-    {"Macaw.Surface.render/3", "spec/06-pages.md"} => "built by #162",
     {"Macaw.Builtin", "spec/12-registry.md"} => "built with the table (#163)",
     {"Macaw.Edit", "spec/13-writes.md"} => "macaw_edit, a later library (spec/13)",
     {"Macaw.Edit", "spec/00-overview.md"} => "macaw_edit, a later library (spec/13)",

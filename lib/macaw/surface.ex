@@ -134,6 +134,30 @@ defmodule Macaw.Surface do
   def validate(%__MODULE__{} = surface, %Macaw.Registry{} = registry, sources),
     do: Macaw.Surface.Validated.validate(surface, registry, sources)
 
+  # -- fetching and rendering ---------------------------------------------------------------
+
+  @doc """
+  Each cell's deliveries and drawn state (spec/06 §3.5): `%{cell => %{deliveries:, drawn:}}`.
+  `env`: `sources:` (as given to `validate/3`), `now:` and `ceiling:` (required),
+  `viewer:` (`nil`), `width:` (`1200`), `row_height:` (`64`), `timeout:` (`5_000` ms).
+  Each fetch runs bounded in a process of its own, so it never blocks or crashes the caller.
+  """
+  @spec fetch(Macaw.Surface.Validated.t(), keyword()) :: %{String.t() => map()}
+  defdelegate fetch(validated, env), to: Macaw.Surface.Fetch
+
+  @doc """
+  The surface's markup (spec/06 §3.6), a safe value: its title at `heading_level:` (`2`),
+  then its cells in reading order, in `mode:` (`:socketless`), with `theme:`, `now:`,
+  `width:` and `row_height:` as for fetching.
+  """
+  @spec render(Macaw.Surface.Validated.t(), map(), keyword()) :: Phoenix.HTML.safe()
+  defdelegate render(validated, fetched, env), to: Macaw.Surface.Render
+
+  @doc "Fetches and renders in one call: `render(validated, fetch(validated, env), env)`."
+  @spec render(Macaw.Surface.Validated.t(), keyword()) :: Phoenix.HTML.safe()
+  def render(%Macaw.Surface.Validated{} = validated, env),
+    do: render(validated, fetch(validated, env), env)
+
   # -- the forms ---------------------------------------------------------------------------
 
   @doc """
