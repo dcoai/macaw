@@ -46,7 +46,7 @@ Serve `Macaw.Grid.stylesheet/0` at `Macaw.Grid.stylesheet_path/0`; nothing is in
 | `macaw_layers` | documents, fragments, stacking and masks, stores, themes |
 | `macaw_data` | the data model, sources, derived sources, operations |
 | `macaw_component` | the component contract and its conformance kit, used without the core |
-| **`macaw`** | the core: state, the page DAG, pages and surfaces, records (this repository, dco-tek/macaw_compose until it is renamed) |
+| **`macaw`** | the core: state, the page DAG, pages and surfaces, records (this repository, `dco-tek/macaw/macaw`) |
 | `macaw_live` | the LiveView runtime (later) |
 | `macaw_edit` | data-editing components (later) |
 | `macaw_plug`, `macaw_host`, `macaw_auth`, `macaw_auth_ash` | host libraries: request guards, host glue, authentication (outside the composition model) |
@@ -60,4 +60,4 @@ Every Macaw library is built the same way: its own spec, surfex as a CI gate, de
 
 Changes go through proposals (GitLab issues): `Research` while a direction is being shaped, `Proposal` when it is ready to evaluate.
 
-*Formerly "composex", then `macaw_compose`; the core became `macaw` on 2026-10-28 (#137).*
+*Formerly "composex", then `macaw_compose`; the core became `macaw` on 2026-10-28 (#137), and every Macaw project moved into the `dco-tek/macaw` group (#151, #152).*

@@ -93,7 +93,7 @@ macaw_layers ← macaw_data ← macaw_component ← macaw ← macaw_live ← mac
              visualize, metresis, other component packages (optionally)
 ```
 
-The core was planned as `macaw_compose`; its repository keeps that name until the rename (macaw_compose#141), and issues are cited by it. **The contract is unstable until two implementers pass its kit**, the core's table and visualize's visuals (visualize#946); until then it is released at 0.x, and its documentation says so.
+The core was planned as `macaw_compose`; its repository is `dco-tek/macaw/macaw` since 2026-10-28 (#151), in the `dco-tek/macaw` group with every Macaw project (#152). Issues before the rename cite it as `macaw_compose#N`. **The contract is unstable until two implementers pass its kit**, the core's table and visualize's visuals (visualize#946); until then it is released at 0.x, and its documentation says so.
 
 **visualize stays visualize.** It holds more than charts (geo and maps, scenes, the design builder) and is a product built on the blocks, not one of them. It depends on `macaw_layers` and `macaw_data`, and registers its theme roles into Macaw's themes. It may be folded into Macaw later, but not yet.
 
