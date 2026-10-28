@@ -64,3 +64,62 @@ defmodule Macaw.Test.HookedPackage do
   @moduledoc false
   def __members__, do: [Macaw.Test.Hooked]
 end
+
+defmodule Macaw.Test.Series do
+  @moduledoc false
+  # A pure component reading a time series: a window role and a number role.
+  use Macaw.Component, name: "test.series", kinds: [:content]
+
+  @impl true
+  def parameters, do: %{"label" => %{type: :text, default: "Series"}}
+
+  @impl true
+  def declarations(_settings),
+    do:
+      {:ok,
+       slots: %{
+         "points" => %{requires: %{"x" => %{type: :time, window: true}, "y" => %{type: :number}}}
+       },
+       reading: :glance}
+
+  @impl true
+  def budget("points", _settings, {w, _h}), do: max(1, trunc(w / 10))
+
+  @impl true
+  def render(:content, %{drawn: :live} = assigns) do
+    rows = assigns.deliveries |> Map.fetch!("points") |> Macaw.Data.Delivery.rows()
+    h = Macaw.Component.Context.heading(assigns.context, 0)
+    {:safe, ~s(<#{h}>#{assigns.settings["label"]}</#{h}><p>#{length(rows)} points</p>)}
+  end
+
+  def render(:content, assigns), do: Macaw.Component.Drawn.render(assigns.drawn, assigns.context)
+end
+
+defmodule Macaw.Test.Counter do
+  @moduledoc false
+  # A contained component: its value counts the rows delivered to it.
+  use Macaw.Component, name: "test.counter", kinds: [:content]
+
+  @impl true
+  def declarations(_settings), do: {:ok, slots: %{"rows" => %{}}, isolation: :contained}
+
+  @impl true
+  def init(_settings, context), do: %{rows: 0, size: context.size, instance: context.instance}
+  @impl true
+  def delivery(value, _slot, delivery),
+    do: %{value | rows: value.rows + length(Macaw.Data.Delivery.rows(delivery))}
+
+  @impl true
+  def size(value, size), do: %{value | size: size}
+  @impl true
+  def bound(value, _name, _new), do: value
+
+  @impl true
+  def render(:content, %{drawn: :live, value: value}), do: {:safe, "<p>#{value.rows} rows</p>"}
+  def render(:content, assigns), do: Macaw.Component.Drawn.render(assigns.drawn, assigns.context)
+end
+
+defmodule Macaw.Test.SurfacePackage do
+  @moduledoc false
+  def __members__, do: [Macaw.Test.Note, Macaw.Test.Series, Macaw.Test.Counter]
+end

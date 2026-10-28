@@ -151,8 +151,6 @@ a placement's classes name its column, span, row and rows; the stylesheet has a 
 
 ### 3.4 Validating a surface {#pages-surface-validate}
 
-<!-- surfex: deferred #161: validating a surface -->
-
 **The static pass** ([07 §2](07-documents.md#documents-validation-time)): `Macaw.Surface.validate/3`, of a surface, the host's registry (`Macaw.Registry`, [12 §1.1](12-registry.md#registry-host)) and its sources by name, each `{source, context}` as `Macaw.Data.Source.describer/1` takes them. No I/O but `describe`, which a source answers from configuration, and no viewer. It answers `{:ok, %Macaw.Surface.Validated{}}` or `{:error, faults}`, every fault at once by path from the surface:
 - **the grid**: every rule of §3.3, at `[:cells, name, :place]`;
 - **the component**: a name the registry doesn't hold is `{:unknown_component, name}` at `[:cells, name, :component]`;
@@ -162,11 +160,11 @@ a placement's classes name its column, span, row and rows; the stylesheet has a 
 
 `%Macaw.Surface.Validated{surface, cells, order}` holds, for each cell, its component module, its validated settings, its declarations, and each slot's source, description and request params; `order` is the cells in reading order. Rendering takes only a validated surface, so nothing renders that hasn't passed.
 
-```planned-test:validate-pass
+```test:validate-pass
 a surface of known components bound to described sources validates, with each cell's module, settings, declarations and descriptions, in reading order
 ```
 
-```planned-test:validate-faults
+```test:validate-faults
 an unknown component, an unoffered kind, bad settings, an unbound and an unknown slot, an unknown source, a failing describe, a binding the schema doesn't meet, bad params and a bad place are all reported at once by path
 ```
 

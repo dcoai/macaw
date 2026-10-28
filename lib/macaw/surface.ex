@@ -122,6 +122,18 @@ defmodule Macaw.Surface do
 
   defp cells(_other), do: {%{}, [{[:cells], {:type, :map}}]}
 
+  # -- validation --------------------------------------------------------------------------
+
+  @doc """
+  The static pass over a surface (spec/06 §3.4), with the host's registry and its sources
+  by name, each `{source, context}`: `{:ok, %Macaw.Surface.Validated{}}` or every fault at
+  once, by path from the surface. No I/O but each source's `describe`, and no viewer.
+  """
+  @spec validate(t(), Macaw.Registry.t(), %{String.t() => {Macaw.Data.Source.t(), term()}}) ::
+          {:ok, Macaw.Surface.Validated.t()} | {:error, [Fault.t(), ...]}
+  def validate(%__MODULE__{} = surface, %Macaw.Registry{} = registry, sources),
+    do: Macaw.Surface.Validated.validate(surface, registry, sources)
+
   # -- the forms ---------------------------------------------------------------------------
 
   @doc """
