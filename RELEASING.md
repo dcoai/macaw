@@ -7,8 +7,10 @@ The Macaw libraries are released to Hex together, bottom-up, and their public ho
 ## 1. Where things stand
 
 ```bash
-elixir ~/Projects/claude-tools/hex_release.exs status ~/Projects/macaw ~/Projects/macaw_*
+elixir ~/Projects/claude-tools/hex_release.exs status ~/Projects/macaw ~/Projects/macaw_{layers,data,component,plug,host,auth,auth_ash}
 ```
+
+The eight packages are named, not globbed: `~/Projects/macaw_*` also matches the server (`macaw_server`) and the archived `macaw_hex`, both still app `:macaw`, and worktree folders. The tool refuses two checkouts of one app name and skips a directory without a `mix.exs`, naming each.
 
 It works out the publish order from the libraries' own runtime git dependencies and reports each library:
 
@@ -25,7 +27,7 @@ The order today: macaw_host, macaw_layers, macaw_plug (no family dependencies); 
 
 1. **Its dependencies on Hex:** once every family library it depends on is published,
    ```bash
-   elixir ~/Projects/claude-tools/hex_release.exs prepare ~/Projects/<lib> ~/Projects/macaw ~/Projects/macaw_*
+   elixir ~/Projects/claude-tools/hex_release.exs prepare ~/Projects/<lib> ~/Projects/macaw ~/Projects/macaw_{layers,data,component,plug,host,auth,auth_ash}
    ```
    rewrites those git dependencies to `~> version`, the version each tag named.
 2. **Its version:** a patch (or a minor, when the API changed) in `mix.exs`; the changelog's `Unreleased` section released as `## vX.Y.Z (date)`; the README's install snippet pinned to that version, `{:lib, "~> X.Y.Z"}`.
