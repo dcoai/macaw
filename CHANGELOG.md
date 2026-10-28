@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The README opens with the early-release notice (macaw#174).
+
 ## v0.1.1 (2026-10-28)
 
 - The repository is `dco-tek/macaw/macaw`, in the `dco-tek/macaw` group; dependencies named by their group paths, on macaw_data v0.5.2 and macaw_component v0.1.1 (#151, #152).

@@ -1,5 +1,7 @@
 # macaw
 
+> **This software is a very early release, and not ready for general use.**
+
 Public home: [github.com/dcoai/macaw](https://github.com/dcoai/macaw) · Docs: [hexdocs.pm](https://hexdocs.pm/macaw)
 
 The core of **Macaw**, a family of building blocks for live, data-driven applications on Phoenix LiveView. `macaw` composes pages out of independent components, which share typed data and interactive state through one source contract. You declare the arrangement and the data flow in validated documents, and Macaw runs them per viewer: rendered on the server, safe under a strict security policy, and reproducible afterwards.
