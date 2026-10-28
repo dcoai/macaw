@@ -45,9 +45,6 @@
   },
   # Modules the spec names that the core doesn't have yet, each with its issue.
   documented_absences: %{
-    {"Macaw.Builtin", "spec/05-components.md"} => "built with the table (#163)",
-    {"Macaw.Builtin.Table", "spec/05-components.md"} => "built by #163",
-    {"Macaw.Builtin", "spec/12-registry.md"} => "built with the table (#163)",
     {"Macaw.Edit", "spec/13-writes.md"} => "macaw_edit, a later library (spec/13)",
     {"Macaw.Edit", "spec/00-overview.md"} => "macaw_edit, a later library (spec/13)",
     {"Macaw.Page", "spec/00-overview.md"} =>

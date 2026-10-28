@@ -84,20 +84,18 @@ Components ship in packages, which bring their own dependencies (Macaw never imp
 
 ### 6.1 The table {#components-table}
 
-<!-- surfex: deferred #163: the built-in table -->
-
 `Macaw.Builtin.Table`, registered as `"macaw.table"` in the package `Macaw.Builtin`, of kind `:content`, `:pure`:
 - **Parameters:** `caption` (text, `"Table"`), the table's name; `identity` (text, `""`), the field naming each row, `""` for rows that can't be selected; `sort` (text, `""`, bindable), the field rows are sorted by, `""` for the delivered order; `order` (category `"asc"` or `"desc"`, `"asc"`, bindable).
 - **Declarations:** one slot, `rows`, of whole rows; events `"sort"` and `"select"`; `writes: %{"selection" => :identity}`; `observes: [:activate, :select]`; reading load `:scan`.
 - **Budget:** the rows its declared height shows at `2rem` (32 px) a row, times four for scrolling, at least 10.
-- **Markup:** a `<table class="mw-table">` with its `<caption>`; a header row of `<th scope="col">`, one per column in the delivered table's column order, each a real `<button type="button">` emitting `sort` with the field as its value, and the sorted column's `<th>` carrying `aria-sort` (`ascending` or `descending`); a row per delivered row, sorted when `sort` names a column (nil last, ties in delivered order), each `<td>` the value as text, `nil` empty; with an `identity` field, each row's first cell holds a `<button type="button">` emitting `select` with the row's identity, and the row's id is `Context.id/2` of `r-` and the identity's spelling, so ids are stable; a non-live drawn state draws its notice.
+- **Markup:** a `<table class="mw-table">` with its `<caption>`; a header row of `<th scope="col">`, one per column in the delivered table's column order, each a real `<button type="button">` emitting `sort` with the field as its value, and the sorted column's `<th>` carrying `aria-sort` (`ascending` or `descending`); a row per delivered row, sorted when `sort` names a column (nil last, ties in delivered order), each `<td>` the value as text, `nil` empty; with an `identity` field, each row's first cell holds a `<button type="button">` named `Select` and the identity, emitting `select` with the row's identity, and the row's id is `Context.id/2` of `r-` and the identity's spelling, base64url-encoded so any identity makes an id, so ids are stable; a `capped` or `stale` table draws its notice above its rows, and any other non-live state its notice alone.
 - **It passes `macaw_component`'s kit**, the core being the contract's first implementer ([macaw_component 00 §3](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/00-overview.md#component-order)).
 
-```planned-test:table-declares
+```test:table-declares
 the table's parameters, slot, events, selection write, observations, reading load and budget are as declared
 ```
 
-```planned-test:table-markup
+```test:table-markup
 the table renders a caption, scoped header buttons that sort, rows sorted by a field in either order with nil last, selection buttons and stable ids with an identity, and its notice when not live; it passes the component kit
 ```
 
