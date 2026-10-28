@@ -2,7 +2,7 @@ defmodule Macaw.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/dcoai/macaw"
-  @version "0.1.1"
+  @version "0.1.2"
 
   def project do
     [
@@ -38,14 +38,11 @@ defmodule Macaw.MixProject do
   defp deps do
     [
       # The document kernel, fragments and themes (spec/00 §4).
-      {:macaw_layers,
-       git: "git@gitlab.conet.yarina.org:dco-tek/macaw/macaw_layers.git", tag: "v0.2.0"},
+      {:macaw_layers, "~> 0.2.2"},
       # The data model, sources, deliveries and finishing (spec/00 §4).
-      {:macaw_data,
-       git: "git@gitlab.conet.yarina.org:dco-tek/macaw/macaw_data.git", tag: "v0.5.2"},
+      {:macaw_data, "~> 0.5.3"},
       # The component contract (spec/00 §4).
-      {:macaw_component,
-       git: "git@gitlab.conet.yarina.org:dco-tek/macaw/macaw_component.git", tag: "v0.1.1"},
+      {:macaw_component, "~> 0.1.2"},
       {:phoenix_html, "~> 4.1"},
       # The component kit reads renders with it; the built-in table is checked by the kit.
       {:lazy_html, "~> 0.1", only: :test},

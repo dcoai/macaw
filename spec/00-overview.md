@@ -123,7 +123,7 @@ Every Macaw library, the host libraries included, is built the same way, from it
 3. **depdep** in CI as the only dependency cache, set up as visualize's is: `scripts/depdep.exs`, a pull before `mix deps.get` and a push after a green build, the store named by the DCOTek group's `DEPDEP_*` variables (never set per project), no runner `cache:`. A store that can't be reached degrades to a cold build, never a failed one.
 4. **extla** models **only where they make sense**: the GenServers that manage state and its transitions, where correctness depends on message orderings no example test explores. Each model is checked in CI, and the running process checked against it. A library with no such process has no model; nothing else is modeled.
 
-The rest of each repository follows the family's conventions: private on GitLab, fast-forward merges with a green pipeline required, released by git tag (Hex later, the owner's decision), CI on the DCOTek runner, format, compile with warnings as errors, tests and American spelling as gates. A library that depends on another by git tag is added to that library's CI job-token allowlist (by numeric project id).
+The rest of each repository follows the family's conventions: private on GitLab, fast-forward merges with a green pipeline required, released on Hex by the owner, bottom-up, each release tag pushed to its public home on GitHub first (#155; RELEASING.md), CI on the DCOTek runner, format, compile with warnings as errors, tests and American spelling as gates. A library that depends on another by git tag is added to that library's CI job-token allowlist (by numeric project id).
 
 ## 5. Order of work {#overview-order}
 
