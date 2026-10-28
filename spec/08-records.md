@@ -1,8 +1,12 @@
 # 08 — Records: view paths, replay and provenance {#records}
 
+<!-- surfex: deferred #166: records -->
+
 A **record** makes a page view reproducible. It holds what was shown, in which states, and how the visitor moved through it. **It never holds the viewer.** (macaw_compose#8, question 3.)
 
 ## 1. View paths {#records-paths}
+
+<!-- surfex: deferred #166: records -->
 
 A visit is a **view path**: a sequence of **views**, each a page in a particular state.
 
@@ -18,6 +22,8 @@ Which is which comes from the event's `initiator` ([macaw_data 01](https://gitla
 Choosing any step shows the page as it was there. The path and the replay are one view. Click paths (macaw#54) become view paths.
 
 ## 2. What is recorded {#records-content}
+
+<!-- surfex: deferred #166: records -->
 
 - **Base renders:** the **neutral** render of a page version **before any delivery**: every component in its initial drawn state (`loading`), and state at its initial values. It therefore holds no data and nothing per viewer, so it is content-addressed and shared by every visit.
   - It is stored **by part and assembled:** the chrome rendered by a given template stack is stored once, and a page's base render is an assembly of part hashes. The record still *means* "the whole page as seen".
@@ -40,9 +46,13 @@ Choosing any step shows the page as it was there. The path and the replay are on
 
 ## 3. Attention {#records-attention}
 
+<!-- surfex: deferred #166: records -->
+
 **Attention is accounted at navigation.** A navigation closes every open interval and credits it to the page being left, and the new page starts fresh, including for persistent elements still in view. Each page view's attention therefore sums to its own time on screen, and its attention map includes its chrome as seen from that page.
 
 ## 4. Data in replay: requery, with time travel when available {#records-requery}
+
+<!-- surfex: deferred #166: records -->
 
 - The point of replay is the **component level:** what was shown, attention and dwell. It is not the exact rows.
 - **Replay requeries sources and shows current data.**
@@ -51,6 +61,8 @@ Choosing any step shows the page as it was there. The path and the replay are on
 - **The viewer for a requery** is supplied by the host; by default, the person replaying.
 
 ## 5. Two stores, one line {#records-stores}
+
+<!-- surfex: deferred #166: records -->
 
 | Store | Holds | Owner |
 |---|---|---|

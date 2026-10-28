@@ -1,42 +1,62 @@
 # 05 — Components, cells and containers {#components}
 
+<!-- surfex: class architecture -->
+
 A **component** is a registered implementation of one public contract. Built-in and third-party components use the same contract ([00](00-overview.md) goal 8). A **cell** places a component in a surface.
 
 **Two libraries** (#137): the contract is `macaw_component`'s, specified in [its own repository](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/README.md), so a component package implements it without the core; §5 and §6's built-in components are the core's, `macaw`. §7 settles where the contract names something the core runs. §1–4 moved to `macaw_component` with their anchors (#141); each keeps its heading here and points to where it is now.
 
 ## 1. What a component declares {#components-declares}
 
+<!-- surfex: class moved -->
+
 Moved: [macaw_component 01 §1.2](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-declares), with the behavior and its static declarations ([§1](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-behavior)), slots ([§1.3](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-slots)), events, announcements, observation and shortcuts ([§1.6](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-events)), assets, hooks and proxy routes ([§1.8](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-assets)), and isolation and access ([§1.9](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-isolation)).
 
 ### 1.1 Parameters {#components-parameters}
+
+<!-- surfex: class moved -->
 
 Moved: [macaw_component 01 §1.1](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-parameters).
 
 ### 1.2 Budget per slot {#components-budget}
 
+<!-- surfex: class moved -->
+
 Moved: [macaw_component 01 §1.4](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-budget).
 
 ### 1.3 State a component writes and reads {#components-state}
+
+<!-- surfex: class moved -->
 
 Moved: [macaw_component 01 §1.5](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-state).
 
 ### 1.4 Reading load {#components-reading}
 
+<!-- surfex: class moved -->
+
 Moved: [macaw_component 01 §1.7](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-reading).
 
 ## 2. Kinds {#components-kinds}
+
+<!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
 
 Moved: [macaw_component 01 §2](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-kinds), with each kind's output rules in [02 §4](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/02-rendering.md#components-kind-rules). Which kind a cell takes, from where it sits, is the core's: a cell names its `kind`, defaulting to `:navigation` in a region whose role is navigation, `:content` elsewhere, and the container's pane kind inside a container, and validation checks that the component offers it and that the region allows it.
 
 ## 3. Rendering rules {#components-rendering}
 
+<!-- surfex: class moved -->
+
 Moved: [macaw_component 02 §5](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/02-rendering.md#components-rendering), with the assigns ([§1](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/02-rendering.md#components-assigns)), the context ([§2](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/02-rendering.md#components-context)) and the client protocols ([§8](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/02-rendering.md#components-client)).
 
 ## 4. Drawn states, the runtime value and isolation {#components-states}
 
+<!-- surfex: class moved -->
+
 Moved: [macaw_component 02 §6](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/02-rendering.md#components-states) and [§7](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/02-rendering.md#components-contained). The contained cell that holds a value, heap-limited and restarted by its surface with a backoff (100 ms doubling to 10 s, reset after 30 s alive) and shown as `crashed` meanwhile, is `macaw_live`'s, so a component's crash never takes down the page that carries the visitor's observation (visualize.md C13; dcotek_web.md C13). **Embedded applications** (macaw#9's demos) are a container pattern running a nested LiveView with its own limits.
 
 ## 5. Containers {#components-containers}
+
+<!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
 
 A **container** is a component of kind `:container` whose content is surfaces: tabs, drawer, accordion, split.
 - Each pane is a surface, with its own state.
@@ -47,6 +67,8 @@ A **container** is a component of kind `:container` whose content is surfaces: t
 - **Nesting** is only through containers, to a **depth of 3** (surface → container → surface …). A surface's grid never directly contains a grid.
 
 ## 6. Packaging {#components-packaging}
+
+<!-- surfex: deferred #168: the built-in prose and cards -->
 
 Components ship in packages, which bring their own dependencies (Macaw never imports them) and register through the registry ([12](12-registry.md)).
 
@@ -61,6 +83,8 @@ Components ship in packages, which bring their own dependencies (Macaw never imp
 - **components built on ryutronic:** wizards, durable jobs, an assistant.
 
 ### 6.1 The table {#components-table}
+
+<!-- surfex: deferred #163: the built-in table -->
 
 `Macaw.Builtin.Table`, registered as `"macaw.table"` in the package `Macaw.Builtin`, of kind `:content`, `:pure`:
 - **Parameters:** `caption` (text, `"Table"`), the table's name; `identity` (text, `""`), the field naming each row, `""` for rows that can't be selected; `sort` (text, `""`, bindable), the field rows are sorted by, `""` for the delivered order; `order` (category `"asc"` or `"desc"`, `"asc"`, bindable).
@@ -78,6 +102,8 @@ the table renders a caption, scoped header buttons that sort, rows sorted by a f
 ```
 
 ## 7. The contract and the core {#components-libraries}
+
+<!-- surfex: class architecture -->
 
 The contract names four things the core runs. In each, **`macaw_component` owns the shape a component declares or receives, and `macaw` owns the behavior** (#137), so a component compiles and passes its kit with no core present, and another host (a plain LiveView, a test) can hold it.
 

@@ -1,8 +1,12 @@
 # 03 — State, exports and the page DAG {#state}
 
+<!-- surfex: deferred #164: state, the core's next slice -->
+
 Interaction is state, and state is a source. A selection, a time window, a variable, a set of chosen skills and an open menu branch are **state sources**: typed values held by the runtime, written by events, and read like any other source. State sources and exports satisfy the source contract ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-contract)), which is how slots and derived sources ([macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md#derived-inputs)) read them.
 
 ## 1. State sources {#state-sources}
+
+<!-- surfex: deferred #164: state, the core's next slice -->
 
 ```elixir
 state "skills",
@@ -30,6 +34,8 @@ state "skills",
 
 ## 2. Scopes {#state-scopes}
 
+<!-- surfex: deferred #164: state, the core's next slice -->
+
 | Scope | Lives for | Example |
 |---|---|---|
 | `:local` | the page in the browser; never on the server | a hover position; a brush band while it is drawn |
@@ -50,6 +56,8 @@ The default scope and the persistence behavior's final shape are settled by expe
 
 ## 3. Persistence and recording {#state-persistence}
 
+<!-- surfex: deferred #164: state, the core's next slice -->
+
 Each has one owner:
 
 | Layer | Owner | Default |
@@ -62,12 +70,16 @@ Persistence is for **interaction** state only. It is never how domain data is sa
 
 ## 4. State snapshots {#state-snapshots}
 
+<!-- surfex: deferred #164: state, the core's next slice -->
+
 A **state snapshot** is the current value of every persisted state source in a set of scopes (a page, a session, a viewer), in the same shape as the state events in records ([08](08-records.md)). It can be saved and restored, alone or inside a bundle ([macaw_layers 03](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/03-stores.md#stores-portable)).
 - Restoring validates each value against its state source's current schema. A value that no longer fits is dropped, and reported by path.
 - Values are restored for whoever restores them: a state snapshot carries no identity.
 - A snapshot holds what **persistence** holds, not what recording allows: a state source that persists is in it. A state source can opt out with `snapshot: false` (a typed search, anything personal), and it is then left out of snapshots even when it persists. Recording rules are separate ([08](08-records.md#records-stores)).
 
 ## 5. Exports {#state-exports}
+
+<!-- surfex: deferred #164: state, the core's next slice -->
 
 Surfaces, containers and cells publish **exports**: named state others may bind to. Exports are declared by the **placement document** (the surface, the container's settings, the cell), naming paths to state; a component never declares them, since what a placement makes public is the page author's choice.
 
@@ -81,6 +93,8 @@ exports:
 **Others bind only to exports, never to internals.** Encapsulation keeps a surface reusable: it can be rearranged inside without breaking anything that depends on it. An aggregate over several exports is a derived source at the scope where it is defined ([macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md)). (macaw_compose#2.)
 
 ## 6. The page DAG {#state-dag}
+
+<!-- surfex: deferred #164: state, the core's next slice -->
 
 Every source on a page is a node: feeds, derived sources, state sources and exports. Bindings are edges: slot bindings, parameter bindings and request bindings ([01](01-vocabulary.md#vocab-data)).
 
@@ -99,6 +113,8 @@ Every source on a page is a node: feeds, derived sources, state sources and expo
 - **Across processes:** a persistent region runs in its own LiveView process, so edges into or out of it cross processes. `macaw_live` carries marked changes between them (an engineering item, [14](14-open.md)).
 
 ## 7. Links: identity equivalence {#state-links}
+
+<!-- surfex: deferred #164: state, the core's next slice -->
 
 Sources written by different authors name the same identity differently (`name` in one feed, `svc` in another, `service` in a third). A surface declares their equivalence **once, where the components meet**, instead of a derived source per mismatch:
 

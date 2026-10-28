@@ -1,8 +1,12 @@
 # 13 — Writes {#writes}
 
+<!-- surfex: deferred #9: writes -->
+
 Editing data is a **component's** job, not Macaw's (owner, 2026-10-26; macaw_compose#9).
 
 ## 1. What Macaw provides: four seams {#writes-seams}
+
+<!-- surfex: deferred #9: writes -->
 
 1. **Reads come through sources,** so a data-editing component works over any backend ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md)).
 2. **Change notification:** after a write, the writer announces that a source changed, and every reader re-fetches, on this page and on others ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-change)).
@@ -10,6 +14,8 @@ Editing data is a **component's** job, not Macaw's (owner, 2026-10-26; macaw_com
 4. **Writes are declared events,** so the host can record or audit them like any other event.
 
 ## 2. What `macaw_edit` provides (not Macaw's core) {#writes-library}
+
+<!-- surfex: deferred #9: writes -->
 
 A component library on top, **`macaw_edit`** (`Macaw.Edit`), provides:
 - drafts, with auto or manual commit;

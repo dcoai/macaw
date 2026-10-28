@@ -1,5 +1,7 @@
 # 06 — Pages, templates and surfaces {#pages}
 
+<!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
+
 ```
 page          the final browser document at one URL
  └ template stack       base template + layers (with masks)
@@ -10,6 +12,8 @@ page          the final browser document at one URL
 ```
 
 ## 1. The page {#pages-page}
+
+<!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
 
 The **page** owns what exists once per browser document:
 - the title and the one `<h1>`;
@@ -31,6 +35,8 @@ regions:
 ```
 
 ## 2. Templates and layers {#pages-templates}
+
+<!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
 
 A **template** is a registered, named arrangement of regions, with its options declared as parameters ([05](05-components.md#components-parameters)), a landmark role per region and, per region, a default collapse behavior and a breakpoint. **Layers** stack on it, using visualize's fragment machinery (reused in Macaw, [macaw_layers 02](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/02-fragments.md#documents-fragments)):
 
@@ -72,6 +78,8 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 
 ## 3. Regions and surfaces {#pages-regions}
 
+<!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
+
 - **A region holds surfaces in a flow.** A surface lays out its cells as a **flow** (sections, for prose) or a **12-column grid** (§3.3), metresis's and visualize's grid. (visualize.md C4; metresis.md C4.)
 - **A surface is reusable:** the same surface can appear on several pages, in a tab or in a drawer.
 - **A cell's settings are inline or referenced** ([07](07-documents.md#documents-everything)): a preset by typed reference, with the cell's own settings stacked over it.
@@ -80,6 +88,8 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 `macaw` v0.1.0 holds **surfaces with a grid**, validated and rendered complete without a socket (§3.1–§3.6, #154). Regions, flows, presets and the live runtime follow.
 
 ### 3.1 The surface document {#pages-surface-document}
+
+<!-- surfex: deferred #158: the surface document -->
 
 **`Macaw.Surface` is a surface:** `%Macaw.Surface{name, title, layout, cells}`, a document read through the kernel's gates ([macaw_layers 01 §5](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/01-kernel.md#kernel-gates)) and stacked as a fragment ([macaw_layers 02](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/02-fragments.md#fragments-types)).
 
@@ -109,6 +119,8 @@ stacking a layer on a surface adds and replaces cells by name and overrides the 
 
 ### 3.2 Cells {#pages-cells}
 
+<!-- surfex: deferred #158: the surface document -->
+
 **`Macaw.Surface.Cell` places one component:** `%Macaw.Surface.Cell{component, kind, settings, slots, place}`.
 
 | Key | Value | Default |
@@ -127,11 +139,13 @@ a cell builds with its defaults, kind read from an atom or its spelling; a missi
 
 ### 3.3 The grid {#pages-grid}
 
+<!-- surfex: deferred #160: the grid -->
+
 A grid surface places its cells on **12 columns** in integer units: `x` from 0 to 11, `w` from 1 to 12 with `x + w` at most 12, `y` from 0, `h` from 1, and `y + h` at most **64** rows (`Macaw.Grid.rows/0`), so every placement has a class. Two cells overlapping is `{:overlap, other}` at the later cell's `place`, later in reading order.
 
 - **Reading order** is by `y`, then `x`, then name (`Macaw.Grid.order/1`): the DOM order, so DOM order is visual order ([10 §4](10-web.md#web-a11y)).
-- **Placement is by classes**, never inline style ([10 §1](10-web.md#web-csp)): `Macaw.Grid.classes(place)` is `"mw-cell mw-col-<x+1> mw-span-<w> mw-row-<y+1> mw-rows-<h>"`, each class one rule of **one static stylesheet**, `Macaw.Grid.stylesheet/0`: the grid (`.mw-grid`: 12 equal columns, rows of `var(--mw-grid-row, 4rem)` at least, a gap of `var(--mw-grid-gap, 1rem)`), one rule per column start, column span, row start and row span, and a container query that stacks every cell into reading order, one column, rows auto, when the surface's container is narrower than `40rem`. Its bytes are a pure function of nothing, served from `'self'` at `Macaw.Grid.stylesheet_path/0`, its content address ([macaw_component 01 §1.8](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-assets)). This settles #5: exact placement with no inline style, by construction.
-- **A cell's declared size** is its share of the surface's width and its rows' height: `Macaw.Grid.size(place, width, row_height)` is `{w * width / 12, h * row_height}` in CSS pixels, the size its component lays out at before any measurement and its budget is evaluated at (§3.5).
+- **Placement is by classes**, never inline style ([10 §1](10-web.md#web-csp)): `Macaw.Grid.classes/1` of a place is `"mw-cell mw-col-<x+1> mw-span-<w> mw-row-<y+1> mw-rows-<h>"`, each class one rule of **one static stylesheet**, `Macaw.Grid.stylesheet/0`: the grid (`.mw-grid`: 12 equal columns, rows of `var(--mw-grid-row, 4rem)` at least, a gap of `var(--mw-grid-gap, 1rem)`), one rule per column start, column span, row start and row span, and a container query that stacks every cell into reading order, one column, rows auto, when the surface's container is narrower than `40rem`. Its bytes are a pure function of nothing, served from `'self'` at `Macaw.Grid.stylesheet_path/0`, its content address ([macaw_component 01 §1.8](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-assets)). This settles #5: exact placement with no inline style, by construction.
+- **A cell's declared size** is its share of the surface's width and its rows' height: `Macaw.Grid.size/3` of a place, the surface's width and its row height is `{w * width / 12, h * row_height}` in CSS pixels, the size its component lays out at before any measurement and its budget is evaluated at (§3.5).
 
 ```planned-test:grid-rules
 placements in bounds pass; x, w, x+w, y, h and y+h out of bounds and non-integers are each a fault; an overlap is named at the later cell in reading order; reading order sorts by y, x and name
@@ -143,7 +157,9 @@ a placement's classes name its column, span, row and rows; the stylesheet has a 
 
 ### 3.4 Validating a surface {#pages-surface-validate}
 
-**The static pass** ([07 §2](07-documents.md#documents-validation-time)): `Macaw.Surface.validate(surface, registry, sources)`, with the host's registry (`Macaw.Registry`, [12 §1.1](12-registry.md#registry-host)) and its sources by name, each `{source, context}` as `Macaw.Data.Source.describer/1` takes them. No I/O but `describe`, which a source answers from configuration, and no viewer. It answers `{:ok, %Macaw.Surface.Validated{}}` or `{:error, faults}`, every fault at once by path from the surface:
+<!-- surfex: deferred #161: validating a surface -->
+
+**The static pass** ([07 §2](07-documents.md#documents-validation-time)): `Macaw.Surface.validate/3`, of a surface, the host's registry (`Macaw.Registry`, [12 §1.1](12-registry.md#registry-host)) and its sources by name, each `{source, context}` as `Macaw.Data.Source.describer/1` takes them. No I/O but `describe`, which a source answers from configuration, and no viewer. It answers `{:ok, %Macaw.Surface.Validated{}}` or `{:error, faults}`, every fault at once by path from the surface:
 - **the grid**: every rule of §3.3, at `[:cells, name, :place]`;
 - **the component**: a name the registry doesn't hold is `{:unknown_component, name}` at `[:cells, name, :component]`;
 - **the kind**: one the component doesn't offer is `{:kind_not_offered, kind, kinds}` at `[:cells, name, :kind]`;
@@ -162,7 +178,9 @@ an unknown component, an unoffered kind, bad settings, an unbound and an unknown
 
 ### 3.5 Fetching {#pages-surface-fetch}
 
-**`Macaw.Surface.fetch(validated, env)`** answers each cell's deliveries and drawn state, `%{cell => %{deliveries: %{slot => delivery}, drawn: state}}`. `env` is a keyword list: `viewer:` (the host's viewer, opaque, `nil` the anonymous one), `now:` (required: the surface's now, never a clock read), `ceiling:` (the host's row ceiling, required), `width:` (the surface's width in CSS pixels, `1200` by default), `row_height:` (`64`), and `timeout:` (ms, `5_000`).
+<!-- surfex: deferred #162: fetching and rendering -->
+
+**`Macaw.Surface.fetch/2`** of a validated surface and an `env` answers each cell's deliveries and drawn state, `%{cell => %{deliveries: %{slot => delivery}, drawn: state}}`. `env` is a keyword list: `viewer:` (the host's viewer, opaque, `nil` the anonymous one), `now:` (required: the surface's now, never a clock read), `ceiling:` (the host's row ceiling, required), `width:` (the surface's width in CSS pixels, `1200` by default), `row_height:` (`64`), and `timeout:` (ms, `5_000`).
 - **Budgets:** each slot's budget is `Macaw.Component.budget/4` at the cell's declared size (§3.3), clamped by `Macaw.Data.Source.Finish.ceiling/2` ([macaw_data 01 §6.1](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-budgets)); a clamped slot's delivery says `reduced_by: :runtime`.
 - **Pooling within the surface:** slots bound to one source with equal params cost one fetch, at the largest of their budgets (`Finish.pooled/1`), and each slot is reduced to its own (`Finish.reduce`). Pooling across pages is #108's.
 - **Fetching never blocks or crashes the caller:** each fetch runs in a process of its own (`Macaw.Data.Bounded`), the fetches concurrently, each bounded by `timeout:`; the delivery is finished by `Macaw.Data.Source.Finish.finish/4` against the description.
@@ -178,7 +196,9 @@ a source error, a crashed fetch, a hung fetch, a capped or reduced delivery and 
 
 ### 3.6 Rendering a surface {#pages-surface-render}
 
-**`Macaw.Surface.render(validated, fetched, env)`** is the surface's markup, a `Phoenix.HTML` safe value, in the mode `env` names (`mode:`, `:socketless` by default), with `theme:` (`Macaw.Layers.Theme.default()`), `heading_level:` (the surface title's level, `2`), `now:`, `width:` and `row_height:` as for fetching:
+<!-- surfex: deferred #162: fetching and rendering -->
+
+**`Macaw.Surface.render/3`** of a validated surface, its fetched deliveries and an `env` is the surface's markup, a `Phoenix.HTML` safe value, in the mode `env` names (`mode:`, `:socketless` by default), with `theme:` (`Macaw.Layers.Theme.default/0`), `heading_level:` (the surface title's level, `2`), `now:`, `width:` and `row_height:` as for fetching:
 
 ```html
 <div class="mw-surface" id="<name>">
@@ -204,15 +224,21 @@ each cell renders with its context: its instance, declared size, heading level b
 
 ## 4. Persistent regions {#pages-persistent}
 
+<!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
+
 A region marked `persistent: true` survives live navigation between pages that share it (LiveView's sticky nested LiveView). Its components keep their processes and state, and focus inside it is kept. When a layer fills it with different content, the old content's state follows its scope ([03](03-state.md#state-scopes)).
 
 ## 5. Steps and navigation {#pages-steps}
+
+<!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
 
 - **Navigation** changes the page (live, or a full load when the plans differ; macaw#130).
 - **A view change** stays on the page: a selection, an opened tab or drawer, a sorted table.
 - Both are steps on a view path ([08](08-records.md)).
 
 ### Cell actions {#pages-actions}
+
+<!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
 
 **A component emits events and never decides what they mean.** Its **placement** decides, by declaring **actions**: each maps one of the component's declared events to one of two effects (macaw_compose#22, R9).
 
@@ -238,6 +264,8 @@ visualize's `drill` is an action table: `{:datum, field}` becomes `{event: [row,
 
 ### Page params {#pages-params}
 
+<!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
+
 A page declares the **params** it accepts, as parameters ([05](05-components.md#components-parameters)): typed, with a default and legal values, read from the URL path or query by the host's router.
 
 ```yaml
@@ -251,6 +279,8 @@ params:
 - A `navigate` action's params are validated against them (§5).
 
 ## 6. A runtime page builder (out of scope for v1) {#pages-runtime}
+
+<!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
 
 It is out of scope, but not precluded:
 1. validation and the page DAG are pure library functions over documents;

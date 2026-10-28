@@ -1,6 +1,10 @@
 # 10 — The web: security, responsive layout, accessibility {#web}
 
+<!-- surfex: deferred #167: the web plans and runtime themes -->
+
 ## 1. Content Security Policy {#web-csp}
+
+<!-- surfex: deferred #167: the web plans and runtime themes -->
 
 Every page must work under the strictest policy of the three adopters (macaw_server's):
 
@@ -31,6 +35,8 @@ What this asks of visualize (visualize#944): inline styles become classes, per-d
 
 ### 1.1 The asset proxy {#web-proxy}
 
+<!-- surfex: deferred #167: the web plans and runtime themes -->
+
 Macaw provides **one generic same-origin asset proxy** for media a component needs from elsewhere: map tiles, remote images, a site's images on object storage (macaw_compose#22, decision 12).
 - **A component declares its proxy routes:** a name, the URL template it fetches, and the content types it accepts. The host mounts the proxy once.
 - **Closed by default:** the host enables each origin explicitly; an undeclared route or an origin not enabled is refused.
@@ -42,9 +48,13 @@ Macaw provides **one generic same-origin asset proxy** for media a component nee
 
 ## 2. Rendering modes {#web-modes}
 
+<!-- surfex: class moved -->
+
 Moved: [macaw_component 02 §3](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/02-rendering.md#web-modes) (#137, #141), since a component renders socketless, neutral and print without a page: the four modes (live, socketless, neutral, print) and what each allows. Choosing a page's mode is the core's and `macaw_live`'s.
 
 ## 3. Responsive layout {#web-responsive}
+
+<!-- surfex: deferred #167: the web plans and runtime themes -->
 
 - **Templates compile to static CSS at build time,** like themes. The markup carries classes and landmark elements only, and layers change classes, never CSS. There is one stylesheet per site, compiled from **every registered template and layer**, not from the stacks in use, so a page fetched at runtime that stacks registered layers is styled too. A fetched page may add only its own last layer (params and fills, [06](06-pages.md#pages-templates)), which adds no CSS. The stylesheet is served from `'self'` and captured with each base render.
 - **The template responds to the viewport** (media queries). **Components respond to their region** (container queries; each region is a CSS container). **Components never size by viewport.**
@@ -66,6 +76,8 @@ Moved: [macaw_component 02 §3](https://gitlab.conet.yarina.org/dco-tek/macaw_co
 (macaw_compose#8, question 4.)
 
 ## 4. Accessibility {#web-a11y}
+
+<!-- surfex: deferred #167: the web plans and runtime themes -->
 
 **The target is WCAG 2.2 AA.** Most of it is about how components fit together, so Macaw owns it. (macaw_compose#8, question 5.)
 
@@ -129,6 +141,8 @@ The menu pattern is a **disclosure navigation** (buttons with `aria-expanded` an
 
 ## 5. Observation {#web-observation}
 
+<!-- surfex: deferred #167: the web plans and runtime themes -->
+
 Observation reports what a viewer did with a component, never what data they saw (macaw_compose#22, R14).
 - **One closed vocabulary:** `view`, `dwell`, `hover_item`, `focus_item`, `activate`, `select`, `brush`, `copy` and `scroll_into_view`.
 - **Each observation is an event in its recorded form** ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-event)): the element and identity, never data values.
@@ -137,6 +151,8 @@ Observation reports what a viewer did with a component, never what data they saw
 - The host's disclosure is generated from the enabled declarations, so it matches exactly what the page can report ([00](00-overview.md#overview-goals)).
 
 ## 6. The client bus {#web-bus}
+
+<!-- surfex: deferred #167: the web plans and runtime themes -->
 
 The **client bus** carries the `:local` scope ([03](03-state.md#state-scopes)) between components in one browser page. It is a static module, served from `'self'`, and like the announcer (§4) it is **found, not created per component**: `macaw_live` provides it when present; otherwise the first adopter hook to mount creates it under a fixed name, and every later component uses that one.
 - **Keyed by local scope name;** each component's hook publishes and subscribes only to the keys its component declares (`local`, [05](05-components.md#components-state)). Undeclared keys are refused.
