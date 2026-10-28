@@ -6,7 +6,7 @@
 
 <!-- surfex: deferred #167: the web plans and runtime themes -->
 
-Every page must work under the strictest policy of the three adopters (macaw_server's):
+Every page must work under the strictest policy of the three adopters (Collpa's):
 
 ```
 script-src 'self' 'sha256-…'; style-src 'self'; connect-src 'self'; img-src 'self' data:;

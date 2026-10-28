@@ -10,7 +10,7 @@ The Macaw libraries are released to Hex together, bottom-up, and their public ho
 elixir ~/Projects/claude-tools/hex_release.exs status ~/Projects/macaw ~/Projects/macaw_{layers,data,component,plug,host,auth,auth_ash}
 ```
 
-The eight packages are named, not globbed: `~/Projects/macaw_*` also matches the server (`macaw_server`) and the archived `macaw_hex`, both still app `:macaw`, and worktree folders. The tool refuses two checkouts of one app name and skips a directory without a `mix.exs`, naming each.
+The eight packages are named, not globbed: `~/Projects/macaw_*` also matches the archived `macaw_hex` (app `:macaw`) and worktree folders. The tool refuses two checkouts of one app name and skips a directory without a `mix.exs`, naming each.
 
 It works out the publish order from the libraries' own runtime git dependencies and reports each library:
 
@@ -58,6 +58,6 @@ mix hex.publish
 
 ## 5. The core and the server
 
-The core was published before the server's app was renamed (owner, 2026-10-28): publishing `macaw` doesn't affect the server, which doesn't depend on it. The server's app (`:macaw`, in dco-tek/macaw/macaw_server, modules under `Macaw.*`) is renamed `:macaw_server`, and its modules moved out of the core's namespace, before the server adopts the core (macaw_server#143).
+The core was published before the server was renamed (owner, 2026-10-28): publishing `macaw` didn't affect it, since it didn't depend on the core. The server is now **Collpa** (app `:collpa`, modules `Collpa.*`, dco-tek/macaw/collpa, collpa#143), an application built on Macaw rather than a member of the family, so it can depend on the published core.
 
 Every README opens with the notice that the software is a very early release, not ready for general use (#174), until the owner says otherwise.

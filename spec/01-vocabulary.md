@@ -67,7 +67,7 @@
 | **record** | what makes a view reproducible: definitions by digest, state by events, sources by request; never the viewer |
 | **base render** | the neutral render of one page version, content-addressed and shared by every visit |
 | **capture level** | how much a session may record, on an ordered scale the host defines (default `:none < :basic < :full`), decided per session by the host. A state source declares the lowest level at which it may be recorded ([08](08-records.md#records-stores)) |
-| **observer** | (in hosts) an optional observation module, such as hover or focus tracking. macaw_server's former "tracking parts" |
+| **observer** | (in hosts) an optional observation module, such as hover or focus tracking. Collpa's former "tracking parts" |
 
 ## 4. Documents and extension {#vocab-documents}
 
@@ -91,10 +91,10 @@
 
 | Project | From | To |
 |---|---|---|
-| macaw_server (was dcotek_web) | trackable `data-dw` "component" | **element** |
-| macaw_server | tracking "parts" (hover, focus, copy …) | **observers** |
-| macaw_server | "level" | **capture level** and **access level** |
-| macaw_server | template `{:slot, …}` | **hole** |
+| Collpa (was dcotek_web, then macaw_server) | trackable `data-dw` "component" | **element** |
+| Collpa | tracking "parts" (hover, focus, copy …) | **observers** |
+| Collpa | "level" | **capture level** and **access level** |
+| Collpa | template `{:slot, …}` | **hole** |
 | metresis | collector "sources" | **collectors** |
 | metresis | family "binding" code | another name (its own choice) |
 | visualize | a design's internal "layout" | **frame grid** |

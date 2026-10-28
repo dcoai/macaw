@@ -66,7 +66,7 @@ Each has one owner:
 | **persistence:** survives a reload, a new page, a later visit | a host behavior: URL, session, token, database | **none** |
 | **recording:** what it was over time, for replay | a host behavior, capped by capture level | **none** (closed by default) |
 
-Persistence is for **interaction** state only. It is never how domain data is saved; that is `macaw_edit`'s job ([13](13-writes.md)). metresis persists in the URL; macaw_server must not use the URL for visitor-specific state, and uses the session and token instead. (metresis.md C5; dcotek_web.md C1.)
+Persistence is for **interaction** state only. It is never how domain data is saved; that is `macaw_edit`'s job ([13](13-writes.md)). metresis persists in the URL; Collpa must not use the URL for visitor-specific state, and uses the session and token instead. (metresis.md C5; dcotek_web.md C1.)
 
 ## 4. State snapshots {#state-snapshots}
 

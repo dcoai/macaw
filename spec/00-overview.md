@@ -4,7 +4,7 @@
 
 Macaw is a family of building blocks for live, data-driven applications (§4). Together they compose pages out of independent components, which share typed data and interactive state through one source contract. You declare the arrangement and the data flow in validated documents, and Macaw runs them per viewer on Phoenix LiveView: rendered on the server, safe under a strict security policy, and reproducible afterwards.
 
-Its first adopters are visualize (charts and boards), metresis (measurements and dashboards) and macaw_server (sites). The model was derived from their requirements (`design/requirements/`).
+Its first adopters are visualize (charts and boards), metresis (measurements and dashboards) and Collpa (sites). The model was derived from their requirements (`design/requirements/`).
 
 ## 2. Goals {#overview-goals}
 
@@ -58,7 +58,7 @@ Its first adopters are visualize (charts and boards), metresis (measurements and
    - WCAG 2.2 AA ([10](10-web.md)).
 
    A component that meets these works in any host.
-6. **Dependencies run one way.** No Macaw library depends on an adopter (visualize, metresis, macaw_server or any other). An adopter may depend on a Macaw library, and may do so **optionally**: it compiles its Macaw integration only when that library is present, and builds, tests and runs without it. A CI check forbids every edge from a Macaw library to an adopter; edges from adopters to Macaw are theirs to choose (§4).
+6. **Dependencies run one way.** No Macaw library depends on an adopter (visualize, metresis, Collpa or any other). An adopter may depend on a Macaw library, and may do so **optionally**: it compiles its Macaw integration only when that library is present, and builds, tests and runs without it. A CI check forbids every edge from a Macaw library to an adopter; edges from adopters to Macaw are theirs to choose (§4).
 7. **Proven by an example app** in this repository, using none of the three, run in CI with accessibility and keyboard checks.
 8. **Open to third parties.** Built-in components and sources use the same public contracts as any package, through an explicit, default-closed registry ([12](12-registry.md)).
 9. **Portable: save and restore, right where you were.** Configuration travels as a **bundle**, and state as a **state snapshot**. Restored on another machine, the same pages, configuration and state come back, re-attached to whoever restores them ([macaw_layers 03](https://github.com/dcoai/macaw_layers/blob/main/spec/03-stores.md#stores-portable)). This works because everything configurable is composable data ([07](07-documents.md#documents-everything)).
@@ -143,9 +143,9 @@ The rest of each repository follows the family's conventions: private on GitLab,
 
 **Each step is released before an adopter switches to it:** tagged in git, and depended on by tag. Until then the adopter keeps a field-identical interim definition, and switches by alias. Publishing to Hex is the owner's decision and comes later.
 
-**An adopter published on Hex switches at Hex publication** (owner, 2026-10-27; #55). Hex refuses a package with a runtime git dependency, so visualize, which is on Hex, can't depend on a foundation by git tag without stopping its own releases. It keeps its field-identical interim definition until the foundation is published on Hex, and **checks it against the real one** through a dev/test-only git dependency (which Hex ignores, as it does visualize's extla dependency): a test asserts the two definitions' fields are identical, so they can't drift. Adopters not on Hex (metresis's server, macaw_server, the host libraries) switch at the git tag.
+**An adopter published on Hex switches at Hex publication** (owner, 2026-10-27; #55). Hex refuses a package with a runtime git dependency, so visualize, which is on Hex, can't depend on a foundation by git tag without stopping its own releases. It keeps its field-identical interim definition until the foundation is published on Hex, and **checks it against the real one** through a dev/test-only git dependency (which Hex ignores, as it does visualize's extla dependency): a test asserts the two definitions' fields are identical, so they can't drift. Adopters not on Hex (metresis's server, Collpa, the host libraries) switch at the git tag.
 
-**Adoption:** visualize on `macaw_layers` and `macaw_data`, with its visuals implementing the component contract (visualize#939, #940); metresis on `macaw_data` and, for its dashboards, Macaw surfaces, migrating once from where it paused (metresis#556, #452); macaw_server on `macaw` and `macaw_live` (macaw#130).
+**Adoption:** visualize on `macaw_layers` and `macaw_data`, with its visuals implementing the component contract (visualize#939, #940); metresis on `macaw_data` and, for its dashboards, Macaw surfaces, migrating once from where it paused (metresis#556, #452); Collpa on `macaw` and `macaw_live` (macaw#130).
 
 The CI dependency check (goal 6) and the example app (goal 7) are acceptance criteria of the first implementation proposal that ships code.
 
