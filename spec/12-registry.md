@@ -12,6 +12,22 @@ A host enables what pages may name, by package. **The package side is `macaw_com
 
 (visualize.md C9; dcotek_web.md C9.)
 
+### 1.1 The host side {#registry-host}
+
+**`Macaw.Registry` is a host's registry of components:** built from the packages it enables, in its configuration, and nothing else.
+- **`Macaw.Registry.new(packages)`** reads each package's components through `Macaw.Component.Package.components/1` ([macaw_component 03](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/03-packages.md#components-packages)) and answers `{:ok, registry}`, or `{:error, faults}` with every fault at once: a package's own faults at `[package]`, and **two components of one name across packages** as `{:duplicate, name, [{module, package}, {module, package}]}`. **`new!/1`** answers the registry or raises `ArgumentError` with every fault formatted, which is how a host fails at boot.
+- **Closed by default:** `new([])` holds nothing, and a component whose package isn't listed is unknown though its module is loaded. `macaw`'s built-in components are the package `Macaw.Builtin`, listed like any other.
+- **Lookup by spelling:** `component(registry, name)` answers `{:ok, module}` or `:error`, a name a string or an atom read as its spelling; no atom is made from a document's name. `components/1` lists `{name, module}` in name order, and `packages/1` the packages as given, each once.
+- **Hooks:** `hooks/1` is `Macaw.Component.Package.hooks/1` over the registry's packages, from which a host or `macaw_live` generates the module that registers them.
+
+```planned-test:registry-build
+a registry built from packages holds their components by name, closed to unlisted packages, and looks names up by either spelling without making atoms
+```
+
+```planned-test:registry-faults
+a package's faults and a name two packages share are faults at once; new!/1 raises with every fault; hooks come from the listed packages
+```
+
 ## 2. The conformance kit {#registry-kit}
 
 Shipped in `lib/`, so any component or source author runs it, the way visualize's feed conformance kit works today. There is **one kit per contract** (the source kit in `macaw_data`, the component kit in `macaw_component`, the template and layer checks in `macaw`); adopters add checks to a kit as **check sets**, never a kit of their own (macaw_compose#22, R19).

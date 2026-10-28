@@ -138,7 +138,7 @@ The rest of each repository follows the family's conventions: private on GitLab,
 7. **`macaw_layers`: themes** ([macaw_layers 04](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/04-themes.md)), with an extension point for visualize's chart theme roles; and the fragment machinery: Fragment, Use, Composite, Store and Bundle ([macaw_layers 02](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/02-fragments.md#documents-fragments), [macaw_layers 03](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/03-stores.md)).
 8. **Only then, `macaw_component`, `macaw` and `macaw_live`** (#137), starting with what adopters use optionally:
    1. **`macaw_component`:** the contract, the context and the mode rules, kinds, drawn states and the component conformance kit, which visualize's visuals implement (visualize#946);
-   2. **`macaw`:** surfaces with a grid region, the target of the board migration (visualize#947) and of metresis's dashboards (metresis#452); then state, the page DAG, pages and templates;
+   2. **`macaw`:** surfaces with a grid region, the target of the board migration (visualize#947) and of metresis's dashboards (metresis#452), first as v0.1.0, validated and rendered without a socket, with the built-in table (#154); then state (#164), pages and templates (#165), records (#166) and the web plans (#167);
    3. **`macaw_live`:** the runtime around them, the announcer among it.
 
 **Each step is released before an adopter switches to it:** tagged in git, and depended on by tag. Until then the adopter keeps a field-identical interim definition, and switches by alias. Publishing to Hex is the owner's decision and comes later.

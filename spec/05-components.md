@@ -50,7 +50,7 @@ A **container** is a component of kind `:container` whose content is surfaces: t
 
 Components ship in packages, which bring their own dependencies (Macaw never imports them) and register through the registry ([12](12-registry.md)).
 
-**Built in,** in `macaw`: content components using the same contract as any package:
+**Built in,** in `macaw`'s package `Macaw.Builtin`: content components using the same contract as any package:
 - **prose** (Markdown) and **cards**;
 - **the table:** an HTML `<table>` of kind `:content`, with a caption, header cells with scope, sortable columns as real buttons, a budget per slot, reading load `:scan`, and rows that write `selection` by identity. Dashboards (metresis#452, visualize#755) and `macaw_edit` share it (macaw_compose#22, decision 10).
 
@@ -59,6 +59,23 @@ Components ship in packages, which bring their own dependencies (Macaw never imp
 - **metresis:** dashboard and panel components, plus its shaping functions, so remote hosts can draw them (metresis#556);
 - **`macaw_edit`:** data-editing components ([13](13-writes.md));
 - **components built on ryutronic:** wizards, durable jobs, an assistant.
+
+### 6.1 The table {#components-table}
+
+`Macaw.Builtin.Table`, registered as `"macaw.table"` in the package `Macaw.Builtin`, of kind `:content`, `:pure`:
+- **Parameters:** `caption` (text, `"Table"`), the table's name; `identity` (text, `""`), the field naming each row, `""` for rows that can't be selected; `sort` (text, `""`, bindable), the field rows are sorted by, `""` for the delivered order; `order` (category `"asc"` or `"desc"`, `"asc"`, bindable).
+- **Declarations:** one slot, `rows`, of whole rows; events `"sort"` and `"select"`; `writes: %{"selection" => :identity}`; `observes: [:activate, :select]`; reading load `:scan`.
+- **Budget:** the rows its declared height shows at `2rem` (32 px) a row, times four for scrolling, at least 10.
+- **Markup:** a `<table class="mw-table">` with its `<caption>`; a header row of `<th scope="col">`, one per column in the delivered table's column order, each a real `<button type="button">` emitting `sort` with the field as its value, and the sorted column's `<th>` carrying `aria-sort` (`ascending` or `descending`); a row per delivered row, sorted when `sort` names a column (nil last, ties in delivered order), each `<td>` the value as text, `nil` empty; with an `identity` field, each row's first cell holds a `<button type="button">` emitting `select` with the row's identity, and the row's id is `Context.id/2` of `r-` and the identity's spelling, so ids are stable; a non-live drawn state draws its notice.
+- **It passes `macaw_component`'s kit**, the core being the contract's first implementer ([macaw_component 00 §3](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/00-overview.md#component-order)).
+
+```planned-test:table-declares
+the table's parameters, slot, events, selection write, observations, reading load and budget are as declared
+```
+
+```planned-test:table-markup
+the table renders a caption, scoped header buttons that sort, rows sorted by a field in either order with nil last, selection buttons and stable ids with an identity, and its notice when not live; it passes the component kit
+```
 
 ## 7. The contract and the core {#components-libraries}
 

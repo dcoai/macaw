@@ -5,7 +5,8 @@
 | Question | Issue | How it's settled |
 |---|---|---|
 | the default state scope, and the persistence behavior's shape | macaw_compose#3 | the example-app experiment: a picker, cards and a table, and a persistent menu, with persistence switched between none, session and URL |
-| grid row placement | macaw_compose#5 | DOM order plus column classes, if every visualize and metresis board fixture renders identically |
+
+Grid row placement (#5) is settled by construction: placement by classes from one static stylesheet, rows included ([06 §3.3](06-pages.md#pages-grid), #154).
 
 ## Deferred until needed {#open-deferred}
 
