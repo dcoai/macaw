@@ -17,7 +17,7 @@ home ──click──▶ about ──select Elixir──▶ about [Elixir] ─�
 - **Steps** are visitor-initiated: navigation (a new page) and view changes (a selection, an opened tab).
 - **Markers** are system-initiated changes (pushed data, a timer, another viewer's edit, a paused animation), recorded on the timeline but not counted as the visitor's actions.
 
-Which is which comes from the event's `initiator` ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-event)). An event on a data element resolves against the drawing it landed on, or is dropped (the drawn-token rule), so a step never records an item the visitor didn't see.
+Which is which comes from the event's `initiator` ([macaw_data 01](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-event)). An event on a data element resolves against the drawing it landed on, or is dropped (the drawn-token rule), so a step never records an item the visitor didn't see.
 
 Choosing any step shows the page as it was there. The path and the replay are one view. Click paths (macaw#54) become view paths.
 
@@ -30,7 +30,7 @@ Choosing any step shows the page as it was there. The path and the replay are on
   - Its assets are captured too, including generated content-addressed stylesheets ([10](10-web.md#web-csp)).
 
   (dcotek_web.md C7.)
-- **Semantic state events,** not LiveView diffs: "selected Elixir". Each is the **recorded form** of an event (`Event.recordable/1`, [macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-event)): the component instance, the element, the name, the identity, the value, the time and the initiator. The payload data an event carries live (`row`, `point`) is delivered to the host and never recorded. Diffs are tied to template and LiveView versions, are larger, and carry everything rendered.
+- **Semantic state events,** not LiveView diffs: "selected Elixir". Each is the **recorded form** of an event (`Event.recordable/1`, [macaw_data 01](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-event)): the component instance, the element, the name, the identity, the value, the time and the initiator. The payload data an event carries live (`row`, `point`) is delivered to the host and never recorded. Diffs are tied to template and LiveView versions, are larger, and carry everything rendered.
 - **Source requests:** params, window and `as_of`. **No data is stored.**
 - **Definitions by digest:** the page, its template stack and its surfaces ([07](07-documents.md)).
 

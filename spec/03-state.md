@@ -2,7 +2,7 @@
 
 <!-- surfex: deferred #164: state, the core's next slice -->
 
-Interaction is state, and state is a source. A selection, a time window, a variable, a set of chosen skills and an open menu branch are **state sources**: typed values held by the runtime, written by events, and read like any other source. State sources and exports satisfy the source contract ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-contract)), which is how slots and derived sources ([macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md#derived-inputs)) read them.
+Interaction is state, and state is a source. A selection, a time window, a variable, a set of chosen skills and an open menu branch are **state sources**: typed values held by the runtime, written by events, and read like any other source. State sources and exports satisfy the source contract ([macaw_data 01](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-contract)), which is how slots and derived sources ([macaw_data 02](https://github.com/dcoai/macaw_data/blob/main/spec/02-derived.md#derived-inputs)) read them.
 
 ## 1. State sources {#state-sources}
 
@@ -21,7 +21,7 @@ state "skills",
   - **a standard state source** (below) is written by the components that declare it in `writes` ([05](05-components.md#components-state)), by fixed name, because its meaning is the component's: a brush writes `window`, a pick writes `selection`. The runtime applies the emitted event;
   - **every other state source** is written by a **cell action** ([06](06-pages.md#pages-actions)): the page author maps a component's event to `set` it. A component never names a state source it doesn't own the meaning of.
 - **Standard state sources** cover the special cases with fixed schemas (visualize.md C5, C7; metresis.md C5):
-  - **`selection`:** a declared identity, `{field, value}` or a composite map, or nothing. A pick writes the item's declared identity ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-event)), through the surface's `links` (§7). Components holding no selection draw unchanged; components sharing the identity draw `:selected` and `:muted`.
+  - **`selection`:** a declared identity, `{field, value}` or a composite map, or nothing. A pick writes the item's declared identity ([macaw_data 01](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-event)), through the surface's `links` (§7). Components holding no selection draw unchanged; components sharing the identity draw `:selected` and `:muted`.
   - **`window`:** `nil` (everything), `%{last: duration}` or `%{from: t, to: t}`, in UTC, with an optional **`as_of`** that reads the data as it was then ([08](08-records.md#records-requery)). It applies only to slots whose source has a `:time` window field; others ignore it. A brush writes it; **reset** returns it to its initial value and is itself an event (`moved`). A scene's playhead is this window plus `as_of`.
   - **variables:** one state source per declared variable, typed like a parameter ([05](05-components.md#components-parameters)). A control writes it; a component reads it through a bound parameter.
   - **preferences:** **`theme`**, **`zone`** (a time zone name), **`units`** (a unit system) and **`shortcuts`** (which page shortcuts are on, and their keys; the page-shortcut registry, [10](10-web.md#web-a11y)), at `:viewer` scope when the host knows the viewer and `:session` otherwise. They reach every component in its context, so one person's unit system follows them across every component on every page they visit. (macaw_compose#22, R10.)
@@ -30,7 +30,7 @@ state "skills",
 - **Reading state:** a component reads a state source it doesn't write in one of two ways, and never by asking another component:
   - **a parameter bound to it** (`bins: {:state, "bins"}`), delivered through the component's `bound/3` transition ([05](05-components.md#components-states));
   - **a slot bound to it,** read like any other source.
-- **A source request may bind its params** to a state source or a page param, so a control can change what is fetched: `slots: %{series: %{source: "cpu", params: %{aggregation: {:state, "agg"}}}}`. A change re-fetches that slot. The bound value is validated against the source's declared param (its type and legal values) on every change ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-contract)).
+- **A source request may bind its params** to a state source or a page param, so a control can change what is fetched: `slots: %{series: %{source: "cpu", params: %{aggregation: {:state, "agg"}}}}`. A change re-fetches that slot. The bound value is validated against the source's declared param (its type and legal values) on every change ([macaw_data 01](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-contract)).
 
 ## 2. Scopes {#state-scopes}
 
@@ -72,7 +72,7 @@ Persistence is for **interaction** state only. It is never how domain data is sa
 
 <!-- surfex: deferred #164: state, the core's next slice -->
 
-A **state snapshot** is the current value of every persisted state source in a set of scopes (a page, a session, a viewer), in the same shape as the state events in records ([08](08-records.md)). It can be saved and restored, alone or inside a bundle ([macaw_layers 03](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/03-stores.md#stores-portable)).
+A **state snapshot** is the current value of every persisted state source in a set of scopes (a page, a session, a viewer), in the same shape as the state events in records ([08](08-records.md)). It can be saved and restored, alone or inside a bundle ([macaw_layers 03](https://github.com/dcoai/macaw_layers/blob/main/spec/03-stores.md#stores-portable)).
 - Restoring validates each value against its state source's current schema. A value that no longer fits is dropped, and reported by path.
 - Values are restored for whoever restores them: a state snapshot carries no identity.
 - A snapshot holds what **persistence** holds, not what recording allows: a state source that persists is in it. A state source can opt out with `snapshot: false` (a typed search, anything personal), and it is then left out of snapshots even when it persists. Recording rules are separate ([08](08-records.md#records-stores)).
@@ -90,7 +90,7 @@ exports:
   window: window
 ```
 
-**Others bind only to exports, never to internals.** Encapsulation keeps a surface reusable: it can be rearranged inside without breaking anything that depends on it. An aggregate over several exports is a derived source at the scope where it is defined ([macaw_data 02](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md)). (macaw_compose#2.)
+**Others bind only to exports, never to internals.** Encapsulation keeps a surface reusable: it can be rearranged inside without breaking anything that depends on it. An aggregate over several exports is a derived source at the scope where it is defined ([macaw_data 02](https://github.com/dcoai/macaw_data/blob/main/spec/02-derived.md)). (macaw_compose#2.)
 
 ## 6. The page DAG {#state-dag}
 
@@ -127,7 +127,7 @@ links:
 
 - **Each link is one step:** a field maps to a canonical name, never through a chain.
 - **The `selection` state source applies links on write and on read.** A pick on `svc = "api"` writes `service = "api"`, and every component whose identity field links to `service` reads it.
-- **Schemas still declare identity** ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-data)); links only say which differently named identity fields are the same.
+- **Schemas still declare identity** ([macaw_data 01](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-data)); links only say which differently named identity fields are the same.
 - Links are validated: each linked field (the left side) must be a declared identity field of a source on the surface; the canonical name (the right side) is any name; and every field linked to one name must have the same type.
 
 Standalone, an adopter's own holder plays the surface's role (visualize's `Visualize.Interaction`, visualize#941). (macaw_compose#22, R8.)

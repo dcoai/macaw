@@ -27,7 +27,7 @@ object-src 'none'; base-uri 'none'; frame-ancestors 'none'
 
 **Every first render has a static form** (macaw_compose#29). Every value a first render needs is a class, a presentation attribute, an attribute of the root (its size as `width`, `height` and `viewBox`), or a rule in a static or generated stylesheet. So socketless and neutral renders are the final state, needing no hook and no CSSOM.
 
-**One output path for page markup.** The delivery rule is the only way any component, built in or adopted, writes markup into a page. There is no permissive styling profile. (A validation profile that permits literal colors in an adopter's own documents, such as visualize's `colors: :open`, is a different matter: it governs which colors a document may name, not how they are delivered, [macaw_layers 04](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/04-themes.md#themes-rules).)
+**One output path for page markup.** The delivery rule is the only way any component, built in or adopted, writes markup into a page. There is no permissive styling profile. (A validation profile that permits literal colors in an adopter's own documents, such as visualize's `colors: :open`, is a different matter: it governs which colors a document may name, not how they are delivered, [macaw_layers 04](https://github.com/dcoai/macaw_layers/blob/main/spec/04-themes.md#themes-rules).)
 
 **A standalone file is not a page.** Output (an SVG file, a PNG rendered from one, a print-to-file PDF) must render alone, and no page CSP applies to it, so it carries its own `<style>` inside the document. The output target decides, with no setting: markup for a page is strict, and a standalone file is self-contained.
 
@@ -50,7 +50,7 @@ Macaw provides **one generic same-origin asset proxy** for media a component nee
 
 <!-- surfex: class moved -->
 
-Moved: [macaw_component 02 §3](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/02-rendering.md#web-modes) (#137, #141), since a component renders socketless, neutral and print without a page: the four modes (live, socketless, neutral, print) and what each allows. Choosing a page's mode is the core's and `macaw_live`'s.
+Moved: [macaw_component 02 §3](https://github.com/dcoai/macaw_component/blob/main/spec/02-rendering.md#web-modes) (#137, #141), since a component renders socketless, neutral and print without a page: the four modes (live, socketless, neutral, print) and what each allows. Choosing a page's mode is the core's and `macaw_live`'s.
 
 ## 3. Responsive layout {#web-responsive}
 
@@ -145,7 +145,7 @@ The menu pattern is a **disclosure navigation** (buttons with `aria-expanded` an
 
 Observation reports what a viewer did with a component, never what data they saw (macaw_compose#22, R14).
 - **One closed vocabulary:** `view`, `dwell`, `hover_item`, `focus_item`, `activate`, `select`, `brush`, `copy` and `scroll_into_view`.
-- **Each observation is an event in its recorded form** ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-event)): the element and identity, never data values.
+- **Each observation is an event in its recorded form** ([macaw_data 01](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-event)): the element and identity, never data values.
 - **A component declares** which it can emit (`observes`). **The host enables** a subset per page. **Nothing is emitted otherwise**, so an adopter used without a host plan reports nothing.
 - **Hover and focus are reported on enter and leave,** never on pointer motion; raw movement never reaches the server. The hover *position* that components share is `:local` state ([03](03-state.md#state-scopes)); a `hover_item` observation is a separate, enabled event.
 - The host's disclosure is generated from the enabled declarations, so it matches exactly what the page can report ([00](00-overview.md#overview-goals)).

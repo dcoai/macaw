@@ -34,7 +34,7 @@
 | **state source** | a typed value held by the runtime, written by events, read like any source |
 | **export** | state an entity (surface, container, cell) publishes for others to bind to; others bind only to exports |
 | **slot** | a component's typed data input |
-| **binding** | an edge of the page DAG declared in a document: a slot → a source or export; a bindable parameter → a state source; or a source request's param → a state source or page param. Owned by the page document; never the mapping from a source's name to its configuration, which is the host's **source configuration** ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-credentials)) |
+| **binding** | an edge of the page DAG declared in a document: a slot → a source or export; a bindable parameter → a state source; or a source request's param → a state source or page param. Owned by the page document; never the mapping from a source's name to its configuration, which is the host's **source configuration** ([macaw_data 01](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-credentials)) |
 | **parameter** | one typed entry in a settings schema (a component's, a page's params, a template's options): type, default, legal values, `legal_for`, whether it is bindable, and documentation |
 | **settings** | the parameter values a component is given: its defaults, a preset, and the cell's own values, stacked |
 | **budget** | the rows a component may draw for one slot, a function of its parameters and size; clamped to the **host ceiling** |
@@ -85,7 +85,7 @@
 | **core** | the `macaw` package: page composition (state, pages, cells, records, the host side of the registry), built on the libraries other projects share ([00](00-overview.md#overview-packaging)) |
 | **registry** | the explicit, default-closed set of packages a host enables, and the members derived from them ([12](12-registry.md#registry-model)) |
 | **conformance kit** | tests shipped in the library that any author of a contract's implementations runs: one kit per contract, extended by **check sets** |
-| **profile** | a validation rule set for which colors a document may name: `:roles` on Macaw pages, `:open` in an adopter standalone ([macaw_layers 04](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/04-themes.md#themes-rules)) |
+| **profile** | a validation rule set for which colors a document may name: `:roles` on Macaw pages, `:open` in an adopter standalone ([macaw_layers 04](https://github.com/dcoai/macaw_layers/blob/main/spec/04-themes.md#themes-rules)) |
 
 ## 5. Terms that changed in the adopting projects {#vocab-adopters}
 

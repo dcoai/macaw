@@ -8,8 +8,8 @@ Editing data is a **component's** job, not Macaw's (owner, 2026-10-26; macaw_com
 
 <!-- surfex: deferred #9: writes -->
 
-1. **Reads come through sources,** so a data-editing component works over any backend ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md)).
-2. **Change notification:** after a write, the writer announces that a source changed, and every reader re-fetches, on this page and on others ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-change)).
+1. **Reads come through sources,** so a data-editing component works over any backend ([macaw_data 01](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md)).
+2. **Change notification:** after a write, the writer announces that a source changed, and every reader re-fetches, on this page and on others ([macaw_data 01](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-change)).
 3. **The viewer reaches components,** so writes are authorized on the server against the actual viewer.
 4. **Writes are declared events,** so the host can record or audit them like any other event.
 

@@ -38,7 +38,7 @@ regions:
 
 <!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
 
-A **template** is a registered, named arrangement of regions, with its options declared as parameters ([05](05-components.md#components-parameters)), a landmark role per region and, per region, a default collapse behavior and a breakpoint. **Layers** stack on it, using visualize's fragment machinery (reused in Macaw, [macaw_layers 02](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/02-fragments.md#documents-fragments)):
+A **template** is a registered, named arrangement of regions, with its options declared as parameters ([05](05-components.md#components-parameters)), a landmark role per region and, per region, a default collapse behavior and a breakpoint. **Layers** stack on it, using visualize's fragment machinery (reused in Macaw, [macaw_layers 02](https://github.com/dcoai/macaw_layers/blob/main/spec/02-fragments.md#documents-fragments)):
 
 ```elixir
 template :site do
@@ -89,16 +89,16 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 
 ### 3.1 The surface document {#pages-surface-document}
 
-**`Macaw.Surface` is a surface:** `%Macaw.Surface{name, title, layout, cells}`, a document read through the kernel's gates ([macaw_layers 01 §5](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/01-kernel.md#kernel-gates)) and stacked as a fragment ([macaw_layers 02](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/02-fragments.md#fragments-types)).
+**`Macaw.Surface` is a surface:** `%Macaw.Surface{name, title, layout, cells}`, a document read through the kernel's gates ([macaw_layers 01 §5](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-gates)) and stacked as a fragment ([macaw_layers 02](https://github.com/dcoai/macaw_layers/blob/main/spec/02-fragments.md#fragments-types)).
 
 | Key | Value | Default |
 |---|---|---|
-| `name` | the surface's name: lower-case words joined by `_`, a name in the kernel's sense ([macaw_layers 01 §1](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/01-kernel.md#kernel-names)), unique where it is stored; it prefixes its cells' instance ids (§3.6) | required |
+| `name` | the surface's name: lower-case words joined by `_`, a name in the kernel's sense ([macaw_layers 01 §1](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-names)), unique where it is stored; it prefixes its cells' instance ids (§3.6) | required |
 | `title` | a non-empty string, its heading; `nil` for a surface without one | `nil` |
 | `layout` | `:grid`, the only layout of v0.1.0 | `:grid` |
 | `cells` | the cells by name (§3.2), a map, at least one | required |
 
-- **Building one:** `Macaw.Surface.new/1` from a keyword list or a map with atom keys answers `{:ok, surface}` or `{:error, faults}`, every fault at once by path from the surface, as the kernel orders them ([macaw_layers 01 §3](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/01-kernel.md#kernel-faults)). A key it doesn't have is `:unknown_key`; a missing one `:required`. Names in it are strings; an atom is read as its spelling, and no atom is made.
+- **Building one:** `Macaw.Surface.new/1` from a keyword list or a map with atom keys answers `{:ok, surface}` or `{:error, faults}`, every fault at once by path from the surface, as the kernel orders them ([macaw_layers 01 §3](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-faults)). A key it doesn't have is `:unknown_key`; a missing one `:required`. Names in it are strings; an atom is read as its spelling, and no atom is made.
 - **The map form** is `%{version: v, surface: node}` (`to_map/1`), the node the surface's keys with each cell as its map; **the JSON form** is `{"$version": v, "surface": {…}}` (`to_json/1`). A cell's settings and a slot's params are plain data in both forms: strings, numbers, booleans, `nil`, lists and maps with string keys. `from_map/2` and `from_json/2` read them back through every gate (the version, the limits, the migration) and then `new/1`, so a surface written by `to_map/1` reads back equal.
 - **The version line** starts at 1 (`current/0`), with no migration step yet.
 - **As a fragment type,** `cells` is a `:union` by name and every other key an `:override`, so a layer stacked on a surface adds or replaces cells by name and overrides its title.
@@ -121,7 +121,7 @@ stacking a layer on a surface adds and replaces cells by name and overrides the 
 
 | Key | Value | Default |
 |---|---|---|
-| `component` | the component's name, as its package registers it ([macaw_component 01 §1](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-behavior)), matched by spelling | required |
+| `component` | the component's name, as its package registers it ([macaw_component 01 §1](https://github.com/dcoai/macaw_component/blob/main/spec/01-contract.md#components-behavior)), matched by spelling | required |
 | `kind` | the kind it renders as, one of `Macaw.Component.kinds/0`, given as an atom or its spelling | `:content` |
 | `settings` | its settings by parameter name, inline, plain data | `%{}` |
 | `slots` | each of its slots bound to a source: `%{source: name, fields: %{role => field}, params: %{name => value}}`, `fields` and `params` defaulting to `%{}`, a `many` role's fields a list | `%{}` |
@@ -138,7 +138,7 @@ a cell builds with its defaults, kind read from an atom or its spelling; a missi
 A grid surface places its cells on **12 columns** in integer units: `x` from 0 to 11, `w` from 1 to 12 with `x + w` at most 12, `y` from 0, `h` from 1, and `y + h` at most **64** rows (`Macaw.Grid.rows/0`), so every placement has a class; `Macaw.Grid.columns/0` is 12. `Macaw.Grid.faults/1` of the cells is every fault at `[:cells, name, :place]`: a bound broken is `{:out_of_bounds, what, value}` (`what` one of `:x`, `:w`, `:x_plus_w`, `:y`, `:h`, `:y_plus_h`), and two cells overlapping is `{:overlap, other}` at the later cell, later in reading order. A place that isn't four integers is the cell's own fault (§3.2).
 
 - **Reading order** is by `y`, then `x`, then name (`Macaw.Grid.order/1`): the DOM order, so DOM order is visual order ([10 §4](10-web.md#web-a11y)).
-- **Placement is by classes**, never inline style ([10 §1](10-web.md#web-csp)): `Macaw.Grid.classes/1` of a place is `"mw-cell mw-col-<x+1> mw-span-<w> mw-row-<y+1> mw-rows-<h>"`, each class one rule of **one static stylesheet**, `Macaw.Grid.stylesheet/0`: the grid (`.mw-grid`: 12 equal columns, rows of `var(--mw-grid-row, 4rem)` at least, a gap of `var(--mw-grid-gap, 1rem)`), one rule per column start, column span, row start and row span, and a container query that stacks every cell into reading order, one column, rows auto, when the surface's container is narrower than `40rem`. Its bytes are a pure function of nothing, served from `'self'` at `Macaw.Grid.stylesheet_path/0`, its content address ([macaw_component 01 §1.8](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-assets)). This settles #5: exact placement with no inline style, by construction.
+- **Placement is by classes**, never inline style ([10 §1](10-web.md#web-csp)): `Macaw.Grid.classes/1` of a place is `"mw-cell mw-col-<x+1> mw-span-<w> mw-row-<y+1> mw-rows-<h>"`, each class one rule of **one static stylesheet**, `Macaw.Grid.stylesheet/0`: the grid (`.mw-grid`: 12 equal columns, rows of `var(--mw-grid-row, 4rem)` at least, a gap of `var(--mw-grid-gap, 1rem)`), one rule per column start, column span, row start and row span, and a container query that stacks every cell into reading order, one column, rows auto, when the surface's container is narrower than `40rem`. Its bytes are a pure function of nothing, served from `'self'` at `Macaw.Grid.stylesheet_path/0`, its content address ([macaw_component 01 §1.8](https://github.com/dcoai/macaw_component/blob/main/spec/01-contract.md#components-assets)). This settles #5: exact placement with no inline style, by construction.
 - **A cell's declared size** is its share of the surface's width and its rows' height: `Macaw.Grid.size/3` of a place, the surface's width and its row height is `{w * width / 12, h * row_height}` in CSS pixels, the size its component lays out at before any measurement and its budget is evaluated at (§3.5).
 
 ```test:grid-rules
@@ -171,10 +171,10 @@ an unknown component, an unoffered kind, bad settings, an unbound and an unknown
 ### 3.5 Fetching {#pages-surface-fetch}
 
 **`Macaw.Surface.fetch/2`** of a validated surface and an `env` answers each cell's deliveries and drawn state, `%{cell => %{deliveries: %{slot => delivery}, drawn: state}}`. `env` is a keyword list: `sources:` (the host's sources by name, as given to `validate/3`, required), `viewer:` (the host's viewer, opaque, `nil` the anonymous one), `now:` (required: the surface's now, never a clock read), `ceiling:` (the host's row ceiling, required), `width:` (the surface's width in CSS pixels, `1200` by default), `row_height:` (`64`), and `timeout:` (ms, `5_000`).
-- **Budgets:** each slot's budget is `Macaw.Component.budget/4` at the cell's declared size (§3.3) (a component's bad budget draws its cell `invalid` and fetches nothing for that slot), clamped by `Macaw.Data.Source.Finish.ceiling/2` ([macaw_data 01 §6.1](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-budgets)); a clamped slot's delivery says `reduced_by: :runtime`.
+- **Budgets:** each slot's budget is `Macaw.Component.budget/4` at the cell's declared size (§3.3) (a component's bad budget draws its cell `invalid` and fetches nothing for that slot), clamped by `Macaw.Data.Source.Finish.ceiling/2` ([macaw_data 01 §6.1](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-budgets)); a clamped slot's delivery says `reduced_by: :runtime`.
 - **Pooling within the surface:** slots bound to one source with equal params cost one fetch, at the largest of their budgets (`Finish.pooled/1`), and each slot is reduced to its own (`Finish.reduce`). Pooling across pages is #108's.
 - **Fetching never blocks or crashes the caller:** each fetch runs in a process of its own (`Macaw.Data.Bounded`), the fetches concurrently, each bounded by `timeout:`; the delivery is finished by `Macaw.Data.Source.Finish.finish/4` against the description.
-- **Drawn states** ([macaw_component 02 §6](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/02-rendering.md#components-states)), the highest of its slots': a fetch that answers an error or whose process exits is `down`; one that hasn't answered within `timeout:` is `loading`; a delivery `capped` or `reduced_by` anything is `capped`; one with no rows is `no_data`; otherwise `live`. A cell with no slots is `live`.
+- **Drawn states** ([macaw_component 02 §6](https://github.com/dcoai/macaw_component/blob/main/spec/02-rendering.md#components-states)), the highest of its slots': a fetch that answers an error or whose process exits is `down`; one that hasn't answered within `timeout:` is `loading`; a delivery `capped` or `reduced_by` anything is `capped`; one with no rows is `no_data`; otherwise `live`. A cell with no slots is `live`.
 
 ```test:fetch-budgets
 each slot is fetched at its budget at its cell's size, clamped to the ceiling and marked runtime when clamped; slots sharing a source and params are fetched once at the largest budget and each reduced to its own
@@ -198,8 +198,8 @@ a source error, a crashed fetch, a hung fetch, a capped or reduced delivery and 
 ```
 
 - **One `div` per cell, in reading order,** with the grid's classes and the instance's id; nothing inline. The surface is not a landmark: regions and the page own landmarks ([10 §4](10-web.md#web-a11y)).
-- **Each cell renders with its context** ([macaw_component 02 §2](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/02-rendering.md#components-context)): `mode`, `instance` `"<surface>-<cell>"`, `size` its declared size (`measured: false`), `heading_level` one below the surface's title (the title's own level without a title), `theme`, the default `preferences`, and `now`; its assigns are its settings, declarations, drawn state, and its deliveries (a `:pure` component) or its value through `init/2`, `delivery/3` and `size/2` (a `:contained` one).
-- **A component's raise is the caller's to take**, as the contract says ([macaw_component 01 §1](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-behavior)): a host isolates a component by process (`macaw_live`'s contained cell); this render does not catch it.
+- **Each cell renders with its context** ([macaw_component 02 §2](https://github.com/dcoai/macaw_component/blob/main/spec/02-rendering.md#components-context)): `mode`, `instance` `"<surface>-<cell>"`, `size` its declared size (`measured: false`), `heading_level` one below the surface's title (the title's own level without a title), `theme`, the default `preferences`, and `now`; its assigns are its settings, declarations, drawn state, and its deliveries (a `:pure` component) or its value through `init/2`, `delivery/3` and `size/2` (a `:contained` one).
+- **A component's raise is the caller's to take**, as the contract says ([macaw_component 01 §1](https://github.com/dcoai/macaw_component/blob/main/spec/01-contract.md#components-behavior)): a host isolates a component by process (`macaw_live`'s contained cell); this render does not catch it.
 - `Macaw.Surface.render/2` fetches and renders in one call.
 
 ```test:render-markup
@@ -243,8 +243,8 @@ cells:
 ```
 
 - **`set`** writes a state source from the event's fields: a view change, applied by the runtime as an event on that state source.
-- **`navigate`** goes to a typed reference ([macaw_layers 03](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/03-stores.md#stores-references)) with params taken from the event's fields: a navigation step, performed by the host's navigation behavior. The library never navigates.
-- **Event fields** are named as paths into the event ([macaw_data 01](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md#sources-event)): `{event: identity}`, `{event: [identity, service]}`, `{event: value}`, or `{event: [row, field]}`. Only the named field is read: the row itself is never recorded. A field written by `set` becomes that state source's value, recorded under its capture level like any other ([08](08-records.md#records-stores)); one used by `navigate` is recorded as the step's params.
+- **`navigate`** goes to a typed reference ([macaw_layers 03](https://github.com/dcoai/macaw_layers/blob/main/spec/03-stores.md#stores-references)) with params taken from the event's fields: a navigation step, performed by the host's navigation behavior. The library never navigates.
+- **Event fields** are named as paths into the event ([macaw_data 01](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-event)): `{event: identity}`, `{event: [identity, service]}`, `{event: value}`, or `{event: [row, field]}`. Only the named field is read: the row itself is never recorded. A field written by `set` becomes that state source's value, recorded under its capture level like any other ([08](08-records.md#records-stores)); one used by `navigate` is recorded as the step's params.
 - **Several actions on one event run in their declared order,** so one pick may select and then navigate.
 - **Validated with the page:** the event must be one the component declares, the state must accept the value's type, and a `navigate` action's params are checked against the target page's declared params, by type and legal values.
 
