@@ -45,6 +45,8 @@ defmodule Spelling do
     ~r{\.(ttf|woff2?|png|ico|jpg|gif|db)$},
     # The adopters' requirements and the first study draft, kept verbatim as records.
     ~r{^design/},
+    # The social previews' font license (SIL OFL 1.1), kept verbatim (#175).
+    ~r{^brand/SpaceGrotesk-OFL\.txt$},
     ~r{^ci/spelling\.exs$},
     ~r{^test/ci/spelling_test\.exs$}
   ]

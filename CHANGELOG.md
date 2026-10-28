@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The macaw logo: `brand/` holds the owner's originals, transparent copies, the render script and GitHub social previews; the docs and the README show the scarlet macaw (#175).
+
 ## v0.1.2 (2026-10-28)
 
 - On Hex: depends on `macaw_layers ~> 0.2.2`, `macaw_data ~> 0.5.3` and `macaw_component ~> 0.1.2` from Hex instead of their git tags; the README installs from Hex (#155).
