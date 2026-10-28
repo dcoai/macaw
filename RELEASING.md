@@ -56,8 +56,8 @@ mix hex.publish
 - Each checkout has a `github` remote: `git remote add github git@github.com:dcoai/<lib>.git` (the core is `dcoai/macaw`).
 - Each public repository exists on GitHub under `dcoai`, created **empty** (no README, license or .gitignore), so the first push fast-forwards.
 
-## 5. Before `macaw`
+## 5. The core and the server
 
-The server's app (`:macaw`, in dco-tek/macaw/macaw_server) is renamed `:macaw_server` before the core is published (macaw_server#143); otherwise that app can't depend on the published core.
+The core was published before the server's app was renamed (owner, 2026-10-28): publishing `macaw` doesn't affect the server, which doesn't depend on it. The server's app (`:macaw`, in dco-tek/macaw/macaw_server, modules under `Macaw.*`) is renamed `:macaw_server`, and its modules moved out of the core's namespace, before the server adopts the core (macaw_server#143).
 
 Every README opens with the notice that the software is a very early release, not ready for general use (#174), until the owner says otherwise.
