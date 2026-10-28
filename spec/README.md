@@ -13,17 +13,18 @@ Macaw is a family of building blocks for live, data-driven applications. Togethe
 | [macaw_data 01 — Sources](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/01-sources.md) | the data model, the source contract, deliveries, push, change notification, the interaction event | `macaw_data` (moved, #62) |
 | [03 — State](03-state.md) | state sources, scopes, persistence and recording, exports, the page DAG | `macaw` |
 | [macaw_data 02 — Derived sources](https://gitlab.conet.yarina.org/dco-tek/macaw_data/-/blob/main/spec/02-derived.md) | checked, bounded, deterministic functions over sources | `macaw_data` (moved, #62) |
-| [05 — Components](05-components.md) | the component contract, kinds, drawn states, isolation, containers; which library holds what (§7) | `macaw_component` (§1–4), `macaw` (§5–6) |
+| [macaw_component — The component contract](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/README.md) | the behavior and its declarations, rendering, the context, modes, drawn states, packages, the component kit | `macaw_component` (moved, #141) |
+| [05 — Components](05-components.md) | cells, containers, the built-in components; which library holds what (§7); §1–4 point to `macaw_component` | `macaw` |
 | [06 — Pages](06-pages.md) | pages, templates, layers and masks, regions, surfaces, persistent regions, the runtime builder (deferred) | `macaw` |
 | [macaw_layers 01 — The document kernel](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/01-kernel.md) | names, vocabularies, faults, version lines, the gates, the forms and tags, the digest | `macaw_layers` (moved, #95) |
 | [macaw_layers 02 — Fragments and stacking](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/02-fragments.md) | fragments, composites, use sites, stacking, masks, `explain` | `macaw_layers` (moved, #95) |
 | [07 — Documents](07-documents.md) | composable data, validation time | `macaw` |
 | [08 — Records](08-records.md) | view paths, base renders and events, attention, requery, the two stores | `macaw` |
 | [macaw_layers 03 — Stores](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/03-stores.md) | the store behavior, typed references, bundles, portability | `macaw_layers` (moved, #95) |
-| [10 — The web](10-web.md) | CSP, rendering modes, responsive layout, accessibility | `macaw_component` (modes), `macaw`, `macaw_live` |
+| [10 — The web](10-web.md) | CSP, responsive layout, accessibility; §2, the rendering modes, points to `macaw_component` | `macaw`, `macaw_live` |
 | [macaw_layers 04 — Themes](https://gitlab.conet.yarina.org/dco-tek/macaw_layers/-/blob/main/spec/04-themes.md) | one theme system: rules and delivery | `macaw_layers` (moved, #95) |
 | [11 — Themes](11-themes.md) | switching at runtime, user themes | `macaw`, `macaw_live` |
-| [12 — Registry](12-registry.md) | explicit registration, the conformance kits (one per contract) | `macaw_component` (package side, component kit), `macaw` (host side, template and layer checks); source kit: `macaw_data` |
+| [12 — Registry](12-registry.md) | explicit registration, the conformance kits (one per contract) | `macaw` (host side, template and layer checks); the package side and component kit: `macaw_component`; source kit: `macaw_data` |
 | [13 — Writes](13-writes.md) | the four seams; what belongs to `macaw_edit` | `macaw`, `macaw_edit` |
 | [14 — Open questions](14-open.md) | by experiment, deferred, and in the adopting projects | all |
 
