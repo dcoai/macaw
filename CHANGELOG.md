@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.1.3 (2026-10-28)
 
 - The macaw logo: `brand/` holds the owner's originals, transparent copies, the render script and GitHub social previews; the docs and the README show the scarlet macaw (#175).
 
