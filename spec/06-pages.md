@@ -135,19 +135,17 @@ a cell builds with its defaults, kind read from an atom or its spelling; a missi
 
 ### 3.3 The grid {#pages-grid}
 
-<!-- surfex: deferred #160: the grid -->
-
-A grid surface places its cells on **12 columns** in integer units: `x` from 0 to 11, `w` from 1 to 12 with `x + w` at most 12, `y` from 0, `h` from 1, and `y + h` at most **64** rows (`Macaw.Grid.rows/0`), so every placement has a class. Two cells overlapping is `{:overlap, other}` at the later cell's `place`, later in reading order.
+A grid surface places its cells on **12 columns** in integer units: `x` from 0 to 11, `w` from 1 to 12 with `x + w` at most 12, `y` from 0, `h` from 1, and `y + h` at most **64** rows (`Macaw.Grid.rows/0`), so every placement has a class; `Macaw.Grid.columns/0` is 12. `Macaw.Grid.faults/1` of the cells is every fault at `[:cells, name, :place]`: a bound broken is `{:out_of_bounds, what, value}` (`what` one of `:x`, `:w`, `:x_plus_w`, `:y`, `:h`, `:y_plus_h`), and two cells overlapping is `{:overlap, other}` at the later cell, later in reading order. A place that isn't four integers is the cell's own fault (§3.2).
 
 - **Reading order** is by `y`, then `x`, then name (`Macaw.Grid.order/1`): the DOM order, so DOM order is visual order ([10 §4](10-web.md#web-a11y)).
 - **Placement is by classes**, never inline style ([10 §1](10-web.md#web-csp)): `Macaw.Grid.classes/1` of a place is `"mw-cell mw-col-<x+1> mw-span-<w> mw-row-<y+1> mw-rows-<h>"`, each class one rule of **one static stylesheet**, `Macaw.Grid.stylesheet/0`: the grid (`.mw-grid`: 12 equal columns, rows of `var(--mw-grid-row, 4rem)` at least, a gap of `var(--mw-grid-gap, 1rem)`), one rule per column start, column span, row start and row span, and a container query that stacks every cell into reading order, one column, rows auto, when the surface's container is narrower than `40rem`. Its bytes are a pure function of nothing, served from `'self'` at `Macaw.Grid.stylesheet_path/0`, its content address ([macaw_component 01 §1.8](https://gitlab.conet.yarina.org/dco-tek/macaw_component/-/blob/main/spec/01-contract.md#components-assets)). This settles #5: exact placement with no inline style, by construction.
 - **A cell's declared size** is its share of the surface's width and its rows' height: `Macaw.Grid.size/3` of a place, the surface's width and its row height is `{w * width / 12, h * row_height}` in CSS pixels, the size its component lays out at before any measurement and its budget is evaluated at (§3.5).
 
-```planned-test:grid-rules
+```test:grid-rules
 placements in bounds pass; x, w, x+w, y, h and y+h out of bounds and non-integers are each a fault; an overlap is named at the later cell in reading order; reading order sorts by y, x and name
 ```
 
-```planned-test:grid-classes
+```test:grid-classes
 a placement's classes name its column, span, row and rows; the stylesheet has a rule for every class a valid placement can name and the stacking query, and its path is its content's address; a cell's size is its share of the width and its rows' height
 ```
 

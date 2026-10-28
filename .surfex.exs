@@ -47,12 +47,6 @@
   documented_absences: %{
     {"Macaw.Builtin", "spec/05-components.md"} => "built with the table (#163)",
     {"Macaw.Builtin.Table", "spec/05-components.md"} => "built by #163",
-    {"Macaw.Grid.classes/1", "spec/06-pages.md"} => "built by #160",
-    {"Macaw.Grid.order/1", "spec/06-pages.md"} => "built by #160",
-    {"Macaw.Grid.rows/0", "spec/06-pages.md"} => "built by #160",
-    {"Macaw.Grid.size/3", "spec/06-pages.md"} => "built by #160",
-    {"Macaw.Grid.stylesheet/0", "spec/06-pages.md"} => "built by #160",
-    {"Macaw.Grid.stylesheet_path/0", "spec/06-pages.md"} => "built by #160",
     {"Macaw.Surface.fetch/2", "spec/06-pages.md"} => "built by #162",
     {"Macaw.Surface.render/2", "spec/06-pages.md"} => "built by #162",
     {"Macaw.Surface.render/3", "spec/06-pages.md"} => "built by #162",
