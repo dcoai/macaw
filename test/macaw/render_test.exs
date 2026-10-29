@@ -39,7 +39,7 @@ defmodule Macaw.RenderTest do
     v = validated(%{"a" => series(0, 0, 6, "lat")}, sources)
     fetched = Surface.fetch(v, env(sources))
     assert_received {:fetched, "lat", 60, %{}}
-    assert Table.size(fetched["a"].deliveries["points"].table) == 60
+    assert Table.size(fetched["a"].deliveries["points"] |> Macaw.Data.Delivery.table!()) == 60
     assert fetched["a"].drawn == :capped
 
     # Wide enough to ask more than the ceiling: clamped and marked runtime.
@@ -74,9 +74,9 @@ defmodule Macaw.RenderTest do
     assert_received {:fetched, "lat", 120, %{"p" => 1}}
     assert_received {:fetched, "lat", 20, %{"p" => 2}}
     refute_received {:fetched, "lat", _, _}
-    assert Table.size(fetched["wide"].deliveries["points"].table) == 120
+    assert Table.size(fetched["wide"].deliveries["points"] |> Macaw.Data.Delivery.table!()) == 120
     # LTTB reduces each host's series, never past the reader's budget.
-    assert Table.size(fetched["narrow"].deliveries["points"].table) in 1..20
+    assert Table.size(fetched["narrow"].deliveries["points"] |> Macaw.Data.Delivery.table!()) in 1..20
     assert fetched["narrow"].deliveries["points"].served.reduced_by == :runtime
   end
 

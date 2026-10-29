@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.4 (2026-10-29)
+
+- `macaw_data ~> 0.6.0` and `macaw_component ~> 0.1.4`: a delivery keeps the rows its source gave (#185). A fetch tells no data by `Delivery.empty?/1`; the built-in table packs the rows into columns with `Delivery.table/2`, drawing no data when they don't pack (#186).
+
 ## v0.1.3 (2026-10-28)
 
 - The macaw logo: `brand/` holds the owner's originals, transparent copies, the render script and GitHub social previews; the docs and the README show the scarlet macaw (#175).

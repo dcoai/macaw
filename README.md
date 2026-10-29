@@ -15,7 +15,7 @@ Macaw exists for **composition effects**: components composed through it gain ef
 From Hex:
 
 ```elixir
-{:macaw, "~> 0.1.3"}
+{:macaw, "~> 0.1.4"}
 ```
 
 **v0.1.0: surfaces with a grid,** validated and rendered complete without a socket, and the built-in table ([spec/06 §3](https://github.com/dcoai/macaw/blob/main/spec/06-pages.md#pages-regions)). State, pages and templates, records, the web plans and the live runtime follow, each tracked by its own issue ([spec/00 §5](https://github.com/dcoai/macaw/blob/main/spec/00-overview.md#overview-order)).

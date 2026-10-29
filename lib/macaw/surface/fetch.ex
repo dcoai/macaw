@@ -6,7 +6,7 @@ defmodule Macaw.Surface.Fetch do
 
   alias Macaw.Component
   alias Macaw.Component.Drawn
-  alias Macaw.Data.{Bounded, Delivery, Source, Table}
+  alias Macaw.Data.{Bounded, Delivery, Source}
   alias Macaw.Data.Source.{Finish, Request}
   alias Macaw.Grid
   alias Macaw.Surface.Validated
@@ -119,10 +119,10 @@ defmodule Macaw.Surface.Fetch do
   defp runtime(%Delivery{served: served} = delivery),
     do: %{delivery | served: %{served | reduced_by: :runtime}}
 
-  defp drawn(%Delivery{served: served, table: table}) do
+  defp drawn(%Delivery{served: served} = delivery) do
     cond do
       served.capped or served.reduced_by != nil -> :capped
-      Table.size(table) == 0 -> :no_data
+      Delivery.empty?(delivery) -> :no_data
       true -> :live
     end
   end

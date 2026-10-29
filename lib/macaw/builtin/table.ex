@@ -55,10 +55,19 @@ defmodule Macaw.Builtin.Table do
      ]}
   end
 
-  def render(
-        :content,
-        %{drawn: :live, deliveries: %{"rows" => %Delivery{table: table}}} = assigns
-      ) do
+  # The rows packed into a table for their columns (macaw_data 0.6.0 keeps a delivery's
+  # rows as the source gave them); rows that don't pack draw as no data.
+  def render(:content, %{drawn: :live, deliveries: %{"rows" => %Delivery{} = delivery}} = assigns) do
+    case Delivery.table(delivery) do
+      {:ok, table} -> render_table(table, assigns)
+      {:error, _faults} -> Drawn.render(:no_data, assigns.context)
+    end
+  end
+
+  def render(:content, %{drawn: :live, context: context}), do: Drawn.render(:no_data, context)
+  def render(:content, %{drawn: drawn, context: context}), do: Drawn.render(drawn, context)
+
+  defp render_table(table, assigns) do
     settings = assigns.settings
     columns = Table.names(table)
     sort = if settings["sort"] in columns, do: settings["sort"]
@@ -76,9 +85,6 @@ defmodule Macaw.Builtin.Table do
        "</tbody></table>"
      ]}
   end
-
-  def render(:content, %{drawn: :live, context: context}), do: Drawn.render(:no_data, context)
-  def render(:content, %{drawn: drawn, context: context}), do: Drawn.render(drawn, context)
 
   defp header(column, sort, order) do
     aria =

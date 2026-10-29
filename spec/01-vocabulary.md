@@ -40,7 +40,7 @@
 | **budget** | the rows a component may draw for one slot, a function of its parameters and size; clamped to the **host ceiling** |
 | **pooling** | one fetch for every reader of the same request: on a page, and across pages when the result doesn't depend on the viewer |
 | **schema** | `Data.Schema`: a source's typed field meanings, versioned by content hash |
-| **delivery** | one answer from a source: a table plus what was served |
+| **delivery** | one answer from a source: its rows as the source gave them, plus what was served ([macaw_data 01 §3](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-delivery)) |
 | **visitor** | the person at the page |
 | **viewer** | the host's context for the visitor (identity and access); passed to sources and components, never stored |
 | **scope** | how long and how widely state lives: local, surface, page, region, session, viewer, shared |
