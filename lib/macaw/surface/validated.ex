@@ -73,39 +73,59 @@ defmodule Macaw.Surface.Validated do
         do: {source, Source.describe(s, context)}
   end
 
+  # Each check runs on what it needs (spec/06 §3.4), so one failure never hides another:
+  # a binding's source and params need only the cell; the kind and settings the component;
+  # which slots exist and each binding's fields the configured declarations. Checks a failed
+  # prerequisite rules out are reported as {:unchecked, prerequisite}, never skipped silently.
   defp cell(name, cell, registry, sources, described) do
     path = [:cells, name]
+    {bindings, binding_faults} = bindings(path, cell, sources, described)
 
-    with {:component, {:ok, module}} <- {:component, Registry.component(registry, cell.component)},
-         {:ok, info} <- Component.info(module),
-         {:kind, true} <- {:kind, cell.kind in info.kinds},
-         {:declarations, {:ok, declarations}} <-
-           {:declarations, Component.declarations(module, cell.settings)},
-         {:ok, settings} <- Component.settings(module, cell.settings),
-         {:slots, {slots, []}} <- {:slots, slots(path, cell, declarations, sources, described)} do
-      {:ok, %{module: module, settings: settings, declarations: declarations, slots: slots}}
-    else
-      {:component, :error} ->
-        {:error, [{path ++ [:component], {:unknown_component, cell.component}}]}
+    {configured, faults} =
+      case Registry.component(registry, cell.component) do
+        {:ok, module} -> configured(path, module, cell)
+        :error -> {:unchecked, [{path ++ [:component], {:unknown_component, cell.component}}]}
+      end
 
-      {:kind, false} ->
-        {:error, [{path ++ [:kind], {:kind_not_offered, cell.kind, kinds(registry, cell)}}]}
+    {built, slot_faults} = slots(path, cell, configured, bindings)
 
-      {:declarations, {:error, faults}} ->
-        {:error, for({p, r} <- faults, do: {path ++ [:settings | p], r})}
-
-      {:slots, {_slots, faults}} ->
-        {:error, faults}
+    case binding_faults ++ faults ++ slot_faults do
+      [] -> {:ok, built}
+      all -> {:error, all}
     end
   end
 
-  defp kinds(registry, cell) do
-    {:ok, module} = Registry.component(registry, cell.component)
+  # The kind, settings and declarations of a known component.
+  defp configured(path, module, cell) do
     {:ok, info} = Component.info(module)
-    info.kinds
+
+    kind =
+      if cell.kind in info.kinds,
+        do: [],
+        else: [{path ++ [:kind], {:kind_not_offered, cell.kind, info.kinds}}]
+
+    case {Component.declarations(module, cell.settings),
+          Component.settings(module, cell.settings)} do
+      {{:ok, declarations}, {:ok, settings}} ->
+        {{module, settings, declarations}, kind}
+
+      {{:error, faults}, _settings} ->
+        {:unchecked_settings, kind ++ for({p, r} <- faults, do: {path ++ [:settings | p], r})}
+    end
   end
 
-  defp slots(path, cell, declarations, sources, described) do
+  # Each binding's source and params, which need no component.
+  defp bindings(path, cell, sources, described) do
+    Enum.reduce(cell.slots, {%{}, []}, fn {slot, binding}, {acc, faults} ->
+      case binding(path ++ [:slots, slot], binding, sources, described) do
+        {:ok, built, []} -> {Map.put(acc, slot, built), faults}
+        {:ok, built, more} -> {Map.put(acc, slot, built), faults ++ more}
+        {:error, more} -> {acc, faults ++ more}
+      end
+    end)
+  end
+
+  defp slots(path, cell, {module, settings, declarations}, bindings) do
     declared = declarations.slots
 
     unbound =
@@ -118,53 +138,57 @@ defmodule Macaw.Surface.Validated do
           not Map.has_key?(declared, slot),
           do: {path ++ [:slots, slot], :unknown_slot}
 
-    {built, faults} =
-      for {slot, binding} <- cell.slots, Map.has_key?(declared, slot), reduce: {%{}, []} do
-        {acc, faults} ->
-          case binding(
-                 path ++ [:slots, slot],
-                 Map.fetch!(declared, slot),
-                 binding,
-                 sources,
-                 described
-               ) do
-            {:ok, built} -> {Map.put(acc, slot, built), faults}
-            {:error, more} -> {acc, faults ++ more}
-          end
-      end
+    fields =
+      for {slot, %{description: description, fields: given}} <- bindings,
+          Map.has_key?(declared, slot),
+          {p, r} <- fields(declared[slot], description, given),
+          do: {path ++ [:slots, slot, :fields | p], r}
 
-    {built, unbound ++ unknown ++ faults}
+    built = %{
+      module: module,
+      settings: settings,
+      declarations: declarations,
+      slots: Map.take(bindings, Map.keys(declared))
+    }
+
+    {built, unbound ++ unknown ++ fields}
   end
 
-  defp binding(path, declared, binding, sources, described) do
+  defp slots(_path, cell, unchecked, _bindings) when cell.slots == %{} and is_atom(unchecked),
+    do: {nil, []}
+
+  defp slots(path, _cell, :unchecked, _bindings),
+    do: {nil, [{path ++ [:slots], {:unchecked, :component}}]}
+
+  defp slots(path, _cell, :unchecked_settings, _bindings),
+    do: {nil, [{path ++ [:slots], {:unchecked, :settings}}]}
+
+  defp fields(declared, description, given) do
+    case Slot.check(declared, description.schema, given) do
+      :ok -> []
+      {:error, faults} -> faults
+    end
+  end
+
+  # A binding's source, described, and its params against the description. A described
+  # binding is kept even when its params fail, so its fields are still checked.
+  defp binding(path, binding, sources, described) do
     with {:source, true} <- {:source, Map.has_key?(sources, binding.source)},
          {:describe, {:ok, %Description{} = description}} <-
            {:describe, Map.fetch!(described, binding.source)} do
-      fields =
-        case Slot.check(declared, description.schema, binding.fields) do
-          :ok -> []
-          {:error, faults} -> for {p, r} <- faults, do: {path ++ [:fields | p], r}
-        end
-
-      {params, param_faults} =
+      {params, faults} =
         case Parameter.validate(description.params, binding.params) do
           {:ok, params} -> {params, []}
           {:error, faults} -> {%{}, for({p, r} <- faults, do: {path ++ [:params | p], r})}
         end
 
-      case fields ++ param_faults do
-        [] ->
-          {:ok,
-           %{
-             source: binding.source,
-             description: description,
-             fields: binding.fields,
-             params: params
-           }}
-
-        faults ->
-          {:error, faults}
-      end
+      {:ok,
+       %{
+         source: binding.source,
+         description: description,
+         fields: binding.fields,
+         params: params
+       }, faults}
     else
       {:source, false} -> {:error, [{path ++ [:source], {:unknown_source, binding.source}}]}
       {:describe, {:error, reason}} -> {:error, [{path ++ [:source], {:describe, reason}}]}

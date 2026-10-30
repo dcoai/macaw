@@ -158,6 +158,14 @@ a placement's classes name its column, span, row and rows; the stylesheet has a 
 - **the settings and declarations**: `Macaw.Component.declarations/2`'s faults, at `[:cells, name, :settings | path]`;
 - **the slots**: every slot the component declares must be bound (`:unbound` at `[:cells, name, :slots, slot]`), and a binding of a slot it doesn't declare is `:unknown_slot`; a source not in the map is `{:unknown_source, name}` at `[..., slot, :source]`, one whose `describe` fails `{:describe, reason}`; the binding's fields are checked by `Macaw.Component.Slot.check/3` against the described schema (at `[..., slot, :fields | path]`), and its params by `Macaw.Data.Parameter.validate/2` against the described params (at `[..., slot, :params | path]`).
 
+**Each check runs on what it needs, so no failure hides another** (#195):
+- **A binding's source and params need only the cell.** They are checked for every binding, whatever else in the cell fails.
+- **The kind and the settings need the component.**
+- **Which slots exist (`:unbound`, `:unknown_slot`) and each binding's fields need the configured declarations,** and so valid settings. A binding's fields also need its source described.
+- **A check whose prerequisite failed is not run, and that is reported, never skipped silently:**
+  - a cell with bindings whose component is unknown gets `{:unchecked, :component}` at `[:cells, name, :slots]`;
+  - one whose settings fail gets `{:unchecked, :settings}` there.
+
 `%Macaw.Surface.Validated{surface, cells, order}` holds, for each cell, its component module, its validated settings, its declarations, and each slot's source, description and request params; `order` is the cells in reading order. Rendering takes only a validated surface, so nothing renders that hasn't passed.
 
 ```test:validate-pass
@@ -166,6 +174,10 @@ a surface of known components bound to described sources validates, with each ce
 
 ```test:validate-faults
 an unknown component, an unoffered kind, bad settings, an unbound and an unknown slot, an unknown source, a failing describe, a binding the schema doesn't meet, bad params and a bad place are all reported at once by path
+```
+
+```test:validate-independent
+one cell failing its kind, settings, a source and a binding's params reports every one, with {:unchecked, :settings} for the slot checks its settings rule out; an unknown component's binding source is still checked, with {:unchecked, :component}
 ```
 
 ### 3.5 Fetching {#pages-surface-fetch}

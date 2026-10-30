@@ -110,6 +110,7 @@ defmodule Macaw.ValidateTest do
     assert faults == [
              {[:cells, "a", :component], {:unknown_component, "test.nothing"}},
              {[:cells, "b", :kind], {:kind_not_offered, :control, [:content]}},
+             {[:cells, "b", :slots, "points"], :unbound},
              {[:cells, "c", :settings, "size"], :unknown_param},
              {[:cells, "c", :settings, "text"], {:type, :text}},
              {[:cells, "d", :slots, "points"], :unbound},
@@ -120,6 +121,41 @@ defmodule Macaw.ValidateTest do
              {[:cells, "h", :slots, "points", :fields, "y"], {:type, [:number], :category}},
              {[:cells, "h", :slots, "points", :params, "agg"], {:enum, ["max", "mean"]}},
              {[:cells, "i", :place], {:overlap, "g"}}
+           ]
+  end
+
+  @tag verifies: "validate-independent"
+  test "one cell failing every check reports each, and what it couldn't check" do
+    s =
+      surface(%{
+        "x" => %{
+          component: "test.series",
+          kind: :control,
+          settings: %{"label" => 7},
+          place: place(0, 0),
+          slots: %{
+            "points" => %{source: "nowhere"},
+            "extra" => %{source: "latency", params: %{"agg" => "sum"}}
+          }
+        },
+        "y" => %{
+          component: "test.nothing",
+          place: place(6, 0),
+          slots: %{"points" => %{source: "down"}}
+        }
+      })
+
+    assert {:error, faults} = Surface.validate(s, @registry, sources())
+
+    assert faults == [
+             {[:cells, "x", :kind], {:kind_not_offered, :control, [:content]}},
+             {[:cells, "x", :settings, "label"], {:type, :text}},
+             {[:cells, "x", :slots], {:unchecked, :settings}},
+             {[:cells, "x", :slots, "extra", :params, "agg"], {:enum, ["max", "mean"]}},
+             {[:cells, "x", :slots, "points", :source], {:unknown_source, "nowhere"}},
+             {[:cells, "y", :component], {:unknown_component, "test.nothing"}},
+             {[:cells, "y", :slots], {:unchecked, :component}},
+             {[:cells, "y", :slots, "points", :source], {:describe, :unreachable}}
            ]
   end
 end
