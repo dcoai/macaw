@@ -206,7 +206,7 @@ defmodule Macaw.Surface do
 
   @doc """
   The surface a map document holds, or every fault: the version gate first, then the
-  limits (`limits:` as `Macaw.Layers.Document.read/3` takes them) and the migration, then
+  limits (`limits:` as `Macaw.Layers.Form.gates/3` takes them) and the migration, then
   `new/1`.
   """
   @spec from_map(term(), keyword()) :: {:ok, t()} | {:error, [Fault.t(), ...]}
@@ -228,8 +228,7 @@ defmodule Macaw.Surface do
   def from_json(json, opts \\ []) when is_binary(json), do: read(json, opts)
 
   defp read(input, opts) do
-    with {:ok, form} <- Document.read(input, __MODULE__, Keyword.take(opts, [:limits])),
-         {:ok, %{surface: node}} <- Form.from_map(Map.delete(form, Version.stamp()), __MODULE__) do
+    with {:ok, %{surface: node}} <- Form.read(input, __MODULE__, Keyword.take(opts, [:limits])) do
       node |> unwrite() |> new()
     end
   end
@@ -283,13 +282,13 @@ defmodule Macaw.Surface do
   def step(document, _from), do: {:ok, document}
 
   @doc false
-  # The envelope: a surface node, and nothing else.
+  # The envelope's value: a surface node, and nothing else.
   @impl Document
   def validate(document) do
-    unknown = Document.unknown_keys(document, [Version.stamp(), "surface"])
+    unknown = Document.unknown_keys(document, [:surface])
 
     surface =
-      case Map.fetch(document, "surface") do
+      case Map.fetch(document, :surface) do
         :error -> [{[:surface], :required}]
         {:ok, node} when is_map(node) -> []
         {:ok, _other} -> [{[:surface], {:type, :map}}]
