@@ -2,7 +2,7 @@ defmodule Macaw.Surface.Validated do
   @moduledoc """
   A surface that passed the static pass (spec/06 §3.4), and what rendering needs of it:
   each cell's component module, validated settings and declarations, and each slot's
-  source, description, fields and request params; `order` is the cells in reading order.
+  source, description, resolved binding (`Slot.resolve/3`) and request params; `order` is the cells in reading order.
 
   Rendering takes only a validated surface, so nothing renders that hasn't passed.
   """
@@ -144,14 +144,21 @@ defmodule Macaw.Surface.Validated do
           {p, r} <- fields(declared[slot], description, given),
           do: {path ++ [:slots, slot, :fields | p], r}
 
-    built = %{
-      module: module,
-      settings: settings,
-      declarations: declarations,
-      slots: Map.take(bindings, Map.keys(declared))
-    }
+    case unbound ++ unknown ++ fields do
+      [] ->
+        # Each binding resolved (`Slot.resolve/3`): the field each role reads, an unbound
+        # window role's window field included. The cell's context carries it (§3.6).
+        slots =
+          Map.new(bindings, fn {slot, built} ->
+            resolved = Slot.resolve(declared[slot], built.description.schema, built.fields)
+            {slot, %{built | fields: resolved}}
+          end)
 
-    {built, unbound ++ unknown ++ fields}
+        {%{module: module, settings: settings, declarations: declarations, slots: slots}, []}
+
+      faults ->
+        {nil, faults}
+    end
   end
 
   defp slots(_path, cell, unchecked, _bindings) when cell.slots == %{} and is_atom(unchecked),

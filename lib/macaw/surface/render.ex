@@ -51,7 +51,8 @@ defmodule Macaw.Surface.Render do
         size: Grid.size(place, env[:width], env[:row_height]),
         heading_level: level,
         theme: Keyword.get_lazy(env, :theme, &Macaw.Layers.Theme.default/0),
-        now: Keyword.fetch!(env, :now)
+        now: Keyword.fetch!(env, :now),
+        bindings: Map.new(cell.slots, fn {slot, %{fields: fields}} -> {slot, fields} end)
       )
 
     {deliveries, value} =

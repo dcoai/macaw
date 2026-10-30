@@ -166,7 +166,7 @@ a placement's classes name its column, span, row and rows; the stylesheet has a 
   - a cell with bindings whose component is unknown gets `{:unchecked, :component}` at `[:cells, name, :slots]`;
   - one whose settings fail gets `{:unchecked, :settings}` there.
 
-`%Macaw.Surface.Validated{surface, cells, order}` holds, for each cell, its component module, its validated settings, its declarations, and each slot's source, description and request params; `order` is the cells in reading order. Rendering takes only a validated surface, so nothing renders that hasn't passed.
+`%Macaw.Surface.Validated{surface, cells, order}` holds, for each cell, its component module, its validated settings, its declarations, and each slot's source, description, request params and **resolved binding** (`Macaw.Component.Slot.resolve/3`: the field each role reads, an unbound `window` role holding the window field and an unbound optional role absent); `order` is the cells in reading order. Rendering takes only a validated surface, so nothing renders that hasn't passed.
 
 ```test:validate-pass
 a surface of known components bound to described sources validates, with each cell's module, settings, declarations and descriptions, in reading order
@@ -210,12 +210,16 @@ a source error, a crashed fetch, a hung fetch, a capped or reduced delivery and 
 ```
 
 - **One `div` per cell, in reading order,** with the grid's classes and the instance's id; nothing inline. The surface is not a landmark: regions and the page own landmarks ([10 §4](10-web.md#web-a11y)).
-- **Each cell renders with its context** ([macaw_component 02 §2](https://github.com/dcoai/macaw_component/blob/main/spec/02-rendering.md#components-context)): `mode`, `instance` `"<surface>-<cell>"`, `size` its declared size (`measured: false`), `heading_level` one below the surface's title (the title's own level without a title), `theme`, the default `preferences`, and `now`; its assigns are its settings, declarations, drawn state, and its deliveries (a `:pure` component) or its value through `init/2`, `delivery/3` and `size/2` (a `:contained` one).
+- **Each cell renders with its context** ([macaw_component 02 §2](https://github.com/dcoai/macaw_component/blob/main/spec/02-rendering.md#components-context)): `mode`, `instance` `"<surface>-<cell>"`, `size` its declared size (`measured: false`), `heading_level` one below the surface's title (the title's own level without a title), `theme`, the default `preferences`, `now`, and `bindings`, each slot's resolved binding, so the component reads the field bound to a role with `Context.field/3` (#194); its assigns are its settings, declarations, drawn state, and its deliveries (a `:pure` component) or its value through `init/2`, `delivery/3` and `size/2` (a `:contained` one).
 - **A component's raise is the caller's to take**, as the contract says ([macaw_component 01 §1](https://github.com/dcoai/macaw_component/blob/main/spec/01-contract.md#components-behavior)): a host isolates a component by process (`macaw_live`'s contained cell); this render does not catch it.
 - `Macaw.Surface.render/2` fetches and renders in one call.
 
 ```test:render-markup
 a surface renders its title at its level and its cells in reading order, each with its grid classes and instance id, nothing inline, in every mode
+```
+
+```test:render-bindings
+each cell's context carries its slots' resolved bindings, the window field for an unbound window role and no optional role left unbound, in a pure cell's render and a contained cell's init
 ```
 
 ```test:render-cells

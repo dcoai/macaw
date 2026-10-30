@@ -123,3 +123,67 @@ defmodule Macaw.Test.SurfacePackage do
   @moduledoc false
   def __members__, do: [Macaw.Test.Note, Macaw.Test.Series, Macaw.Test.Counter]
 end
+
+defmodule Macaw.Test.Bound do
+  @moduledoc false
+  # A pure component that reads its rows by the fields its context binds, never by name.
+  use Macaw.Component, name: "test.bound", kinds: [:content]
+
+  alias Macaw.Component.Context
+
+  @impl true
+  def declarations(_settings),
+    do:
+      {:ok,
+       slots: %{
+         "points" => %{
+           requires: %{
+             "x" => %{type: :time, window: true},
+             "y" => %{type: :number},
+             "label" => %{type: :category, optional: true}
+           }
+         }
+       }}
+
+  @impl true
+  def render(:content, %{drawn: :live} = assigns) do
+    ctx = assigns.context
+    {x, y} = {Context.field(ctx, "points", "x"), Context.field(ctx, "points", "y")}
+    rows = assigns.deliveries |> Map.fetch!("points") |> Macaw.Data.Delivery.rows()
+    sum = rows |> Enum.map(&Map.fetch!(&1, y)) |> Enum.sum()
+
+    {:safe,
+     ~s(<p>x=#{x} y=#{y} label=#{inspect(Context.field(ctx, "points", "label"))} sum=#{sum}</p>)}
+  end
+
+  def render(:content, assigns), do: Macaw.Component.Drawn.render(assigns.drawn, assigns.context)
+end
+
+defmodule Macaw.Test.BoundCounter do
+  @moduledoc false
+  # A contained component whose value takes its bound field from the context at init.
+  use Macaw.Component, name: "test.bound_counter", kinds: [:content]
+
+  @impl true
+  def declarations(_settings),
+    do:
+      {:ok, slots: %{"points" => %{requires: %{"y" => %{type: :number}}}}, isolation: :contained}
+
+  @impl true
+  def init(_settings, context), do: %{y: Macaw.Component.Context.field(context, "points", "y")}
+  @impl true
+  def delivery(value, _slot, _delivery), do: value
+  @impl true
+  def size(value, _size), do: value
+  @impl true
+  def bound(value, _name, _new), do: value
+
+  @impl true
+  def render(:content, %{drawn: :live, value: value}), do: {:safe, "<p>reads #{value.y}</p>"}
+  def render(:content, assigns), do: Macaw.Component.Drawn.render(assigns.drawn, assigns.context)
+end
+
+defmodule Macaw.Test.BoundPackage do
+  @moduledoc false
+  def __members__, do: [Macaw.Test.Bound, Macaw.Test.BoundCounter]
+end

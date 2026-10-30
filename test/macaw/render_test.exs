@@ -232,4 +232,44 @@ defmodule Macaw.RenderTest do
 
     assert html =~ ~s(id="ops-count"><p>7 rows</p>)
   end
+
+  @tag verifies: "render-bindings"
+  test "each cell's context carries its slots' bindings, resolved, for pure and contained cells" do
+    schema =
+      Macaw.Data.Schema.new!(%{
+        "t" => %{type: :time},
+        "v" => %{type: :number},
+        "w" => %{type: :number}
+      })
+
+    rows = for i <- 1..3, do: %{"t" => DateTime.add(@now, i * 60), "v" => 1.0, "w" => i * 10.0}
+    sources = %{"lat" => {%Rows{schema: schema, rows: rows}, nil}}
+    registry = Registry.new!([SurfacePackage, Macaw.Test.BoundPackage])
+    slot = %{source: "lat", fields: %{"y" => "w"}}
+
+    {:ok, s} =
+      Surface.new(
+        name: "ops",
+        cells: %{
+          "pure" => %{
+            component: "test.bound",
+            place: %{x: 0, y: 0, w: 6, h: 2},
+            slots: %{"points" => slot}
+          },
+          "held" => %{
+            component: "test.bound_counter",
+            place: %{x: 6, y: 0, w: 6, h: 2},
+            slots: %{"points" => slot}
+          }
+        }
+      )
+
+    {:ok, v} = Surface.validate(s, registry, sources)
+    # The unbound window role holds the window field; the unbound optional role is absent.
+    assert v.cells["pure"].slots["points"].fields == %{"x" => "t", "y" => "w"}
+
+    html = v |> Surface.render(env(sources)) |> Phoenix.HTML.safe_to_string()
+    assert html =~ "<p>x=t y=w label=nil sum=60.0</p>"
+    assert html =~ "<p>reads w</p>"
+  end
 end

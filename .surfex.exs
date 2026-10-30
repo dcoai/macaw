@@ -36,6 +36,7 @@
     "Macaw.Component.Package.components/1" => "macaw_component's package side",
     "Macaw.Component.Package.hooks/1" => "macaw_component's hooks of packages",
     "Macaw.Component.Slot.check/3" => "macaw_component's binding check",
+    "Macaw.Component.Slot.resolve/3" => "macaw_component's binding resolution",
     "Macaw.Live" => "macaw_live, the LiveView runtime, a library above this one",
     "Macaw.Plug" => "macaw_plug, a host library",
     "Macaw.Host" => "macaw_host, a host library",
