@@ -104,7 +104,7 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
   - the cells, the slots, a slot's `fields`, and the settings and params at every depth are **name maps**: their keys are names, strings written as they are (the surface's `name_map?/1` answer to the JSON adapter), so a name spelled like a document key (`title`) is never read as one;
   - a value JSON has no word for is tagged: an atom as `$atom`, a UTC time as `$time`, a color by the colors' own tags (`$rgb`, `$color`, `$ramp`, …, [macaw_layers 04 §1.6](https://github.com/dcoai/macaw_layers/blob/main/spec/04-themes.md#themes-color-adapters)), a `{longitude, latitude}` point as `{"$point": [lon, lat]}`, each tag listed in the surface's tag table;
   - **what JSON can't hold is refused there, at its path:** another term (a tuple, a PID) is `{:type, :term}`, and a map key in a setting or param that isn't a string `{:type, :name}`. The surface itself is valid; only this form of it fails;
-  - `from_json/2` reads through every gate (the bytes, the scan, the version, the migration, the limits, `limits:`), then the value, judged, then `new/1`. **No atom is made from a document:** an atom a setting or param spells reads back only when it is the document's own word or in `vocabulary: %{atoms: [...]}`, else it is `{:enum, atoms}` at its path.
+  - `from_json/2` reads through every gate (the bytes, the scan, the version, the migration, the limits, `limits:`), then the value, judged, then `new/1`. **No atom is made from a document:** an atom a setting or param spells reads back only when it is the document's own word or in `vocabulary: %{atoms: [...]}`, else it is `{:unknown_atom, spelling}` at its path ([macaw_layers 01 §3](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-faults)), naming the spelling the reader wasn't given. A kind spelled as a string that isn't one of the kinds is `{:unknown_kind, spelling}`, from `new/1`.
 
   A surface written by `to_map/1` reads back equal through `from_map/1`, and one written by `to_json/1` through `from_json/2` given the atoms its settings spell.
 - **The version line** starts at 1 (`current/0`), with no migration step yet.
@@ -119,7 +119,7 @@ a surface written to its map and JSON forms reads back equal through every gate;
 ```
 
 ```test:surface-terms
-settings holding a color term, a typed color, a time, a point and an atom validate against a component declaring those types and read back equal from the value and from JSON (the atom given in the reader's vocabulary, refused at its path without it); a wrong type and an undeclared setting are faults at validation; a term JSON can't hold reads back from the value and is refused, at its path, only by the JSON adapter
+settings holding a color term, a typed color, a time, a point and an atom validate against a component declaring those types and read back equal from the value and from JSON (the atom given in the reader's vocabulary, refused at its path by its spelling without it; a kind `$atom` the reader doesn't know refused the same way, and a kind spelled outside the kinds an unknown kind); a wrong type and an undeclared setting are faults at validation; a term JSON can't hold reads back from the value and is refused, at its path, only by the JSON adapter
 ```
 
 ```test:surface-fragment

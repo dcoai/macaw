@@ -46,7 +46,7 @@ defmodule Macaw.MixProject do
   defp deps do
     [
       # The document kernel, fragments and themes (spec/00 §4).
-      {:macaw_layers, "~> 0.3.0"},
+      {:macaw_layers, "~> 0.3.1"},
       # The data model, sources, deliveries and finishing (spec/00 §4).
       {:macaw_data, "~> 0.7.0"},
       # The component contract (spec/00 §4).

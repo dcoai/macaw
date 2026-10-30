@@ -201,11 +201,30 @@ defmodule Macaw.SurfaceTest do
     assert %{"fill" => %{"$rgb" => "#3b6fa8"}, "where" => %{"$point" => [-122.4, 37.8]}} =
              JSON.decode!(json)["surface"]["cells"]["a"]["settings"]
 
-    # The atom a setting spells reads back only with it in the reader's vocabulary.
+    # The atom a setting spells reads back only with it in the reader's vocabulary;
+    # without it, the fault names the spelling, not the surface's own words.
     assert Surface.from_json(json, vocabulary: %{atoms: [:max]}) == {:ok, s}
 
-    assert {:error, [{[:surface, :cells, "a", :settings, "agg"], {:enum, _}}]} =
-             Surface.from_json(json)
+    assert Surface.from_json(json) ==
+             {:error, [{[:surface, :cells, "a", :settings, "agg"], {:unknown_atom, "max"}}]}
+
+    # A kind outside the kinds: an `$atom` the reader doesn't know is refused by name,
+    # a spelling by the cell as an unknown kind (by path from the surface, #215).
+    kind = fn k ->
+      cell = %{
+        "component" => "x",
+        "kind" => k,
+        "place" => %{"x" => 0, "y" => 0, "w" => 1, "h" => 1}
+      }
+
+      JSON.encode!(%{"$version" => 1, "surface" => %{"name" => "o", "cells" => %{"a" => cell}}})
+    end
+
+    assert Surface.from_json(kind.(%{"$atom" => "nope"})) ==
+             {:error, [{[:surface, :cells, "a", :kind], {:unknown_atom, "nope"}}]}
+
+    assert Surface.from_json(kind.("nope")) ==
+             {:error, [{[:cells, "a", :kind], {:unknown_kind, "nope"}}]}
 
     # A setting of the wrong type, and one the component doesn't declare, at validation.
     {:ok, bad} =
