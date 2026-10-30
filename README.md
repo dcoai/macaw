@@ -68,7 +68,7 @@ What another library uses lives in its own library: **visualize** keeps its own 
 Every Macaw library is built the same way: its own spec, surfex as a CI gate, depdep in CI, and extla models only for state-managing GenServers ([spec/00 §4.1](https://github.com/dcoai/macaw/blob/main/spec/00-overview.md#overview-library-rule)).
 
 - [`spec/README.md`](https://github.com/dcoai/macaw/blob/main/spec/README.md): the model for the whole family, and the core's spec.
-- [`design/requirements/`](https://github.com/dcoai/macaw/blob/main/design/requirements/): the requirement reports it was derived from, one per adopting project (visualize, metresis, and Collpa under its former name, dcotek_web).
+- [`design/requirements/`](https://github.com/dcoai/macaw/tree/main/design/requirements/): the requirement reports it was derived from, one per adopting project (visualize, metresis, and Collpa under its former name, dcotek_web).
 
 Changes go through proposals (GitLab issues): `Research` while a direction is being shaped, `Proposal` when it is ready to evaluate.
 

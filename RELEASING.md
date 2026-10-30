@@ -51,6 +51,19 @@ mix hex.publish
 
 `publish_history.exs` fast-forwards GitHub's `main` to the release tag and pushes the tag, over your own SSH key: no mirror and no token. It refuses a tag whose pipeline isn't green, a tag GitHub already has, a push that wouldn't fast-forward, and any commit about to go public that matches a `--forbid` pattern. It runs before `mix hex.publish`, because the package's `source_url`, its links and its docs' `source_ref` point at the public home and the tag.
 
+**`mix hex.publish` is guarded** (#190).
+- Each library's `mix.exs` aliases it to run `ci/release_guard.exs` first.
+- The guard refuses a working tree with changes, a HEAD that doesn't carry the tag `vX.Y.Z`, and a tag that isn't on `origin`. It names each reason, and nothing is published.
+- So publish from a clean checkout of the tag: `git worktree add --detach <dir> vX.Y.Z`, then `mix deps.get` there. Afterwards, check the package against the tag: `mix hex.package fetch <lib> X.Y.Z --unpack`, diffed with `git archive vX.Y.Z`.
+
+**The vendored CI scripts stay identical** (#191).
+- `ci/release_guard.exs` and `ci/spec_links.exs` are copied into every library from the reference in `~/Projects/claude-tools/macaw_ci/`, because CI can't reach claude-tools.
+- Before a release, check that no copy has drifted:
+  ```bash
+  elixir ~/Projects/claude-tools/macaw_ci_drift.exs ~/Projects/macaw ~/Projects/macaw_{layers,data,component,plug,host,auth,auth_ash}
+  ```
+- A change to either script is made in the reference first, then copied to every library.
+
 ## 4. Once per machine and per library
 
 - Each checkout has a `github` remote: `git remote add github git@github.com:dcoai/<lib>.git` (the core is `dcoai/macaw`).

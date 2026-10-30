@@ -12,6 +12,8 @@ defmodule Macaw.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      # A Hex package is built only from the clean, pushed release tag (dco-tek/macaw/macaw#190).
+      aliases: ["hex.publish": ["cmd elixir ci/release_guard.exs #{@version}", "hex.publish"]],
       description:
         "Macaw's core: composing pages out of independent components that share typed data and interactive state.",
       source_url: @source_url,
