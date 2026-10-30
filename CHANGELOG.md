@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.2.0 (2026-10-30)
 
 ### Upgrading from 0.1.4
 
