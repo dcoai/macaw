@@ -125,7 +125,16 @@ Every Macaw library, the host libraries included, is built the same way, from it
 
 The rest of each repository follows the family's conventions: private on GitLab, fast-forward merges with a green pipeline required, released on Hex by the owner, bottom-up, each release tag pushed to its public home on GitHub first (#155; RELEASING.md), CI on the DCOTek runner, format, compile with warnings as errors, tests and American spelling as gates. A library that depends on another by git tag is added to that library's CI job-token allowlist (by numeric project id).
 
+### 4.2 Terms are the form {#core-terms}
+
+**A value is a BEAM term, and its encodings are adapters** (#188, from v0.2.0), as in macaw_layers ([macaw_layers 00 §2](https://github.com/dcoai/macaw_layers/blob/main/spec/00-overview.md#layers-terms)) and macaw_data ([macaw_data 00 §2](https://github.com/dcoai/macaw_data/blob/main/spec/00-overview.md#data-terms)):
+- **Identity is the term's.** A recorded definition, a page, a template stack or a surface, is identified by the kernel's digest of its value ([08 §2](08-records.md#records-content)).
+- **Validity is the term's.** A surface is built and judged as the value it is ([06 §3.1](06-pages.md#pages-surface-document)); a cell's settings are checked against its component's declared parameter types, never against what JSON can hold ([06 §3.2](06-pages.md#pages-cells), [06 §3.4](06-pages.md#pages-surface-validate)).
+- **Each value has one form.** Names are strings, normalized once, at construction; a name is never rewritten to fit an encoding.
+- **JSON is an adapter at the edge.** A surface's JSON form is written and read through macaw_layers' JSON adapter, which alone refuses a value it can't hold, naming its path ([06 §3.1](06-pages.md#pages-surface-document)).
+
 ## 5. Order of work {#overview-order}
+
 
 **Macaw builds first what its adopters consume, in the order they consume it** (macaw_compose#28). visualize moves its generic core into `macaw_layers` and `macaw_data` once, and metresis migrates once, so neither is ever blocked on Macaw features no one uses yet.
 

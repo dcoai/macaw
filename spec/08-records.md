@@ -32,7 +32,7 @@ Choosing any step shows the page as it was there. The path and the replay are on
   (dcotek_web.md C7.)
 - **Semantic state events,** not LiveView diffs: "selected Elixir". Each is the **recorded form** of an event (`Event.recordable/1`, [macaw_data 01](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-event)): the component instance, the element, the name, the identity, the value, the time and the initiator. The payload data an event carries live (`row`, `point`) is delivered to the host and never recorded. Diffs are tied to template and LiveView versions, are larger, and carry everything rendered.
 - **Source requests:** params, window and `as_of`. **No data is stored.**
-- **Definitions by digest:** the page, its template stack and its surfaces ([07](07-documents.md)).
+- **Definitions by digest:** the page, its template stack and its surfaces ([07](07-documents.md)), each the kernel's digest of its value, the term ([macaw_layers 01 §7](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-digest), [00 §4.2](00-overview.md#core-terms)), never of its JSON form: a definition has one digest however it was written or read back.
 
 **Records never embed printouts.** A **printout** is a component's prepared output with its data (a visual's design, deliveries, now, window and theme), used for print and output. Whole-page output in print mode assembles the components' printouts, and is output, never a record. Three values, three rules (macaw_compose#22, R16):
 

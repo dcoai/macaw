@@ -187,3 +187,28 @@ defmodule Macaw.Test.BoundPackage do
   @moduledoc false
   def __members__, do: [Macaw.Test.Bound, Macaw.Test.BoundCounter]
 end
+
+defmodule Macaw.Test.Styled do
+  @moduledoc false
+  # A pure component whose settings are terms of every data type but text.
+  use Macaw.Component, name: "test.styled", kinds: [:content]
+
+  @impl true
+  def parameters,
+    do: %{
+      "fill" => %{type: :color, default: {:color, "info"}},
+      "accent" => %{type: :color, default: {:color, "info"}},
+      "since" => %{type: :time, default: ~U[2026-01-01 00:00:00Z]},
+      "where" => %{type: :point, default: {0, 0}},
+      "agg" => %{type: :category, default: "mean"},
+      "extra" => %{type: :term, default: nil}
+    }
+
+  @impl true
+  def render(:content, assigns), do: Macaw.Component.Drawn.render(assigns.drawn, assigns.context)
+end
+
+defmodule Macaw.Test.StyledPackage do
+  @moduledoc false
+  def __members__, do: [Macaw.Test.Styled]
+end

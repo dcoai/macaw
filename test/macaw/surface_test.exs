@@ -91,7 +91,7 @@ defmodule Macaw.SurfaceTest do
   end
 
   @tag verifies: "cells-shape"
-  test "a cell builds with its defaults, kind from an atom or its spelling" do
+  test "a cell builds with its defaults, kind from an atom or its spelling, values as given" do
     assert {:ok, %Cell{kind: :content, settings: %{}, slots: %{}, place: nil}} =
              Cell.new(component: "x")
 
@@ -102,12 +102,12 @@ defmodule Macaw.SurfaceTest do
     assert {:ok,
             %Cell{
               slots: %{"rows" => %{source: "s", fields: %{"y" => ["a", "b"]}, params: %{}}},
-              settings: %{"n" => %{"deep" => [1, nil, true]}}
+              settings: %{"n" => %{deep: [1, nil, true]}, "when" => ~U[2026-10-28 00:00:00Z]}
             }} =
              Cell.new(
                component: "x",
                slots: %{rows: %{source: :s, fields: %{y: [:a, "b"]}}},
-               settings: %{n: %{deep: [1, nil, true]}}
+               settings: %{n: %{deep: [1, nil, true]}, when: ~U[2026-10-28 00:00:00Z]}
              )
   end
 
@@ -116,9 +116,9 @@ defmodule Macaw.SurfaceTest do
     assert {:error, faults} =
              Cell.new(
                kind: :widget,
-               settings: %{"when" => ~U[2026-10-28 00:00:00Z], "who" => :alice},
+               settings: %{"when" => ~U[2026-10-28 00:00:00Z], 1 => :alice},
                slots: %{
-                 "rows" => %{fields: %{"x" => 1}, params: %{"p" => {1, 2}}, tint: 1},
+                 "rows" => %{fields: %{"x" => 1}, params: [p: 1], tint: 1},
                  "other" => :nope
                },
                place: %{x: 0, y: "0", w: 6, depth: 1},
@@ -132,11 +132,10 @@ defmodule Macaw.SurfaceTest do
              {[:place, :depth], :unknown_key},
              {[:place, :h], :required},
              {[:place, :y], {:type, :integer}},
-             {[:settings, "when"], {:not_plain, ~U[2026-10-28 00:00:00Z]}},
-             {[:settings, "who"], {:not_plain, :alice}},
+             {[:settings, 1], {:type, :name}},
              {[:slots, "other"], {:type, :map}},
              {[:slots, "rows", :fields, "x"], {:type, :name}},
-             {[:slots, "rows", :params, "p"], {:not_plain, {1, 2}}},
+             {[:slots, "rows", :params], {:type, :map}},
              {[:slots, "rows", :source], :required},
              {[:slots, "rows", :tint], :unknown_key}
            ]
@@ -172,6 +171,82 @@ defmodule Macaw.SurfaceTest do
              Surface.from_map(%{surface: %{name: "ops", cells: %{"a" => %{component: "x"}}}})
 
     assert faults == [{[:cells, "a", :place], :required}]
+  end
+
+  @tag verifies: "surface-terms"
+  test "settings hold terms: they validate against the component and round-trip both forms" do
+    import Macaw.Layers.Color, only: [sigil_RGB: 2]
+
+    settings = %{
+      "fill" => ~RGB"#3b6fa8",
+      "accent" => {:ramp, "status", 0.5},
+      "since" => ~U[2026-10-28 12:00:00Z],
+      "where" => {-122.4, 37.8},
+      "agg" => :max
+    }
+
+    {:ok, s} =
+      Surface.new(
+        name: "ops",
+        cells: %{"a" => %{component: "test.styled", settings: settings, place: @place}}
+      )
+
+    registry = Macaw.Registry.new!([Macaw.Test.StyledPackage])
+    assert {:ok, v} = Surface.validate(s, registry, %{})
+    assert v.cells["a"].settings["fill"] == ~RGB"#3b6fa8"
+
+    assert Surface.from_map(Surface.to_map(s)) == {:ok, s}
+    assert {:ok, json} = Surface.to_json(s)
+
+    assert %{"fill" => %{"$rgb" => "#3b6fa8"}, "where" => %{"$point" => [-122.4, 37.8]}} =
+             JSON.decode!(json)["surface"]["cells"]["a"]["settings"]
+
+    # The atom a setting spells reads back only with it in the reader's vocabulary.
+    assert Surface.from_json(json, vocabulary: %{atoms: [:max]}) == {:ok, s}
+
+    assert {:error, [{[:surface, :cells, "a", :settings, "agg"], {:enum, _}}]} =
+             Surface.from_json(json)
+
+    # A setting of the wrong type, and one the component doesn't declare, at validation.
+    {:ok, bad} =
+      Surface.new(
+        name: "ops",
+        cells: %{
+          "a" => %{
+            component: "test.styled",
+            settings: %{"fill" => "#3b6fa8", "since" => "today", "size" => 2},
+            place: @place
+          }
+        }
+      )
+
+    assert {:error, faults} = Surface.validate(bad, registry, %{})
+
+    assert faults == [
+             {[:cells, "a", :settings, "fill"], {:type, :color}},
+             {[:cells, "a", :settings, "since"], {:type, :time}},
+             {[:cells, "a", :settings, "size"], :unknown_param}
+           ]
+  end
+
+  @tag verifies: "surface-terms"
+  test "the map form is the value; only the JSON adapter refuses what JSON can't hold" do
+    settings = %{"extra" => {:a, 1, 2}, "nested" => %{deep: 1}}
+
+    {:ok, s} =
+      Surface.new(
+        name: "ops",
+        cells: %{"a" => %{component: "test.styled", settings: settings, place: @place}}
+      )
+
+    assert Surface.from_map(Surface.to_map(s)) == {:ok, s}
+
+    assert Surface.to_json(s) ==
+             {:error,
+              [
+                {[:surface, :cells, "a", :settings, "extra"], {:type, :term}},
+                {[:surface, :cells, "a", :settings, "nested", :deep], {:type, :name}}
+              ]}
   end
 
   @tag verifies: "surface-fragment"

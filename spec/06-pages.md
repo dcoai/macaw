@@ -89,7 +89,7 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 
 ### 3.1 The surface document {#pages-surface-document}
 
-**`Macaw.Surface` is a surface:** `%Macaw.Surface{name, title, layout, cells}`, a document read through the kernel's gates ([macaw_layers 01 §5](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-gates)) and stacked as a fragment ([macaw_layers 02](https://github.com/dcoai/macaw_layers/blob/main/spec/02-fragments.md#fragments-types)).
+**`Macaw.Surface` is a surface:** `%Macaw.Surface{name, title, layout, cells}`, a document whose value is a term ([00 §4.2](00-overview.md#core-terms)), read from JSON through the kernel's gates ([macaw_layers 01 §5](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-gates)) and stacked as a fragment ([macaw_layers 02](https://github.com/dcoai/macaw_layers/blob/main/spec/02-fragments.md#fragments-types)).
 
 | Key | Value | Default |
 |---|---|---|
@@ -99,7 +99,14 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 | `cells` | the cells by name (§3.2), a map, at least one | required |
 
 - **Building one:** `Macaw.Surface.new/1` from a keyword list or a map with atom keys answers `{:ok, surface}` or `{:error, faults}`, every fault at once by path from the surface, as the kernel orders them ([macaw_layers 01 §3](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-faults)). A key it doesn't have is `:unknown_key`; a missing one `:required`. Names in it are strings; an atom is read as its spelling, and no atom is made.
-- **The map form** is `%{version: v, surface: node}` (`to_map/1`), the node the surface's keys with each cell as its map; **the JSON form** is `{"$version": v, "surface": {…}}` (`to_json/1`). A cell's settings and a slot's params are plain data in both forms: strings, numbers, booleans, `nil`, lists and maps with string keys. `from_map/2` and `from_json/2` read them back through every gate (the version, the limits, the migration) and then `new/1`, so a surface written by `to_map/1` reads back equal.
+- **The value** is `%{version: v, surface: node}` (`to_map/1`), the node the surface's keys with each cell as its map, every name a string and every setting and param the term it is. `from_map/1` judges a value as terms: the version first, so nothing of a newer document is judged, then the envelope (`surface` and no other key), then `new/1`. No form is written or read on the way, so a value JSON can't hold reads back as the term it is, and no limit applies.
+- **The JSON form** is `{"$version": v, "surface": {…}}`, an adapter at the edge (`to_json/1`, `from_json/2`), written and read by macaw_layers' JSON adapter ([macaw_layers 01 §6](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-forms)):
+  - the cells, the slots, a slot's `fields`, and the settings and params at every depth are **name maps**: their keys are names, strings written as they are (the surface's `name_map?/1` answer to the JSON adapter), so a name spelled like a document key (`title`) is never read as one;
+  - a value JSON has no word for is tagged: an atom as `$atom`, a UTC time as `$time`, a color by the colors' own tags (`$rgb`, `$color`, `$ramp`, …, [macaw_layers 04 §1.6](https://github.com/dcoai/macaw_layers/blob/main/spec/04-themes.md#themes-color-adapters)), a `{longitude, latitude}` point as `{"$point": [lon, lat]}`, each tag listed in the surface's tag table;
+  - **what JSON can't hold is refused there, at its path:** another term (a tuple, a PID) is `{:type, :term}`, and a map key in a setting or param that isn't a string `{:type, :name}`. The surface itself is valid; only this form of it fails;
+  - `from_json/2` reads through every gate (the bytes, the scan, the version, the migration, the limits, `limits:`), then the value, judged, then `new/1`. **No atom is made from a document:** an atom a setting or param spells reads back only when it is the document's own word or in `vocabulary: %{atoms: [...]}`, else it is `{:enum, atoms}` at its path.
+
+  A surface written by `to_map/1` reads back equal through `from_map/1`, and one written by `to_json/1` through `from_json/2` given the atoms its settings spell.
 - **The version line** starts at 1 (`current/0`), with no migration step yet.
 - **As a fragment type,** `cells` is a `:union` by name and every other key an `:override`, so a layer stacked on a surface adds or replaces cells by name and overrides its title.
 
@@ -109,6 +116,10 @@ a surface builds from its keys with title and layout defaulted; a missing name o
 
 ```test:surface-forms
 a surface written to its map and JSON forms reads back equal through every gate; a document of a newer version, past a limit or with an unknown key is refused by the gate that catches it
+```
+
+```test:surface-terms
+settings holding a color term, a typed color, a time, a point and an atom validate against a component declaring those types and read back equal from the value and from JSON (the atom given in the reader's vocabulary, refused at its path without it); a wrong type and an undeclared setting are faults at validation; a term JSON can't hold reads back from the value and is refused, at its path, only by the JSON adapter
 ```
 
 ```test:surface-fragment
@@ -123,14 +134,14 @@ stacking a layer on a surface adds and replaces cells by name and overrides the 
 |---|---|---|
 | `component` | the component's name, as its package registers it ([macaw_component 01 §1](https://github.com/dcoai/macaw_component/blob/main/spec/01-contract.md#components-behavior)), matched by spelling | required |
 | `kind` | the kind it renders as, one of `Macaw.Component.kinds/0`, given as an atom or its spelling | `:content` |
-| `settings` | its settings by parameter name, inline, plain data | `%{}` |
-| `slots` | each of its slots bound to a source: `%{source: name, fields: %{role => field}, params: %{name => value}}`, `fields` and `params` defaulting to `%{}`, a `many` role's fields a list | `%{}` |
+| `settings` | its settings by parameter name, inline, each a term of its parameter's type: a color term, a typed color, a time, a point, an atom where the type takes one. The cell checks only that it is a map of names; each value is checked against the component's declared parameter types where the component is known (§3.4), and a setting with no declared parameter is `:unknown_param` | `%{}` |
+| `slots` | each of its slots bound to a source: `%{source: name, fields: %{role => field}, params: %{name => value}}`, `fields` and `params` defaulting to `%{}`, a `many` role's fields a list; each param a term, checked against the source's declared parameters (§3.4) | `%{}` |
 | `place` | where it sits in the grid: `%{x, y, w, h}` (§3.3) | required on a grid |
 
 Cell names are names in the kernel's sense, unique within the surface (the map's keys).
 
 ```test:cells-shape
-a cell builds with its defaults, kind read from an atom or its spelling; a missing component or place, an unknown kind, settings or params that aren't plain data, a slot without a source and an unknown key are faults at their paths
+a cell builds with its defaults, kind read from an atom or its spelling, setting and param names normalized to strings and their values kept as given; a missing component or place, an unknown kind, settings or params that aren't a map of names, a slot without a source and an unknown key are faults at their paths
 ```
 
 ### 3.3 The grid {#pages-grid}

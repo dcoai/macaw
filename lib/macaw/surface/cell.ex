@@ -4,12 +4,15 @@ defmodule Macaw.Surface.Cell do
 
     * `component`, the component's name as its package registers it, matched by spelling;
     * `kind`, the kind it renders as, `:content` by default;
-    * `settings`, its settings by parameter name, inline, plain data;
+    * `settings`, its settings by parameter name, inline, each the term it is, checked
+      against the component's parameter types where the component is known (spec/06 §3.4);
     * `slots`, each slot bound to a source: `%{source: name, fields: %{role => field},
-      params: %{name => value}}`, a `many` role's fields a list;
+      params: %{name => value}}`, a `many` role's fields a list, each param the term it is;
     * `place`, where it sits in the grid: `%{x, y, w, h}` (spec/06 §3.3).
 
-  Names are strings; an atom is read as its spelling, and no atom is made from one.
+  Names are strings, normalized once here; an atom is read as its spelling, and no atom is
+  made from one. A cell checks only its own shape: the types of its settings and params are
+  its component's and its sources' (spec/06 §3.4).
   """
 
   alias Macaw.Layers.Names
@@ -56,7 +59,7 @@ defmodule Macaw.Surface.Cell do
 
     {component, c} = component(Map.get(attrs, :component))
     {kind, k} = kind(Map.get(attrs, :kind, :content))
-    {settings, s} = plain(Map.get(attrs, :settings, %{}), [:settings])
+    {settings, s} = named(Map.get(attrs, :settings, %{}), [:settings])
     {slots, sl} = slots(Map.get(attrs, :slots, %{}))
     {place, p} = place(Map.get(attrs, :place))
 
@@ -118,7 +121,7 @@ defmodule Macaw.Surface.Cell do
       end
 
     {fields, f} = fields(Map.get(binding, :fields, %{}), path ++ [:fields])
-    {params, p} = plain(Map.get(binding, :params, %{}), path ++ [:params])
+    {params, p} = named(Map.get(binding, :params, %{}), path ++ [:params])
     {%{source: source, fields: fields, params: params}, unknown ++ s ++ f ++ p}
   end
 
@@ -169,35 +172,17 @@ defmodule Macaw.Surface.Cell do
 
   defp place(_other), do: {nil, [{[:place], {:type, :map}}]}
 
-  @doc false
-  # Plain data: strings, numbers, booleans, nil, lists, and maps whose keys are names (an
-  # atom key read as its spelling), deep. Any other value is a fault at its path.
-  @spec plain(term(), list()) :: {term(), [Macaw.Layers.Fault.t()]}
-  def plain(%{} = map, path) when not is_struct(map) do
+  # Values by name: each key a name, read as its spelling, each value the term it is.
+  defp named(%{} = map, path) when not is_struct(map) do
     Enum.reduce(map, {%{}, []}, fn {k, v}, {acc, faults} ->
-      key = Names.name(k)
-
-      if is_binary(key) do
-        {value, more} = plain(v, path ++ [key])
-        {Map.put(acc, key, value), faults ++ more}
-      else
-        {acc, faults ++ [{path ++ [k], {:type, :name}}]}
+      case Names.name(k) do
+        key when is_binary(key) and key != "" -> {Map.put(acc, key, v), faults}
+        _ -> {acc, faults ++ [{path ++ [k], {:type, :name}}]}
       end
     end)
   end
 
-  def plain(list, path) when is_list(list) do
-    {items, faults} =
-      list
-      |> Enum.with_index()
-      |> Enum.map(fn {v, i} -> plain(v, path ++ [i]) end)
-      |> Enum.unzip()
-
-    {items, Enum.concat(faults)}
-  end
-
-  def plain(v, _path) when is_binary(v) or is_number(v) or is_boolean(v) or is_nil(v), do: {v, []}
-  def plain(v, path), do: {v, [{path, {:not_plain, v}}]}
+  defp named(_other, path), do: {%{}, [{path, {:type, :map}}]}
 
   defp answer([], value), do: {:ok, value}
   defp answer(faults, _value), do: {:error, Macaw.Layers.Fault.sort(faults)}

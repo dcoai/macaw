@@ -12,11 +12,16 @@ defmodule Macaw.Surface do
           }
         )
 
-  A surface is a document, read through the kernel's gates and stacked as a fragment:
+  A surface is a document whose value is a term, read from JSON through the kernel's gates
+  and stacked as a fragment:
 
-    * the map form is `%{version: v, surface: node}` (`to_map/1`), the JSON form
-      `{"$version": v, "surface": {…}}` (`to_json/1`); `from_map/2` and `from_json/2` read
-      them back through every gate (the version, the limits, the migration), then `new/1`;
+    * its value is `%{version: v, surface: node}` (`to_map/1`), judged as terms by
+      `from_map/1`; its settings and params are the terms they are, checked against the
+      component's and the sources' parameter types by `validate/3`;
+    * the JSON form, `{"$version": v, "surface": {…}}`, is an adapter at the edge:
+      `to_json/1` writes it, refusing at its path a value JSON can't hold, and `from_json/2`
+      reads it back through every gate (the version, the limits, the migration), then
+      `new/1`;
     * as a fragment type, `cells` is a `:union` by name and every other key an `:override`,
       so a layer adds or replaces cells by name and overrides the title.
 
@@ -31,6 +36,7 @@ defmodule Macaw.Surface do
   import Kernel, except: [node: 1]
 
   alias Macaw.Layers.{Document, Fault, Form, Names, Version}
+  alias Macaw.Layers.Color.Form, as: ColorForm
   alias Macaw.Surface.{Cell, Words}
 
   @enforce_keys [:name, :cells]
@@ -161,8 +167,8 @@ defmodule Macaw.Surface do
   # -- the forms ---------------------------------------------------------------------------
 
   @doc """
-  The surface as its node: its keys, each cell as its map, names that spell one of the
-  document's keys written as that key.
+  The surface as its node: its keys, each cell as its map, every name a string and every
+  setting and param the term it is.
   """
   @spec node(t()) :: map()
   def node(%__MODULE__{} = surface) do
@@ -174,103 +180,65 @@ defmodule Macaw.Surface do
     node = %{
       component: cell.component,
       kind: cell.kind,
-      settings: Words.write_data(cell.settings),
+      settings: cell.settings,
       slots:
         Map.new(cell.slots, fn {slot, binding} ->
-          {Words.written(slot),
-           %{
-             source: binding.source,
-             fields: Map.new(binding.fields, fn {role, f} -> {Words.written(role), f} end),
-             params: Words.write_data(binding.params)
-           }}
+          {slot, %{source: binding.source, fields: binding.fields, params: binding.params}}
         end)
     }
 
-    {Words.written(name), if(cell.place, do: Map.put(node, :place, cell.place), else: node)}
+    {name, if(cell.place, do: Map.put(node, :place, cell.place), else: node)}
   end
 
   @doc "`%{surface: node}`: the surface as a fragment."
   @spec fragment(t()) :: %{surface: map()}
   def fragment(%__MODULE__{} = surface), do: %{surface: node(surface)}
 
-  @doc "`%{version: current, surface: node}`."
+  @doc "`%{version: current, surface: node}`: the surface's value as a document."
   @spec to_map(t()) :: %{version: pos_integer(), surface: map()}
   def to_map(%__MODULE__{} = surface), do: %{version: current(), surface: node(surface)}
 
-  @doc "The JSON document, `{:ok, json}`, stamped `\"$version\"`."
+  @doc """
+  The JSON document, `{:ok, json}`, stamped `"$version"`, written by the JSON adapter
+  (`Macaw.Layers.Form`): a name as its string, a color by its tags, a time as `$time`, a
+  point as `$point`, an atom as `$atom`. A value JSON can't hold is refused at its path,
+  `{:type, :term}`, and a map key in a setting or param that isn't a string
+  `{:type, :name}`.
+  """
   @spec to_json(t()) :: {:ok, String.t()} | {:error, [Fault.t(), ...]}
-  def to_json(%__MODULE__{} = surface) do
-    with {:ok, form} <- Form.to_map(fragment(surface), __MODULE__),
-         do: {:ok, JSON.encode!(Map.put(form, Version.stamp(), current()))}
-  end
+  def to_json(%__MODULE__{} = surface), do: Form.to_json(fragment(surface), __MODULE__)
 
   @doc """
-  The surface a map document holds, or every fault: the version gate first, then the
-  limits (`limits:` as `Macaw.Layers.Form.gates/3` takes them) and the migration, then
-  `new/1`.
+  The surface a document value holds, judged as terms, or every fault: the version first,
+  so nothing of a newer document is judged, then the envelope, then `new/1`. No form is
+  written or read, so no limit applies: the limits bound what reading an encoding costs
+  (`from_json/2`).
   """
-  @spec from_map(term(), keyword()) :: {:ok, t()} | {:error, [Fault.t(), ...]}
-  def from_map(document, opts \\ [])
-
-  def from_map(document, opts) when is_map(document) and not is_struct(document) do
-    {version, fragment} = Map.pop(document, :version, current())
+  @spec from_map(term()) :: {:ok, t()} | {:error, [Fault.t(), ...]}
+  def from_map(document) when is_map(document) and not is_struct(document) do
+    {version, value} = Map.pop(document, :version, current())
 
     with {:ok, _version} <- Version.check(%{Version.stamp() => version}, __MODULE__),
-         {:ok, form} <- Form.to_map(fragment, __MODULE__) do
-      read(Map.put(form, Version.stamp(), version), opts)
+         {:ok, %{surface: node}} <- Document.check(value, __MODULE__) do
+      new(node)
     end
   end
 
-  def from_map(_other, _opts), do: {:error, [{[], {:type, :map}}]}
+  def from_map(_other), do: {:error, [{[], {:type, :map}}]}
 
-  @doc "The surface a JSON document holds, read as `from_map/2` reads a map, every gate first."
+  @doc """
+  The surface a JSON document holds: read through the JSON adapter
+  (`Macaw.Layers.Form.read/3`: every gate, the version, the limits and the migration, then
+  the value, judged), then `new/1`. `limits:` as `Macaw.Layers.Form.gates/3` takes them;
+  `vocabulary:` the atoms a setting or param may spell beyond the document's own words,
+  since no other atom is made from a document.
+  """
   @spec from_json(String.t(), keyword()) :: {:ok, t()} | {:error, [Fault.t(), ...]}
-  def from_json(json, opts \\ []) when is_binary(json), do: read(json, opts)
-
-  defp read(input, opts) do
-    with {:ok, %{surface: node}} <- Form.read(input, __MODULE__, Keyword.take(opts, [:limits])) do
-      node |> unwrite() |> new()
-    end
+  def from_json(json, opts \\ []) when is_binary(json) do
+    with {:ok, %{surface: node}} <-
+           Form.read(json, __MODULE__, Keyword.take(opts, [:limits, :vocabulary])),
+         do: new(node)
   end
-
-  # Names the map form wrote as a key's atom are read back as their spelling; the node's
-  # own keys stay atoms for `new/1`.
-  defp unwrite(%{} = node) do
-    node
-    |> Map.update(:cells, %{}, fn cells ->
-      if is_map(cells),
-        do: Map.new(cells, fn {name, cell} -> {Names.name(name), unwrite_cell(cell)} end),
-        else: cells
-    end)
-  end
-
-  defp unwrite_cell(%{} = cell) do
-    cell
-    |> Map.update(:settings, %{}, &names_deep/1)
-    |> Map.update(:slots, %{}, fn slots ->
-      if is_map(slots),
-        do:
-          Map.new(slots, fn {name, binding} ->
-            {Names.name(name),
-             if(is_map(binding),
-               do:
-                 binding
-                 |> Map.update(:fields, %{}, &names_deep/1)
-                 |> Map.update(:params, %{}, &names_deep/1),
-               else: binding
-             )}
-          end),
-        else: slots
-    end)
-  end
-
-  defp unwrite_cell(other), do: other
-
-  defp names_deep(%{} = map) when not is_struct(map),
-    do: Map.new(map, fn {k, v} -> {Names.name(k), names_deep(v)} end)
-
-  defp names_deep(list) when is_list(list), do: Enum.map(list, &names_deep/1)
-  defp names_deep(leaf), do: leaf
 
   # -- the behaviors -----------------------------------------------------------------------
 
@@ -306,6 +274,30 @@ defmodule Macaw.Surface do
   def keys, do: Words.keys()
   @impl Form
   def atoms, do: Words.atoms()
+
+  # The surface's names are strings in every name map; a setting's or param's value is data,
+  # so its maps are name maps at every depth.
+  @impl Form
+  def name_map?([:surface, :cells]), do: true
+  def name_map?([:surface, :cells, _cell, :slots]), do: true
+  def name_map?([:surface, :cells, _cell, :slots, _slot, :fields]), do: true
+  def name_map?([:surface, :cells, _cell, :slots, _slot, :params | _]), do: true
+  def name_map?([:surface, :cells, _cell, :settings | _]), do: true
+  def name_map?(_path), do: false
+
+  # A point is `$point`, a color by the colors' own tags (`Macaw.Layers.Color.Form`).
+  @impl Form
+  def encode_value({lon, lat}) when is_number(lon) and is_number(lat),
+    do: {:ok, %{"$point" => [lon, lat]}}
+
+  def encode_value(term), do: ColorForm.encode_value(term)
+
+  @impl Form
+  def decode_value("$point", [lon, lat]) when is_number(lon) and is_number(lat),
+    do: {:ok, {lon, lat}}
+
+  def decode_value("$point", _other), do: :default
+  def decode_value(tag, payload), do: ColorForm.decode_value(tag, payload)
 
   @impl Macaw.Layers.Fragment
   def root, do: :surface_document
