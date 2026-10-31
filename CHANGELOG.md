@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- CI runs the family's dependency advisories guard (`ci/advisories.exs`, with a reasoned allowlist that defaults empty), so a locked package with a security advisory, or a retired one, fails the pipeline; phoenix_html is locked at 4.4.0 (EEF-CVE-2026-117645) (#216, macaw#214).
 - `macaw_layers ~> 0.3.1`: an atom a setting or param spells that the reader wasn't given (neither the document's word nor in `vocabulary: %{atoms: [...]}`) is refused at its path as `{:unknown_atom, spelling}`, naming the spelling, no longer `{:enum, <the surface's own words>}` (#212, #213, spec/06 §3.1). Bundles read each entry with its type's vocabulary (macaw_layers#21, #192); the core reads no bundles, so nothing else changes here.
 
 ## v0.2.0 (2026-10-30)
