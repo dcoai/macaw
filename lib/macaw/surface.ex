@@ -209,10 +209,10 @@ defmodule Macaw.Surface do
   def to_json(%__MODULE__{} = surface), do: Form.to_json(fragment(surface), __MODULE__)
 
   @doc """
-  The surface a document value holds, judged as terms, or every fault: the version first,
-  so nothing of a newer document is judged, then the envelope, then `new/1`. No form is
-  written or read, so no limit applies: the limits bound what reading an encoding costs
-  (`from_json/2`).
+  The surface a document value holds, judged as terms, or every fault by path from the
+  document: the version first, so nothing of a newer document is judged, then the
+  envelope, then `new/1` (its faults under `:surface`). No form is written or read, so no
+  limit applies: the limits bound what reading an encoding costs (`from_json/2`).
   """
   @spec from_map(term()) :: {:ok, t()} | {:error, [Fault.t(), ...]}
   def from_map(document) when is_map(document) and not is_struct(document) do
@@ -220,7 +220,7 @@ defmodule Macaw.Surface do
 
     with {:ok, _version} <- Version.check(%{Version.stamp() => version}, __MODULE__),
          {:ok, %{surface: node}} <- Document.check(value, __MODULE__) do
-      new(node)
+      surface(node)
     end
   end
 
@@ -229,7 +229,8 @@ defmodule Macaw.Surface do
   @doc """
   The surface a JSON document holds: read through the JSON adapter
   (`Macaw.Layers.Form.read/3`: every gate, the version, the limits and the migration, then
-  the value, judged), then `new/1`. `limits:` as `Macaw.Layers.Form.gates/3` takes them;
+  the value, judged), then `new/1`, every fault by path from the document as `from_map/1`
+  gives them. `limits:` as `Macaw.Layers.Form.gates/3` takes them;
   `vocabulary:` the atoms a setting or param may spell beyond the document's own words,
   since no other atom is made from a document.
   """
@@ -237,7 +238,16 @@ defmodule Macaw.Surface do
   def from_json(json, opts \\ []) when is_binary(json) do
     with {:ok, %{surface: node}} <-
            Form.read(json, __MODULE__, Keyword.take(opts, [:limits, :vocabulary])),
-         do: new(node)
+         do: surface(node)
+  end
+
+  # A document's surface node, built: `new/1`'s faults are by path from the surface, so a
+  # reader's are put under the document's `:surface`, where the node sits (spec/06 §3.1).
+  defp surface(node) do
+    case new(node) do
+      {:ok, surface} -> {:ok, surface}
+      {:error, faults} -> {:error, for({path, reason} <- faults, do: {[:surface | path], reason})}
+    end
   end
 
   # -- the behaviors -----------------------------------------------------------------------

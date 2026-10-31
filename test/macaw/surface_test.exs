@@ -1,6 +1,7 @@
 defmodule Macaw.SurfaceTest do
   # The surface document and its cells (spec/06 §3.1, §3.2).
   use ExUnit.Case, async: true
+  use ExUnitProperties
 
   alias Macaw.Layers.Fragment
   alias Macaw.Surface
@@ -151,6 +152,55 @@ defmodule Macaw.SurfaceTest do
     assert Surface.current() == 1
   end
 
+  # A cell as a document spells it, JSON-holdable, with any of its keys missing or wrong.
+  defp document_cell do
+    gen all(
+          component <- one_of([constant("x"), constant(1), constant(nil)]),
+          kind <- member_of(["content", "nope", 1, %{"$atom" => "content"}, %{"$atom" => "nope"}]),
+          place <-
+            one_of([
+              constant(%{"x" => 0, "y" => 0, "w" => 1, "h" => 1}),
+              constant(%{"x" => "0", "y" => 0, "w" => 1}),
+              constant(%{"x" => 0, "y" => 0, "w" => 1, "h" => 1, "depth" => 1}),
+              constant(nil)
+            ]),
+          settings <- member_of([%{}, %{"mode" => %{"$atom" => "wide"}}, 1]),
+          extra <- boolean()
+        ) do
+      [{"component", component}, {"kind", kind}, {"place", place}, {"settings", settings}]
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
+      |> then(&if(extra, do: Map.put(&1, "tint", 1), else: &1))
+    end
+  end
+
+  @tag verifies: "surface-forms"
+  property "a reader gives every fault by path from the document, from_map and from_json alike" do
+    check all(list <- list_of(document_cell(), min_length: 1, max_length: 3)) do
+      cells = list |> Enum.with_index(fn cell, i -> {"c#{i}", cell} end) |> Map.new()
+      json = JSON.encode!(%{"$version" => 1, "surface" => %{"name" => "ops", "cells" => cells}})
+
+      value = %{
+        version: 1,
+        surface: %{name: "ops", cells: Map.new(cells, fn {n, c} -> {n, keys(c)} end)}
+      }
+
+      for result <- [Surface.from_json(json), Surface.from_map(value)],
+          match?({:error, _}, result),
+          {:error, faults} = result,
+          {path, _reason} <- faults,
+          do: assert(hd(path) == :surface, "#{inspect(path)} is not by path from the document")
+    end
+  end
+
+  # A cell's keys as the value spells them; a tagged kind as its spelling.
+  defp keys(cell) do
+    Map.new(cell, fn
+      {"kind", %{"$atom" => spelled}} -> {:kind, spelled}
+      {key, value} -> {String.to_existing_atom(key), value}
+    end)
+  end
+
   @tag verifies: "surface-forms"
   test "the gates refuse a newer version, a document past a limit and an unknown key" do
     assert {:error, [{[], {:newer_schema, 2, 1}}]} =
@@ -170,7 +220,7 @@ defmodule Macaw.SurfaceTest do
     assert {:error, faults} =
              Surface.from_map(%{surface: %{name: "ops", cells: %{"a" => %{component: "x"}}}})
 
-    assert faults == [{[:cells, "a", :place], :required}]
+    assert faults == [{[:surface, :cells, "a", :place], :required}]
   end
 
   @tag verifies: "surface-terms"
@@ -209,7 +259,7 @@ defmodule Macaw.SurfaceTest do
              {:error, [{[:surface, :cells, "a", :settings, "agg"], {:unknown_atom, "max"}}]}
 
     # A kind outside the kinds: an `$atom` the reader doesn't know is refused by name,
-    # a spelling by the cell as an unknown kind (by path from the surface, #215).
+    # a spelling by the cell as an unknown kind; both by path from the document (#215).
     kind = fn k ->
       cell = %{
         "component" => "x",
@@ -224,7 +274,7 @@ defmodule Macaw.SurfaceTest do
              {:error, [{[:surface, :cells, "a", :kind], {:unknown_atom, "nope"}}]}
 
     assert Surface.from_json(kind.("nope")) ==
-             {:error, [{[:cells, "a", :kind], {:unknown_kind, "nope"}}]}
+             {:error, [{[:surface, :cells, "a", :kind], {:unknown_kind, "nope"}}]}
 
     # A setting of the wrong type, and one the component doesn't declare, at validation.
     {:ok, bad} =
