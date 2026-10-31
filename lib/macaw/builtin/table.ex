@@ -6,7 +6,9 @@ defmodule Macaw.Builtin.Table do
     * **parameters:** `caption` (text, `"Table"`); `identity` (text, `""`), the field naming
       each row, `""` for rows that can't be selected; `sort` (text, `""`, bindable), the
       field rows are sorted by; `order` (`"asc"` or `"desc"`, bindable);
-    * **declarations:** one slot, `rows`; events `"sort"` and `"select"`; it writes
+    * **declarations:** one slot, `rows`, whose optional `columns` role names the fields
+      shown, in order (any type, many), every column in the delivered order when unbound;
+      events `"sort"` and `"select"`; it writes
       `selection` as an identity; it observes `:activate` and `:select`; reading load
       `:scan`;
     * **budget:** the rows its declared height shows at 32 px a row, times four, at least 10;
@@ -34,7 +36,19 @@ defmodule Macaw.Builtin.Table do
   @impl true
   def declarations(_settings) do
     {:ok,
-     slots: %{"rows" => %{doc: "the rows, whole"}},
+     slots: %{
+       "rows" => %{
+         doc: "the rows, whole",
+         requires: %{
+           "columns" => %{
+             type: [:time, :number, :category, :text, :color, :point],
+             many: true,
+             optional: true,
+             doc: "the fields shown, in order; every column when unbound"
+           }
+         }
+       }
+     },
      events: ["sort", "select"],
      writes: %{"selection" => :identity},
      observes: [:activate, :select],
@@ -69,9 +83,11 @@ defmodule Macaw.Builtin.Table do
 
   defp render_table(table, assigns) do
     settings = assigns.settings
-    columns = Table.names(table)
-    sort = if settings["sort"] in columns, do: settings["sort"]
-    identity = if settings["identity"] in columns, do: settings["identity"]
+    names = Table.names(table)
+    # The bound columns, checked against the schema at validation; unbound, every column.
+    columns = Context.field(assigns.context, "rows", "columns") || names
+    sort = if settings["sort"] in names, do: settings["sort"]
+    identity = if settings["identity"] in names, do: settings["identity"]
     rows = table |> Table.rows() |> sorted(sort, settings["order"])
 
     {:safe,

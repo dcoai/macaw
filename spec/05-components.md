@@ -86,13 +86,17 @@ Components ship in packages, which bring their own dependencies (Macaw never imp
 
 `Macaw.Builtin.Table`, registered as `"macaw.table"` in the package `Macaw.Builtin`, of kind `:content`, `:pure`:
 - **Parameters:** `caption` (text, `"Table"`), the table's name; `identity` (text, `""`), the field naming each row, `""` for rows that can't be selected; `sort` (text, `""`, bindable), the field rows are sorted by, `""` for the delivered order; `order` (category `"asc"` or `"desc"`, `"asc"`, bindable).
-- **Declarations:** one slot, `rows`, of whole rows; events `"sort"` and `"select"`; `writes: %{"selection" => :identity}`; `observes: [:activate, :select]`; reading load `:scan`.
+- **Declarations:** one slot, `rows`, of whole rows, with one optional role, `columns` (`many`, any type): the fields shown, in the order bound (`fields: %{"columns" => ["host", "p50"]}`). Being a role, each field is checked against the source's schema at validation ([06 §3.4](06-pages.md#pages-surface-validate)), so a field the source lacks is a fault at its path before any data flows; unbound, every column of the delivered table shows. Events `"sort"` and `"select"`; `writes: %{"selection" => :identity}`; `observes: [:activate, :select]`; reading load `:scan`.
 - **Budget:** the rows its declared height shows at `2rem` (32 px) a row, times four for scrolling, at least 10.
-- **Markup:** a `<table class="mw-table">` with its `<caption>`; a header row of `<th scope="col">`, one per column in the delivered table's column order, each a real `<button type="button">` emitting `sort` with the field as its value, and the sorted column's `<th>` carrying `aria-sort` (`ascending` or `descending`); a row per delivered row, sorted when `sort` names a column (nil last, ties in delivered order), each `<td>` the value as text, `nil` empty; with an `identity` field, each row's first cell holds a `<button type="button">` named `Select` and the identity, emitting `select` with the row's identity, and the row's id is `Context.id/2` of `r-` and the identity's spelling, base64url-encoded so any identity makes an id, so ids are stable; a `capped` or `stale` table draws its notice above its rows, and any other non-live state its notice alone.
+- **Markup:** a `<table class="mw-table">` with its `<caption>`; a header row of `<th scope="col">`, one per column shown (the `columns` bound, else the delivered table's columns in their order), each a real `<button type="button">` emitting `sort` with the field as its value, and the sorted column's `<th>` carrying `aria-sort` (`ascending` or `descending`); a row per delivered row, sorted when `sort` names a column (nil last, ties in delivered order), each `<td>` the value as text, `nil` empty; with an `identity` field, each row's first shown cell holds a `<button type="button">` named `Select` and the identity, emitting `select` with the row's identity, and the row's id is `Context.id/2` of `r-` and the identity's spelling, base64url-encoded so any identity makes an id, so ids are stable; a `capped` or `stale` table draws its notice above its rows, and any other non-live state its notice alone.
 - **It passes `macaw_component`'s kit**, the core being the contract's first implementer ([macaw_component 00 §3](https://github.com/dcoai/macaw_component/blob/main/spec/00-overview.md#component-order)).
 
 ```test:table-declares
 the table's parameters, slot, events, selection write, observations, reading load and budget are as declared
+```
+
+```test:table-columns
+the columns role chooses the columns shown and their order, and the select button sits in the first shown cell; sorting by a field not shown still sorts; unbound, every column shows; a field the source lacks is a validation fault at its path
 ```
 
 ```test:table-markup

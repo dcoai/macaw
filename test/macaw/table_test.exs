@@ -39,10 +39,18 @@ defmodule Macaw.TableTest do
       }
     ]
 
-  defp html(settings, drawn \\ :live) do
+  defp html(settings, drawn \\ :live, bindings \\ %{}) do
     {:ok, settings} = Component.settings(Table, settings)
     {:ok, declarations} = Component.declarations(Table, settings)
-    {:ok, context} = Context.new(mode: :socketless, instance: "t1", size: {600, 320}, now: @now)
+
+    {:ok, context} =
+      Context.new(
+        mode: :socketless,
+        instance: "t1",
+        size: {600, 320},
+        now: @now,
+        bindings: bindings
+      )
 
     {:ok, assigns} =
       Assigns.new(
@@ -70,6 +78,9 @@ defmodule Macaw.TableTest do
 
     assert {:ok, d} = Component.declarations(Table, %{})
     assert Map.keys(d.slots) == ["rows"]
+
+    assert %{many: true, optional: true, type: [:time, :number, :category, :text, :color, :point]} =
+             d.slots["rows"].requires["columns"]
 
     assert {d.events, d.writes, d.observes, d.reading} ==
              {["sort", "select"], %{"selection" => :identity}, [:activate, :select], :scan}
@@ -100,6 +111,67 @@ defmodule Macaw.TableTest do
     assert html(%{"sort" => "ms"}) =~ ~s(<th scope="col" aria-sort="ascending"><button)
     assert order(html(%{"sort" => "nope"})) == ["b", "a", "c"]
     assert plain =~ "<td>2026-10-28T10:00:00Z</td>" and plain =~ "<td></td>"
+  end
+
+  @tag verifies: "table-columns"
+  test "the columns role chooses the columns and their order; unbound shows every column" do
+    headers = fn html ->
+      for [_, h] <- Regex.scan(~r/data-mw-event="sort" value="([^"]+)"/, html), do: h
+    end
+
+    assert headers.(html(%{})) == ["host", "ms", "seen"]
+
+    chosen = html(%{"identity" => "host"}, :live, %{"rows" => %{"columns" => ["seen", "host"]}})
+    assert headers.(chosen) == ["seen", "host"]
+    refute chosen =~ "<td>30</td>"
+
+    # The first shown cell holds the select button, whichever column it is.
+    assert chosen =~
+             ~s(<td><button type="button" data-mw-event="select" value="b">Select b</button> 2026-10-28T10:00:00Z</td><td>b</td>)
+
+    # Sorting by a field not shown still sorts.
+    sorted = html(%{"sort" => "ms"}, :live, %{"rows" => %{"columns" => ["host"]}})
+    assert sorted =~ "<td>c</td></tr><tr><td>b</td></tr><tr><td>a</td>"
+  end
+
+  @tag verifies: "table-columns"
+  test "a surface binds the columns; a field its source lacks is a fault at validation" do
+    sources = %{
+      "lat" => {%Macaw.Test.Rows{rows: [%{"t" => @now, "v" => 1.0, "host" => "a"}]}, nil}
+    }
+
+    registry = Macaw.Registry.new!([Macaw.Builtin])
+
+    surface = fn columns ->
+      {:ok, s} =
+        Macaw.Surface.new(
+          name: "hosts",
+          cells: %{
+            "t" => %{
+              component: "macaw.table",
+              place: %{x: 0, y: 0, w: 12, h: 4},
+              slots: %{"rows" => %{source: "lat", fields: %{"columns" => columns}}}
+            }
+          }
+        )
+
+      s
+    end
+
+    {:ok, v} = Macaw.Surface.validate(surface.(["host", "v"]), registry, sources)
+
+    html =
+      v
+      |> Macaw.Surface.render(sources: sources, now: @now, ceiling: 1_000)
+      |> Phoenix.HTML.safe_to_string()
+
+    assert html =~
+             ~s(value="host">host</button></th><th scope="col"><button type="button" data-mw-event="sort" value="v">v</button></th></tr>)
+
+    refute html =~ ~s(value="t">)
+
+    assert {:error, [{[:cells, "t", :slots, "rows", :fields, "columns" | _], _}]} =
+             Macaw.Surface.validate(surface.(["host", "hots"]), registry, sources)
   end
 
   @tag verifies: "table-markup"
