@@ -221,7 +221,7 @@ a source error, a crashed fetch, a hung fetch, a capped or reduced delivery and 
 ```
 
 - **One `div` per cell, in reading order,** with the grid's classes and the instance's id; nothing inline. The surface is not a landmark: regions and the page own landmarks ([10 §4](10-web.md#web-a11y)).
-- **Each cell renders with its context** ([macaw_component 02 §2](https://github.com/dcoai/macaw_component/blob/main/spec/02-rendering.md#components-context)): `mode`, `instance` `"<surface>-<cell>"`, `size` its declared size (`measured: false`), `heading_level` one below the surface's title (the title's own level without a title), `theme`, the default `preferences`, `now`, and `bindings`, each slot's resolved binding, so the component reads the field bound to a role with `Context.field/3` (#194); its assigns are its settings, declarations, drawn state, and its deliveries (a `:pure` component) or its value through `init/2`, `delivery/3` and `size/2` (a `:contained` one).
+- **Each cell renders with its context** ([macaw_component 02 §2](https://github.com/dcoai/macaw_component/blob/main/spec/02-rendering.md#components-context)): `mode`, `instance` `"<surface>-<cell>"`, `size` its declared size (`measured: false`), `heading_level` one below the surface's title (the title's own level without a title), `theme`, the default `preferences`, `now`, `bindings`, each slot's resolved binding, so the component reads the field bound to a role with `Context.field/3` (#194), and `schemas`, each slot's source schema as its description gives it, so the component reads a field's label and unit with `Context.label/3` and `unit/3` (#219); its assigns are its settings, declarations, drawn state, and its deliveries (a `:pure` component) or its value through `init/2`, `delivery/3` and `size/2` (a `:contained` one).
 - **A component's raise is the caller's to take**, as the contract says ([macaw_component 01 §1](https://github.com/dcoai/macaw_component/blob/main/spec/01-contract.md#components-behavior)): a host isolates a component by process (`macaw_live`'s contained cell); this render does not catch it.
 - `Macaw.Surface.render/2` fetches and renders in one call.
 
@@ -230,7 +230,7 @@ a surface renders its title at its level and its cells in reading order, each wi
 ```
 
 ```test:render-bindings
-each cell's context carries its slots' resolved bindings, the window field for an unbound window role and no optional role left unbound, in a pure cell's render and a contained cell's init
+each cell's context carries its slots' resolved bindings, the window field for an unbound window role and no optional role left unbound, and each slot's source schema, in a pure cell's render and a contained cell's init
 ```
 
 ```test:render-cells

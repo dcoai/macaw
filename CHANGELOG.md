@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The built-in table heads each column with its field's label from the source's schema, its unit after it (`Request time (s)`); a cell's context carries each slot's schema (`schemas`, read with `Context.label/3` and `unit/3`). Needs macaw_component `~> 0.2.1` (#219, #196).
 - The built-in table has a static stylesheet, `Macaw.Builtin.Table.stylesheet/0` at its content address `stylesheet_path/0`, as the grid's is: every color a theme custom property, and the sorted column marked (#196, #220, spec/05 §6.1).
 - The built-in table's columns are chosen by its `rows` slot's optional `columns` role (`fields: %{"columns" => ["host", "p50"]}`), in the order bound, each field checked against the source's schema at validation; unbound, every column shows, as before (#196, #218, spec/05 §6.1).
 - **Breaking:** `Surface.from_map/1` and `from_json/2` give every fault by path from the document they were given. The faults `new/1` finds are now under `:surface` (`[:surface, :cells, "a", :kind]`, was `[:cells, "a", :kind]`), as a reader's own faults already were; `new/1` itself is unchanged (#215, #217, spec/06 §3.1).

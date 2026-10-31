@@ -50,7 +50,7 @@ defmodule Macaw.MixProject do
       # The data model, sources, deliveries and finishing (spec/00 §4).
       {:macaw_data, "~> 0.7.0"},
       # The component contract (spec/00 §4).
-      {:macaw_component, "~> 0.2.0"},
+      {:macaw_component, "~> 0.2.1"},
       {:phoenix_html, "~> 4.1"},
       # The component kit reads renders with it; the built-in table is checked by the kit.
       {:lazy_html, "~> 0.1", only: :test},

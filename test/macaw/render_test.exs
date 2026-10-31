@@ -239,7 +239,7 @@ defmodule Macaw.RenderTest do
       Macaw.Data.Schema.new!(%{
         "t" => %{type: :time},
         "v" => %{type: :number},
-        "w" => %{type: :number}
+        "w" => %{type: :number, quantity: :duration, label: "Wait", unit: "ms"}
       })
 
     rows = for i <- 1..3, do: %{"t" => DateTime.add(@now, i * 60), "v" => 1.0, "w" => i * 10.0}
@@ -269,7 +269,8 @@ defmodule Macaw.RenderTest do
     assert v.cells["pure"].slots["points"].fields == %{"x" => "t", "y" => "w"}
 
     html = v |> Surface.render(env(sources)) |> Phoenix.HTML.safe_to_string()
-    assert html =~ "<p>x=t y=w label=nil sum=60.0</p>"
-    assert html =~ "<p>reads w</p>"
+    # Each slot's source schema too, so a component reads a field's label and unit.
+    assert html =~ ~s(<p>x=t y=w label=nil unit="ms" sum=60.0</p>)
+    assert html =~ "<p>reads w as Wait</p>"
   end
 end

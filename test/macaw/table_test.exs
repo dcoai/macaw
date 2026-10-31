@@ -39,7 +39,7 @@ defmodule Macaw.TableTest do
       }
     ]
 
-  defp html(settings, drawn \\ :live, bindings \\ %{}) do
+  defp html(settings, drawn \\ :live, bindings \\ %{}, schemas \\ %{}) do
     {:ok, settings} = Component.settings(Table, settings)
     {:ok, declarations} = Component.declarations(Table, settings)
 
@@ -49,7 +49,8 @@ defmodule Macaw.TableTest do
         instance: "t1",
         size: {600, 320},
         now: @now,
-        bindings: bindings
+        bindings: bindings,
+        schemas: schemas
       )
 
     {:ok, assigns} =
@@ -166,12 +167,35 @@ defmodule Macaw.TableTest do
       |> Phoenix.HTML.safe_to_string()
 
     assert html =~
-             ~s(value="host">host</button></th><th scope="col"><button type="button" data-mw-event="sort" value="v">v</button></th></tr>)
+             ~s|value="host">host</button></th><th scope="col"><button type="button" data-mw-event="sort" value="v">v (ms)</button></th></tr>|
 
     refute html =~ ~s(value="t">)
 
     assert {:error, [{[:cells, "t", :slots, "rows", :fields, "columns" | _], _}]} =
              Macaw.Surface.validate(surface.(["host", "hots"]), registry, sources)
+  end
+
+  @tag verifies: "table-headers"
+  test "a header is the field's label with its unit after it; the sort value stays the field" do
+    schema =
+      Macaw.Data.Schema.new!(%{
+        "host" => %{type: :category, label: "Host <name>"},
+        "ms" => %{type: :number, quantity: :duration, label: "Request time", unit: "s"},
+        "seen" => %{type: :time}
+      })
+
+    html = html(%{"sort" => "ms"}, :live, %{}, %{"rows" => schema})
+
+    assert html =~ ~s(value="host">Host &lt;name&gt;</button></th>)
+
+    assert html =~
+             ~s|<th scope="col" aria-sort="ascending"><button type="button" data-mw-event="sort" value="ms">Request time (s)</button></th>|
+
+    assert html =~ ~s(value="seen">seen</button></th>)
+
+    # No schema for the slot: every header is its field.
+    plain = html(%{}, :live)
+    for f <- ["host", "ms", "seen"], do: assert(plain =~ ~s(value="#{f}">#{f}</button>))
   end
 
   @tag verifies: "table-stylesheet"

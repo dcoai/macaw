@@ -123,14 +123,16 @@ defmodule Macaw.Builtin.Table do
        ~s(<table class="mw-table"><caption>),
        escape(settings["caption"]),
        "</caption><thead><tr>",
-       Enum.map(columns, &header(&1, sort, settings["order"])),
+       Enum.map(columns, &header(&1, sort, settings["order"], assigns.context)),
        "</tr></thead><tbody>",
        Enum.map(rows, &row(&1, columns, identity, assigns.context)),
        "</tbody></table>"
      ]}
   end
 
-  defp header(column, sort, order) do
+  # A column's header reads its field's label, its unit after it, from the source's schema
+  # (`Context.label/3`, `unit/3`); the sort button's value stays the field.
+  defp header(column, sort, order, context) do
     aria =
       cond do
         column != sort -> ""
@@ -142,9 +144,18 @@ defmodule Macaw.Builtin.Table do
       ~s(<th scope="col"#{aria}><button type="button" data-mw-event="sort" value="),
       escape(column),
       ~s(">),
-      escape(column),
+      escape(heading(context, column)),
       "</button></th>"
     ]
+  end
+
+  defp heading(context, column) do
+    label = Context.label(context, "rows", column)
+
+    case Context.unit(context, "rows", column) do
+      nil -> label
+      unit -> "#{label} (#{unit})"
+    end
   end
 
   defp row(row, columns, identity, context) do

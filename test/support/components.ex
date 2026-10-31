@@ -153,7 +153,7 @@ defmodule Macaw.Test.Bound do
     sum = rows |> Enum.map(&Map.fetch!(&1, y)) |> Enum.sum()
 
     {:safe,
-     ~s(<p>x=#{x} y=#{y} label=#{inspect(Context.field(ctx, "points", "label"))} sum=#{sum}</p>)}
+     ~s(<p>x=#{x} y=#{y} label=#{inspect(Context.field(ctx, "points", "label"))} unit=#{inspect(Context.unit(ctx, "points", y))} sum=#{sum}</p>)}
   end
 
   def render(:content, assigns), do: Macaw.Component.Drawn.render(assigns.drawn, assigns.context)
@@ -170,7 +170,11 @@ defmodule Macaw.Test.BoundCounter do
       {:ok, slots: %{"points" => %{requires: %{"y" => %{type: :number}}}}, isolation: :contained}
 
   @impl true
-  def init(_settings, context), do: %{y: Macaw.Component.Context.field(context, "points", "y")}
+  def init(_settings, context) do
+    y = Macaw.Component.Context.field(context, "points", "y")
+    %{y: y, label: Macaw.Component.Context.label(context, "points", y)}
+  end
+
   @impl true
   def delivery(value, _slot, _delivery), do: value
   @impl true
@@ -179,7 +183,9 @@ defmodule Macaw.Test.BoundCounter do
   def bound(value, _name, _new), do: value
 
   @impl true
-  def render(:content, %{drawn: :live, value: value}), do: {:safe, "<p>reads #{value.y}</p>"}
+  def render(:content, %{drawn: :live, value: value}),
+    do: {:safe, "<p>reads #{value.y} as #{value.label}</p>"}
+
   def render(:content, assigns), do: Macaw.Component.Drawn.render(assigns.drawn, assigns.context)
 end
 
