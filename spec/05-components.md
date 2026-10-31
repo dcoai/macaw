@@ -89,6 +89,7 @@ Components ship in packages, which bring their own dependencies (Macaw never imp
 - **Declarations:** one slot, `rows`, of whole rows, with one optional role, `columns` (`many`, any type): the fields shown, in the order bound (`fields: %{"columns" => ["host", "p50"]}`). Being a role, each field is checked against the source's schema at validation ([06 §3.4](06-pages.md#pages-surface-validate)), so a field the source lacks is a fault at its path before any data flows; unbound, every column of the delivered table shows. Events `"sort"` and `"select"`; `writes: %{"selection" => :identity}`; `observes: [:activate, :select]`; reading load `:scan`.
 - **Budget:** the rows its declared height shows at `2rem` (32 px) a row, times four for scrolling, at least 10.
 - **Markup:** a `<table class="mw-table">` with its `<caption>`; a header row of `<th scope="col">`, one per column shown (the `columns` bound, else the delivered table's columns in their order), each a real `<button type="button">` emitting `sort` with the field as its value, and the sorted column's `<th>` carrying `aria-sort` (`ascending` or `descending`); a row per delivered row, sorted when `sort` names a column (nil last, ties in delivered order), each `<td>` the value as text, `nil` empty; with an `identity` field, each row's first shown cell holds a `<button type="button">` named `Select` and the identity, emitting `select` with the row's identity, and the row's id is `Context.id/2` of `r-` and the identity's spelling, base64url-encoded so any identity makes an id, so ids are stable; a `capped` or `stale` table draws its notice above its rows, and any other non-live state its notice alone.
+- **Stylesheet:** one static sheet, `Macaw.Builtin.Table.stylesheet/0`, served from `'self'` at `stylesheet_path/0`, its content address, as the grid's is ([06 §3.3](06-pages.md#pages-grid)): rules for the table, its caption, cells, header and select buttons, and the sorted column's mark (`aria-sort`'s ▲ or ▼). Every color is a theme custom property with the default theme's value as its fallback ([macaw_layers 04 §6](https://github.com/dcoai/macaw_layers/blob/main/spec/04-themes.md#themes-delivery)); it has no `url(` and no `@import`.
 - **It passes `macaw_component`'s kit**, the core being the contract's first implementer ([macaw_component 00 §3](https://github.com/dcoai/macaw_component/blob/main/spec/00-overview.md#component-order)).
 
 ```test:table-declares
@@ -97,6 +98,10 @@ the table's parameters, slot, events, selection write, observations, reading loa
 
 ```test:table-columns
 the columns role chooses the columns shown and their order, and the select button sits in the first shown cell; sorting by a field not shown still sorts; unbound, every column shows; a field the source lacks is a validation fault at its path
+```
+
+```test:table-stylesheet
+the table's stylesheet has a rule for every class and element the table emits, every color a theme property, no url( and no @import, and its path is its content's address
 ```
 
 ```test:table-markup

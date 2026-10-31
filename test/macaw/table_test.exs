@@ -174,6 +174,36 @@ defmodule Macaw.TableTest do
              Macaw.Surface.validate(surface.(["host", "hots"]), registry, sources)
   end
 
+  @tag verifies: "table-stylesheet"
+  test "the stylesheet styles what the table emits, in the theme's colors only, at its address" do
+    css = Table.stylesheet()
+    assert Table.stylesheet_path() == Macaw.Component.Stylesheet.path(css)
+
+    for selector <- [
+          ".mw-table{",
+          ".mw-table caption",
+          ".mw-table th,",
+          ".mw-table td{",
+          ".mw-table th button",
+          ~s(.mw-table th[aria-sort="ascending"]),
+          ~s(.mw-table th[aria-sort="descending"]),
+          ".mw-table td button"
+        ],
+        do: assert(css =~ selector, "no rule for #{selector}")
+
+    refute css =~ "url("
+    refute css =~ "@import"
+
+    for [_, property, value] <-
+          Regex.scan(~r/([a-z-]*color|border[a-z-]*|outline):([^;}]+)[;}]/, css),
+        value =~ ~r/#[0-9a-f]{3,6}|rgb|hsl/i,
+        do:
+          assert(
+            value =~ ~r/var\(--mw-[a-z-]+,#[0-9a-f]+\)/,
+            "#{property}:#{value} is not a theme property"
+          )
+  end
+
   @tag verifies: "table-markup"
   test "an identity gives select buttons and stable ids; a non-live state draws its notice" do
     with_identity = html(%{"identity" => "host"})

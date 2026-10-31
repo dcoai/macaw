@@ -15,7 +15,8 @@ defmodule Macaw.Builtin.Table do
     * **markup:** a capped or stale table draws its notice above its rows; a caption, a header of scoped `<th>` each holding a real button that emits
       `sort`, the sorted column's `aria-sort`, a row per delivered row sorted when `sort`
       names a column (nil last, ties in delivered order), and with an `identity` field a
-      `select` button in each row's first cell and the row's id from its identity.
+      `select` button in each row's first cell and the row's id from its identity;
+    * **stylesheet:** `stylesheet/0`, served at `stylesheet_path/0`, its content address.
   """
 
   use Macaw.Component, name: "macaw.table", kinds: [:content]
@@ -57,6 +58,33 @@ defmodule Macaw.Builtin.Table do
 
   @impl true
   def budget("rows", _settings, {_w, h}), do: max(10, trunc(h / 32) * 4)
+
+  @doc """
+  The table's one static stylesheet: the table, its caption, cells, header and select
+  buttons and the sorted column's mark, every color a theme custom property with the
+  default theme's value as its fallback. It loads and imports nothing.
+  """
+  @spec stylesheet() :: String.t()
+  def stylesheet do
+    """
+    .mw-table{border-collapse:collapse;inline-size:100%;font-family:var(--mw-font-family,sans-serif);color:var(--mw-text,#333333);background-color:var(--mw-background,#ffffff)}
+    .mw-table caption{caption-side:top;text-align:start;font-weight:600;padding-block:0.25rem 0.5rem}
+    .mw-table th,.mw-table td{text-align:start;padding:0.375rem 0.75rem;border-block-end:1px solid var(--mw-grid,#e0e0e0)}
+    .mw-table th{border-block-end-color:var(--mw-axis,#666666)}
+    .mw-table tbody tr:nth-child(even){background-color:var(--mw-surface,#eef2f6)}
+    .mw-table button{font:inherit;color:inherit;background-color:transparent;border:0;padding:0;cursor:pointer}
+    .mw-table th button{font-weight:600}
+    .mw-table th[aria-sort] button::after{margin-inline-start:0.25em}
+    .mw-table th[aria-sort="ascending"] button::after{content:"\\25B2"}
+    .mw-table th[aria-sort="descending"] button::after{content:"\\25BC"}
+    .mw-table td button{text-decoration:underline;color:var(--mw-info,#3b6fa8)}
+    .mw-table button:focus-visible{outline:2px solid var(--mw-info,#3b6fa8);outline-offset:2px}
+    """
+  end
+
+  @doc "The stylesheet's path, its content address (`Macaw.Component.Stylesheet.path/1`)."
+  @spec stylesheet_path() :: String.t()
+  def stylesheet_path, do: Macaw.Component.Stylesheet.path(stylesheet())
 
   # Capped and stale rows are still rows: the notice, then the table.
   @impl true

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The built-in table has a static stylesheet, `Macaw.Builtin.Table.stylesheet/0` at its content address `stylesheet_path/0`, as the grid's is: every color a theme custom property, and the sorted column marked (#196, #220, spec/05 §6.1).
 - The built-in table's columns are chosen by its `rows` slot's optional `columns` role (`fields: %{"columns" => ["host", "p50"]}`), in the order bound, each field checked against the source's schema at validation; unbound, every column shows, as before (#196, #218, spec/05 §6.1).
 - **Breaking:** `Surface.from_map/1` and `from_json/2` give every fault by path from the document they were given. The faults `new/1` finds are now under `:surface` (`[:surface, :cells, "a", :kind]`, was `[:cells, "a", :kind]`), as a reader's own faults already were; `new/1` itself is unchanged (#215, #217, spec/06 §3.1).
 - CI runs the family's dependency advisories guard (`ci/advisories.exs`, with a reasoned allowlist that defaults empty), so a locked package with a security advisory, or a retired one, fails the pipeline; phoenix_html is locked at 4.4.0 (EEF-CVE-2026-117645) (#216, macaw#214).
