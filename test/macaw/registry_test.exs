@@ -19,6 +19,7 @@ defmodule Macaw.RegistryTest do
     assert Registry.components(empty) == []
     # Layouts too: the built-in ones, and none the host did not add (spec/06 §3.3).
     assert Registry.layouts(empty) == [
+             {"areas", Macaw.Layout.Areas},
              {"flow", Macaw.Layout.Flow},
              {"grid", Macaw.Grid},
              {"stack", Macaw.Layout.Stack}

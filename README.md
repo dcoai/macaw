@@ -42,7 +42,7 @@ sources = %{"latency" => {my_source, my_context}}
 html = Macaw.Surface.render(validated, sources: sources, now: DateTime.utc_now(), ceiling: 10_000)
 ```
 
-Serve `Macaw.Grid.stylesheet/0` at `Macaw.Grid.stylesheet_path/0`, `Macaw.Layout.Stack.stylesheet/0` and `Macaw.Layout.Flow.stylesheet/0` at their `stylesheet_path/0` when a surface uses them, and `Macaw.Builtin.Table.stylesheet/0` at `Macaw.Builtin.Table.stylesheet_path/0`, and serve macaw_component's `priv/static` for the drawn states' notices (`Macaw.Component.Drawn.stylesheet_url/0`); link them from the page. Nothing is inline.
+Serve `Macaw.Grid.stylesheet/0` at `Macaw.Grid.stylesheet_path/0`, `Macaw.Layout.Stack.stylesheet/0` and `Macaw.Layout.Flow.stylesheet/0` at their `stylesheet_path/0` when a surface uses them (and, for any surface, `Macaw.Surface.stylesheet/1` of the validated surface, which an areas layout's template needs), and `Macaw.Builtin.Table.stylesheet/0` at `Macaw.Builtin.Table.stylesheet_path/0`, and serve macaw_component's `priv/static` for the drawn states' notices (`Macaw.Component.Drawn.stylesheet_url/0`); link them from the page. Nothing is inline.
 
 | Module | What it is | Spec |
 |---|---|---|

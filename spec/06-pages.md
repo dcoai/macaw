@@ -95,7 +95,7 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 |---|---|---|
 | `name` | the surface's name: lower-case words joined by `_`, a name in the kernel's sense ([macaw_layers 01 §1](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-names)), unique where it is stored; it prefixes its cells' instance ids (§3.6) | required |
 | `title` | a non-empty string, its heading; `nil` for a surface without one | `nil` |
-| `layout` | the layout its cells are placed by (§3.3): a name, or `{name, options}`; `:grid` is the 12-column grid, `{:grid, columns: 24}` one of 24, `{:stack, order: [...]}` one column and `{:flow, order: [...]}` sections for prose. Built in, a name's options and its cells' places are judged here; one only the host's registry knows is held as given and judged by `validate/3` | `:grid` |
+| `layout` | the layout its cells are placed by (§3.3): a name, or `{name, options}`; `:grid` is the 12-column grid, `{:grid, columns: 24}` one of 24, `{:stack, order: [...]}` one column, `{:flow, order: [...]}` sections for prose, and `{:areas, template: [...]}` named regions. Built in, a name's options and its cells' places are judged here; one only the host's registry knows is held as given and judged by `validate/3` | `:grid` |
 | `cells` | the cells by name (§3.2), a map, at least one | required |
 
 - **Building one:** `Macaw.Surface.new/1` from a keyword list or a map with atom keys answers `{:ok, surface}` or `{:error, faults}`, every fault at once by path from the surface, as the kernel orders them ([macaw_layers 01 §3](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-faults)). A key it doesn't have is `:unknown_key`; a missing one `:required`. Names in it are strings; an atom is read as its spelling, and no atom is made.
@@ -160,12 +160,13 @@ a cell builds with its defaults, kind read from an atom or its spelling, setting
 | `size/4` | a place's declared size in CSS pixels from the surface's width and row height, what its component lays out at and its budget is evaluated at, before any render (§3.5) |
 | `stylesheet/1` | its static stylesheet for the options, served from `'self'` by its content address |
 
-- **The built-in layouts** are `Macaw.Layout.builtins/0`: the grid (`Macaw.Grid`), the stack (`Macaw.Layout.Stack`) and the flow (`Macaw.Layout.Flow`), below; `Layout.default/0`, the grid, is a surface's layout when it names none. `Layout.split/1` reads a `layout` value as its spelled name and its options; anything else is `{:type, :layout}` at `[:layout]`.
+- **The built-in layouts** are `Macaw.Layout.builtins/0`: the grid (`Macaw.Grid`), the stack (`Macaw.Layout.Stack`), the flow (`Macaw.Layout.Flow`) and named areas (`Macaw.Layout.Areas`), below; `Layout.default/0`, the grid, is a surface's layout when it names none. `Layout.split/1` reads a `layout` value as its spelled name and its options; anything else is `{:type, :layout}` at `[:layout]`.
 - **Which layouts exist is the host's** ([12 §1.1](12-registry.md#registry-host)): its registry holds the built-in layouts and the ones it adds, and nothing else. `Macaw.Surface.new/1` judges a built-in layout's options and its cells' places as it builds the surface; a name no built-in has is held as given, with its cells' places, and judged by `validate/3` through the registry (§3.4). A name the registry doesn't hold is `{:unknown, :layout}` at `[:layout]`, and nothing is placed.
+- **A host serves the stylesheet a surface's layout uses:** `Macaw.Surface.stylesheet/1` of a validated surface is `{path, css}`, the layout's sheet for its options and its content address, served from `'self'`. The grid's, the stack's and the flow's are each one sheet whatever the surface; an areas layout's is its template's.
 - **Nothing reaches a layout's module but through the behavior:** validation, fetching and rendering ask the validated surface's layout, never `Macaw.Grid` by name.
 
 ```test:layout-behavior
-the grid, the stack and the flow are the built-in layouts, the grid the default, its callbacks its own rules; a surface holds :grid for the grid with no options and refuses options the grid doesn't take, and a layout that is neither a name nor {name, options}; nothing in the library reaches the grid but through the behavior
+the grid, the stack, the flow and the areas are the built-in layouts, the grid the default, its callbacks its own rules; a surface holds :grid for the grid with no options and refuses options the grid doesn't take, and a layout that is neither a name nor {name, options}; nothing in the library reaches the grid but through the behavior
 ```
 
 ```test:layout-registry
@@ -184,6 +185,20 @@ a layout no registry holds is {:unknown, :layout} at validation, its places held
 
 ```test:layout-ordered
 a stack and a flow render in the order given, which is the DOM order, with their classes and no inline style; a cell with a place is refused, and a missing, mistyped or extra option; at validation a name no cell has, a name given twice and a cell left out are all faults by path; a cell's size is the width and four rows; each stylesheet is served by its address; an ordered layout round-trips through the map and JSON forms
+```
+
+#### Named areas {#pages-areas}
+
+**`:areas` lays out named regions from a template,** as CSS's `grid-template-areas` does: `{:areas, template: [["header", "header"], ["nav", "main"]]}`. Its one option, **`template`**, required, is rows of area names, each row naming the area of each of its columns and `nil` a column no area holds (written `.` in the stylesheet), every row as wide as the first, at most 64 rows of at most 24 columns. An area name is lower-case letters, digits and `_`, starting with a letter, given as a string or an atom read as its spelling, so it is safe in a stylesheet by its grammar.
+
+- **The template's faults,** all at once, at `[:layout, :options, :template]`: missing is `:required`, not a non-empty list `{:type, :template}`; a row that isn't a non-empty list is `{:type, {:list, :name}}` at its index and an entry that isn't a name or `nil` `{:type, :name}` at `[..., i, j]`; a row of another width `{:width, first, given}` at its index; an area that isn't one rectangle (its columns don't fill the box they span) `{:not_rectangle, name}`; too many rows or columns `{:limit, :rows | :columns, max, given}`.
+- **A cell's place names an area,** `%{area: "main"}`: a cell with none is `:required`, a missing or ill-spelled `area` `:required` or `{:type, :name}` at `[:cells, name, :place, :area]`, and another key `:unknown_key`. At validation, an area the template doesn't name is `{:unknown_area, area}` there, and a second cell in one area `{:taken, first}` at the later cell by name. An area no cell takes stays empty.
+- **Reading order** is the order each area first appears in the template, row by row, and so the DOM order and the visual order ([10 §4](10-web.md#web-a11y)).
+- **Classes:** the container is `"mw-areas mw-areas-<digest>"`, the digest the first twelve hex digits of the template's value's digest ([macaw_layers 01 §7](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-digest)), and each cell `"mw-cell mw-area-<area>"`. **The stylesheet is generated per template** (`Macaw.Layout.Areas.stylesheet/1`): under the template's class, its areas and equal columns, the rows of `var(--mw-grid-row, 4rem)` at least and the grid's gap, a rule placing each area, and a container query that stacks the areas into reading order when the surface is narrower than `40rem`. One template is one sheet and one address (`stylesheet_path/1`), whatever spelling gave it; another template has another class, so two never share a rule. No style is inline.
+- **A cell's declared size** is its area's share of the width by its columns and its rows' height: `{columns * width / template_width, rows * row_height}`.
+
+```test:layout-areas
+a template's rows are names or nil as wide as the first, each area a rectangle, within the limits, every fault at once by path; a cell's place names an area, an unknown area and two cells in one are faults at validation; reading order is each area's first appearance, the DOM order, with no inline style; a cell's size is its area's share; one template is one stylesheet at one address, another another, and a host gets a validated surface's sheet; an areas layout round-trips through the map and JSON forms
 ```
 
 #### The grid {#pages-grid}

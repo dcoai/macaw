@@ -85,7 +85,7 @@ Moved: [macaw_component 02 §3](https://github.com/dcoai/macaw_component/blob/ma
 - a landmark element per region role, exactly one `main`, and labeled navs;
 - **heading levels come from context:** the page has the `<h1>`, and each surface and component renders its headings at the level it is given. Components never hard-code a level, so the outline is right for any arrangement;
 - skip links: to main, and to navigation when there is a sidebar;
-- DOM order equal to visual order: every surface layout's reading order is its DOM order ([06 §3.3](06-pages.md#pages-layouts)), by position on the grid and by the order given on the stack and the flow.
+- DOM order equal to visual order: every surface layout's reading order is its DOM order ([06 §3.3](06-pages.md#pages-layouts)), by position on the grid, by the order given on the stack and the flow, and by each area's first appearance in an areas template.
 
 **Keyboard:**
 - tab order is DOM order, with no positive `tabindex`;

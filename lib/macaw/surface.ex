@@ -194,6 +194,17 @@ defmodule Macaw.Surface do
   def render(%Macaw.Surface.Validated{} = validated, env),
     do: render(validated, fetch(validated, env), env)
 
+  @doc """
+  The stylesheet a validated surface's layout places its cells by, and its path, its content
+  address: `{path, css}`, for the host to serve from `'self'` (spec/06 §3.3). The grid's,
+  the stack's and the flow's are each one sheet; an areas layout's is its template's.
+  """
+  @spec stylesheet(Macaw.Surface.Validated.t()) :: {String.t(), String.t()}
+  def stylesheet(%Macaw.Surface.Validated{layout: {layout, options}}) do
+    css = layout.stylesheet(options)
+    {Macaw.Component.Stylesheet.path(css), css}
+  end
+
   # -- the forms ---------------------------------------------------------------------------
 
   @doc """
