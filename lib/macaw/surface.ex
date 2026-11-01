@@ -55,6 +55,51 @@ defmodule Macaw.Surface do
   @name ~r/\A[a-z][a-z0-9_]*\z/
 
   @doc """
+  A surface in its short code form (spec/06 §3.8): its name, then its keys, each cell
+  `{component, opts}` with `opts` the rest of the cell's keys, in a list, so the cells
+  take their order and their names from it. It is `new/1` of the same keys, and the
+  surface it answers is equal to the one written out.
+
+      iex> {:ok, short} = Macaw.Surface.build("status", cells: [{"macaw.table", source: "services"}])
+      iex> Macaw.Surface.new(
+      ...>   name: "status",
+      ...>   layout: {:stack, order: ["table_services"]},
+      ...>   cells: %{"table_services" => %{component: "macaw.table", source: "services"}}
+      ...> ) == {:ok, short}
+      true
+  """
+  @spec build(String.t() | atom(), keyword()) :: {:ok, t()} | {:error, [Fault.t(), ...]}
+  def build(name, opts \\ []) when is_list(opts) do
+    {cells, opts} = Keyword.pop(opts, :cells)
+    new([name: name, cells: build_cells(cells)] ++ opts)
+  end
+
+  @doc "`build/2`, or an `ArgumentError` naming every fault: a surface written in code."
+  @spec build!(String.t() | atom(), keyword()) :: t()
+  def build!(name, opts \\ []) do
+    case build(name, opts) do
+      {:ok, surface} ->
+        surface
+
+      {:error, faults} ->
+        raise ArgumentError,
+              "the surface can't be built:\n" <>
+                Enum.map_join(faults, "\n", &("  " <> Fault.format(&1)))
+    end
+  end
+
+  defp build_cells(cells) when is_list(cells) do
+    Enum.map(cells, fn
+      {component, opts} when is_list(opts) -> Map.new([{:component, component} | opts])
+      {component, opts} when is_map(opts) -> Map.put(opts, :component, component)
+      component when is_binary(component) or is_atom(component) -> %{component: component}
+      other -> other
+    end)
+  end
+
+  defp build_cells(other), do: other
+
+  @doc """
   A surface from a keyword list or a map with atom keys: `{:ok, surface}` or every fault
   at once, by path from the surface, in the kernel's order.
   """

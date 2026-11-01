@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The short code form (#231, #204): `Macaw.Surface.build/2` and `build!/2`, a surface's name and keys with its cells `{component, opts}` in a list, equal to the surface written out; with the defaults, a predefined source and the table are five lines.
 - The host's default registry and the one-call render (#230, #204): `Macaw.Registry.default/0` (and `from_config/1`) from `config :macaw, packages:, layouts:`, `Macaw.Builtin` always included, kept in `:persistent_term` and rebuilt when the configuration changes; `Macaw.Surface.show/2` validates, fetches and renders in one call, `sources:` given once, the registry, `now:` (one clock read in the call), `ceiling:` (from `config :macaw, :ceiling`) and `mode:` (from a LiveView `socket:`) defaulted.
 - **Fixed:** a list of cells none of which could be named also reported `:place_mixed` and `:empty`; it now gives only its entries' faults, a property over generated lists guarding it (#235, #233).
 - **Fixed:** a bound cell under `:stack` or `:flow` (and a stacked list cell) was never fetched and always drew no data: the fetch read the cell's place as a comprehension filter, which drops a `nil` place. Every built-in layout's bound cells are now tested to fetch at their declared size (#234, #232).

@@ -20,6 +20,17 @@ From Hex:
 
 **v0.1.0: surfaces with a grid,** validated and rendered complete without a socket, and the built-in table ([spec/06 §3](https://github.com/dcoai/macaw/blob/main/spec/06-pages.md#pages-regions)). State, pages and templates, records, the web plans and the live runtime follow, each tracked by its own issue ([spec/00 §5](https://github.com/dcoai/macaw/blob/main/spec/00-overview.md#overview-order)).
 
+In five lines, the host's registry and ceiling configured (`config :macaw, packages: [...], ceiling: 10_000`):
+
+```elixir
+{:ok, html} =
+  "service"
+  |> Macaw.Surface.build!(title: "Service", cells: [{"macaw.table", source: "latency"}])
+  |> Macaw.Surface.show(sources: %{"latency" => {my_source, my_context}})
+```
+
+The same surface written out, every default stated, and the two passes taken one at a time:
+
 ```elixir
 registry = Macaw.Registry.new!([Macaw.Builtin])
 sources = %{"latency" => {my_source, my_context}}

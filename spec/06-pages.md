@@ -329,6 +329,23 @@ It renders exactly what `validate/3` then `render/2` render, given the same `now
 show/2 renders what validate/3 then render/2 render given the same now, from a surface, {:ok, surface} or attrs, with the default registry or a given one; it answers validation's and new/1's faults unchanged; the ceiling comes from the host's config, and its absence raises; with no now it reads the clock once itself; its mode is socketless unless given and follows a LiveView socket's connection
 ```
 
+### 3.8 The short code form {#pages-surface-build}
+
+**`Macaw.Surface.build/2`** writes a surface in code, `build(name, keys)`: the surface's other keys as `new/1` takes them, its `cells` a list in which each cell is `{component, opts}` (`opts` the cell's other keys, a keyword list or a map) or a component's name alone. It is `new/1` of the same keys, with the list's order and derived names (§3.2), so the surface it answers is equal to the one written out, and `to_map/1` writes that one. `build!/2` answers the surface or raises `ArgumentError` naming every fault, a mistake in the code that wrote it.
+
+With the defaults of §3.2, §3.3 and §3.7, a surface of a predefined source and the built-in table is five lines:
+
+```elixir
+{:ok, html} =
+  "status"
+  |> Macaw.Surface.build!(title: "Service status", cells: [{"macaw.table", source: "services"}])
+  |> Macaw.Surface.show(sources: %{"services" => {%MyApp.Services{}, nil}})
+```
+
+```test:surface-build
+the short form in five lines renders, byte for byte, the surface written out; build/2 is new/1 of the same keys, cells as {component, opts} or a name, and build!/2 raises naming the faults
+```
+
 ## 4. Persistent regions {#pages-persistent}
 
 <!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
