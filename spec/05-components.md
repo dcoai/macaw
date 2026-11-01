@@ -101,7 +101,7 @@ each column's header is its field's label, its unit after it in parentheses when
 ```
 
 ```test:table-columns
-the columns role chooses the columns shown and their order, and the select button sits in the first shown cell; sorting by a field not shown still sorts; unbound, every column shows; a field the source lacks is a validation fault at its path
+the columns role chooses the columns shown and their order, and the select button sits in the first shown cell; sorting by a field not shown still sorts; unbound, every column shows; a field the source lacks, or one listed twice, is a validation fault at its path
 ```
 
 ```test:table-stylesheet

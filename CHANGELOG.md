@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Needs macaw_component `~> 0.2.2`: a column the table's `columns` role lists twice is `{:duplicate, field}` at its path, never shown twice (#240, #237).
 - **Fixed:** a layout's bad options no longer hide its cells' place faults, at `new/1` or at validation, since `place/1` judges a place's shape alone; and `Surface.show/2` answers a failed `new/1` or `build/2` result's faults instead of raising (#238, #236).
 - The table's docs and spec state its unbound column order as the code gives it: the delivered table's, name order for rows given as maps (#239, #237).
 - The short code form (#231, #204): `Macaw.Surface.build/2` and `build!/2`, a surface's name and keys with its cells `{component, opts}` in a list, equal to the surface written out; with the defaults, a predefined source and the table are five lines.

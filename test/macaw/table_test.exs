@@ -182,6 +182,10 @@ defmodule Macaw.TableTest do
 
     assert {:error, [{[:cells, "t", :slots, "rows", :fields, "columns" | _], _}]} =
              Macaw.Surface.validate(surface.(["host", "hots"]), registry, sources)
+
+    # A column shown twice is a fault at the role, never two copies (#237).
+    assert Macaw.Surface.validate(surface.(["host", "v", "host"]), registry, sources) ==
+             {:error, [{[:cells, "t", :slots, "rows", :fields, "columns"], {:duplicate, "host"}}]}
   end
 
   @tag verifies: "table-headers"
