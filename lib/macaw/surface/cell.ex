@@ -19,7 +19,7 @@ defmodule Macaw.Surface.Cell do
   alias Macaw.Layers.Names
 
   @enforce_keys [:component]
-  defstruct component: nil, kind: :content, settings: %{}, slots: %{}, place: nil
+  defstruct component: nil, kind: :content, settings: %{}, slots: %{}, source: nil, place: nil
 
   @typedoc "Where a cell sits, as its layout reads it: `%{x, y, w, h}` on the grid."
   @type place :: term()
@@ -34,10 +34,11 @@ defmodule Macaw.Surface.Cell do
           kind: Macaw.Component.kind(),
           settings: %{String.t() => term()},
           slots: %{String.t() => slot()},
+          source: slot() | nil,
           place: place() | nil
         }
 
-  @keys [:component, :kind, :settings, :slots, :place]
+  @keys [:component, :kind, :settings, :slots, :source, :fields, :params, :place]
   @slot_keys [:source, :fields, :params]
   @doc "A cell's keys, in order."
   @spec keys() :: [atom(), ...]
@@ -67,6 +68,7 @@ defmodule Macaw.Surface.Cell do
     {kind, k} = kind(Map.get(attrs, :kind, :content))
     {settings, s} = named(Map.get(attrs, :settings, %{}), [:settings])
     {slots, sl} = slots(Map.get(attrs, :slots, %{}))
+    {source, so} = source(attrs, slots)
     {place, p} = place(Map.get(attrs, :place), layout)
 
     cell = %__MODULE__{
@@ -74,10 +76,11 @@ defmodule Macaw.Surface.Cell do
       kind: kind,
       settings: settings,
       slots: slots,
+      source: source,
       place: place
     }
 
-    answer(unknown ++ c ++ k ++ s ++ sl ++ p, cell)
+    answer(unknown ++ c ++ k ++ s ++ sl ++ so ++ p, cell)
   end
 
   def new(_other, _layout), do: {:error, [{[], {:type, :map}}]}
@@ -114,6 +117,25 @@ defmodule Macaw.Surface.Cell do
   end
 
   defp slots(_other), do: {%{}, [{[:slots], {:type, :map}}]}
+
+  # The shorthand for a component's one slot (spec/06 §3.2): `source`, with `fields` and
+  # `params` beside it, a binding with no slot name, which validation gives its slot.
+  defp source(attrs, slots) do
+    case {Map.fetch(attrs, :source), Map.take(attrs, [:fields, :params])} do
+      {:error, beside} when beside == %{} ->
+        {nil, []}
+
+      {:error, beside} ->
+        {nil, for(key <- Enum.sort(Map.keys(beside)), do: {[key], {:requires, :source}})}
+
+      {{:ok, _source}, _beside} when slots != %{} ->
+        {nil, [{[:source], :source_and_slots}]}
+
+      {{:ok, source}, beside} ->
+        {binding, faults} = slot(Map.put(beside, :source, source), [])
+        {binding, faults}
+    end
+  end
 
   defp slot(%{} = binding, path) when not is_struct(binding) do
     unknown =

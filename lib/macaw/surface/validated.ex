@@ -100,7 +100,7 @@ defmodule Macaw.Surface.Validated do
   defp describe(surface, sources) do
     names =
       for {_name, cell} <- surface.cells,
-          {_slot, %{source: source}} <- cell.slots,
+          %{source: source} <- Map.values(cell.slots) ++ List.wrap(cell.source),
           uniq: true,
           do: source
 
@@ -124,7 +124,11 @@ defmodule Macaw.Surface.Validated do
         :error -> {:unchecked, [{path ++ [:component], {:unknown_component, cell.component}}]}
       end
 
-    {built, slot_faults} = slots(path, cell, configured, bindings)
+    {built, slot_faults} =
+      case cell.source do
+        nil -> slots(path, cell, configured, bindings)
+        _binding -> shorthand(path, cell, configured, bindings)
+      end
 
     case binding_faults ++ faults ++ slot_faults do
       [] -> {:ok, built}
@@ -151,7 +155,44 @@ defmodule Macaw.Surface.Validated do
     end
   end
 
-  # Each binding's source and params, which need no component.
+  # A cell's source shorthand (spec/06 §3.2) binds its component's one slot: checked as
+  # that slot's binding would be, its faults at the cell's own keys (`[:cells, name,
+  # :fields | p]`). A component with no slot or several is `{:ambiguous_slot, slots}`.
+  defp shorthand(path, cell, {_module, _settings, declarations} = configured, bindings) do
+    case Map.keys(declarations.slots) do
+      [slot] ->
+        bound = %{cell | slots: %{slot => cell.source}, source: nil}
+        at = path ++ [:slots, slot]
+
+        {built, faults} =
+          slots(path, bound, configured, Map.new(bindings, fn {_none, b} -> {slot, b} end))
+
+        {built, for({p, r} <- faults, do: {unslot(p, at, path), r})}
+
+      slots ->
+        {nil, [{path ++ [:source], {:ambiguous_slot, Enum.sort(slots)}}]}
+    end
+  end
+
+  defp shorthand(path, _cell, :unchecked, _bindings),
+    do: {nil, [{path ++ [:source], {:unchecked, :component}}]}
+
+  defp shorthand(path, _cell, :unchecked_settings, _bindings),
+    do: {nil, [{path ++ [:source], {:unchecked, :settings}}]}
+
+  defp unslot(path, at, cell) do
+    if List.starts_with?(path, at), do: cell ++ Enum.drop(path, length(at)), else: path
+  end
+
+  # Each binding's source and params, which need no component; the shorthand's at the
+  # cell's own keys, under no slot name until validation gives it one.
+  defp bindings(path, %{source: %{} = binding}, sources, described) do
+    case binding(path, binding, sources, described) do
+      {:ok, built, faults} -> {%{nil => built}, faults}
+      {:error, faults} -> {%{}, faults}
+    end
+  end
+
   defp bindings(path, cell, sources, described) do
     Enum.reduce(cell.slots, {%{}, []}, fn {slot, binding}, {acc, faults} ->
       case binding(path ++ [:slots, slot], binding, sources, described) do

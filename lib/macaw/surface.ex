@@ -198,7 +198,9 @@ defmodule Macaw.Surface do
 
   defp last_word(_other), do: nil
 
-  # The source a cell reads: its one slot's.
+  # The source a cell reads: its shorthand's, or its one slot's.
+  defp source_of(%{source: source}), do: Names.name(source)
+
   defp source_of(attrs) do
     case Map.get(attrs, :slots) do
       %{} = slots when map_size(slots) == 1 ->
@@ -346,7 +348,15 @@ defmodule Macaw.Surface do
         end)
     }
 
-    {name, if(cell.place, do: Map.put(node, :place, cell.place), else: node)}
+    node = if cell.place, do: Map.put(node, :place, cell.place), else: node
+    {name, if(cell.source, do: Map.merge(node, shorthand(cell.source)), else: node)}
+  end
+
+  # The source shorthand as written (spec/06 §3.2): `fields` and `params` only when given.
+  defp shorthand(%{source: source, fields: fields, params: params}) do
+    %{source: source}
+    |> then(&if(fields == %{}, do: &1, else: Map.put(&1, :fields, fields)))
+    |> then(&if(params == %{}, do: &1, else: Map.put(&1, :params, params)))
   end
 
   @doc "`%{surface: node}`: the surface as a fragment."
@@ -452,6 +462,8 @@ defmodule Macaw.Surface do
   def name_map?([:surface, :cells, _cell, :slots, _slot, :fields]), do: true
   def name_map?([:surface, :cells, _cell, :slots, _slot, :params | _]), do: true
   def name_map?([:surface, :cells, _cell, :settings | _]), do: true
+  def name_map?([:surface, :cells, _cell, :fields]), do: true
+  def name_map?([:surface, :cells, _cell, :params | _]), do: true
   def name_map?(_path), do: false
 
   # A point is `$point`, a layout with options `$layout` (its name and its options, a node

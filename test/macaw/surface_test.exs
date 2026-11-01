@@ -107,7 +107,17 @@ defmodule Macaw.SurfaceTest do
 
     assert {:ok, %Cell{kind: :navigation}} = Cell.new(component: "x", kind: "navigation")
     assert {:ok, %Cell{kind: :control}} = Cell.new(component: :x, kind: :control)
-    assert Cell.keys() == [:component, :kind, :settings, :slots, :place]
+
+    assert Cell.keys() == [
+             :component,
+             :kind,
+             :settings,
+             :slots,
+             :source,
+             :fields,
+             :params,
+             :place
+           ]
 
     assert {:ok,
             %Cell{
