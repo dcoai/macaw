@@ -108,6 +108,39 @@ defmodule Macaw.Registry do
     end
   end
 
+  @doc """
+  The host's registry from its configuration (spec/12 §1.1): `config :macaw, packages:
+  [...], layouts: [...]`, `Macaw.Builtin` always among the packages. Built on its first call
+  and kept in `:persistent_term`, rebuilt only when the configuration changes; a host calls
+  it as it boots, so a misconfigured package fails the boot as `new!/2` does. A registry
+  passed explicitly overrides it wherever one is taken.
+  """
+  @spec default() :: t()
+  def default do
+    config =
+      {Application.get_env(:macaw, :packages, []), Application.get_env(:macaw, :layouts, [])}
+
+    case :persistent_term.get({__MODULE__, :default}, nil) do
+      {^config, registry} ->
+        registry
+
+      _none_or_stale ->
+        registry = from_config(packages: elem(config, 0), layouts: elem(config, 1))
+        :persistent_term.put({__MODULE__, :default}, {config, registry})
+        registry
+    end
+  end
+
+  @doc """
+  The registry a configuration names: `packages:`, `Macaw.Builtin` first and always, and
+  `layouts:`; an `ArgumentError` with every fault for a bad one, as `new!/2`.
+  """
+  @spec from_config(keyword()) :: t()
+  def from_config(config) when is_list(config) do
+    packages = [Macaw.Builtin | List.wrap(Keyword.get(config, :packages, []))]
+    new!(packages, layouts: Keyword.get(config, :layouts, []))
+  end
+
   @doc "A component by name, a string or an atom read as its spelling: `{:ok, module}` or `:error`."
   @spec component(t(), String.t() | atom()) :: {:ok, module()} | :error
   def component(%__MODULE__{components: components}, name) do

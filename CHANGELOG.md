@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The host's default registry and the one-call render (#230, #204): `Macaw.Registry.default/0` (and `from_config/1`) from `config :macaw, packages:, layouts:`, `Macaw.Builtin` always included, kept in `:persistent_term` and rebuilt when the configuration changes; `Macaw.Surface.show/2` validates, fetches and renders in one call, `sources:` given once, the registry, `now:` (one clock read in the call), `ceiling:` (from `config :macaw, :ceiling`) and `mode:` (from a LiveView `socket:`) defaulted.
 - **Fixed:** a list of cells none of which could be named also reported `:place_mixed` and `:empty`; it now gives only its entries' faults, a property over generated lists guarding it (#235, #233).
 - **Fixed:** a bound cell under `:stack` or `:flow` (and a stacked list cell) was never fetched and always drew no data: the fetch read the cell's place as a comprehension filter, which drops a `nil` place. Every built-in layout's bound cells are now tested to fetch at their declared size (#234, #232).
 - A cell's single source (#229, #204): `source:` (with `fields:` and `params:` beside it) binds the component's one slot, resolved at validation, kept short in the document; a component with no slot or several is `{:ambiguous_slot, slots}` at `[:cells, name, :source]`, and `source` with `slots` is `:source_and_slots`. `Cell.keys/0` gains `:source`, `:fields` and `:params`.

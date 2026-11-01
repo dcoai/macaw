@@ -314,6 +314,21 @@ each cell's context carries its slots' resolved bindings, the window field for a
 each cell renders with its context: its instance, declared size, heading level below the title, theme and now; its drawn state and deliveries, or a contained component's value through its transitions
 ```
 
+### 3.7 One call {#pages-surface-show}
+
+**`Macaw.Surface.show/2`** validates, fetches and renders a surface in one call: `{:ok, html}`, a `Phoenix.HTML` safe value, or `{:error, faults}`, the faults `validate/3` gives, unchanged. Its first argument is a `%Macaw.Surface{}`, `{:ok, surface}`, or the attrs `new/1` takes, whose faults it answers as they are. Its `env` is `fetch/2`'s and `render/3`'s, with the defaults a host would otherwise restate on every call:
+- `sources:`, given once, required;
+- `registry:`, `Macaw.Registry.default/0` ([12 §1.1](12-registry.md#registry-host)) unless given;
+- `now:`, **one clock read in this call**, a host-side call, unless given; never in a source or a component, and never in a test, which gives its own;
+- `ceiling:`, `config :macaw, :ceiling` unless given; with neither it raises `ArgumentError`, a host's configuration mistake;
+- `mode:`, `:socketless` unless given; given a LiveView `socket:`, `:live` once it is connected and `:socketless` before, as `Phoenix.LiveView.connected?/1` reads it (a socket with a transport process is connected), so `macaw` needs no LiveView.
+
+It renders exactly what `validate/3` then `render/2` render, given the same `now`.
+
+```test:surface-show
+show/2 renders what validate/3 then render/2 render given the same now, from a surface, {:ok, surface} or attrs, with the default registry or a given one; it answers validation's and new/1's faults unchanged; the ceiling comes from the host's config, and its absence raises; with no now it reads the clock once itself; its mode is socketless unless given and follows a LiveView socket's connection
+```
+
 ## 4. Persistent regions {#pages-persistent}
 
 <!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->

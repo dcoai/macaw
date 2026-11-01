@@ -323,6 +323,53 @@ defmodule Macaw.Surface do
     do: render(validated, fetch(validated, env), env)
 
   @doc """
+  A surface validated, fetched and rendered in one call (spec/06 §3.7): `{:ok, html}`, a
+  safe value, or `{:error, faults}`, validation's own. `surface` is a `%Macaw.Surface{}`,
+  `{:ok, surface}`, or the attrs `new/1` takes, whose faults are answered as they are.
+
+  `env` is as `fetch/2` and `render/3` take it, with defaults a host would otherwise
+  restate on every call:
+  - `sources:`, given once, required;
+  - `registry:`, `Macaw.Registry.default/0` unless given;
+  - `now:`, one clock read here, in this host-side call, unless given (never in a source
+    or a component);
+  - `ceiling:`, `config :macaw, :ceiling` unless given; neither raises `ArgumentError`;
+  - `mode:`, `:socketless` unless given, or, given a LiveView `socket:`, `:live` once it is
+    connected and `:socketless` before, as `Phoenix.LiveView.connected?/1` reads it.
+  """
+  @spec show(t() | {:ok, t()} | keyword() | map(), keyword()) ::
+          {:ok, Phoenix.HTML.safe()} | {:error, [Fault.t(), ...]}
+  def show({:ok, %__MODULE__{} = surface}, env), do: show(surface, env)
+
+  def show(%__MODULE__{} = surface, env) when is_list(env) do
+    sources = Keyword.fetch!(env, :sources)
+    registry = Keyword.get_lazy(env, :registry, &Macaw.Registry.default/0)
+
+    with {:ok, validated} <- validate(surface, registry, sources),
+         do: {:ok, render(validated, shown(env))}
+  end
+
+  def show(attrs, env) when is_list(attrs) or is_map(attrs) do
+    with {:ok, surface} <- new(attrs), do: show(surface, env)
+  end
+
+  # The env with the host's defaults filled in: now, the ceiling and the mode.
+  defp shown(env) do
+    env
+    |> Keyword.put_new_lazy(:now, &DateTime.utc_now/0)
+    |> Keyword.put_new_lazy(:ceiling, fn ->
+      Application.get_env(:macaw, :ceiling) ||
+        raise ArgumentError, "show/2 needs ceiling: or config :macaw, :ceiling"
+    end)
+    |> Keyword.put_new_lazy(:mode, fn -> mode(Keyword.get(env, :socket)) end)
+  end
+
+  # A LiveView socket is connected once it has a transport process (connected?/1's rule).
+  defp mode(nil), do: :socketless
+  defp mode(%{transport_pid: pid}) when is_pid(pid), do: :live
+  defp mode(%{transport_pid: nil}), do: :socketless
+
+  @doc """
   The stylesheet a validated surface's layout places its cells by, and its path, its content
   address: `{path, css}`, for the host to serve from `'self'` (spec/06 §3.3). The grid's,
   the stack's and the flow's are each one sheet; an areas layout's is its template's.
