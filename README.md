@@ -55,6 +55,8 @@ html = Macaw.Surface.render(validated, sources: sources, now: DateTime.utc_now()
 
 Serve `Macaw.Grid.stylesheet/0` at `Macaw.Grid.stylesheet_path/0`, `Macaw.Layout.Stack.stylesheet/0` and `Macaw.Layout.Flow.stylesheet/0` at their `stylesheet_path/0` when a surface uses them (and, for any surface, `Macaw.Surface.stylesheet/1` of the validated surface, which an areas layout's template needs), and `Macaw.Builtin.Table.stylesheet/0` at `Macaw.Builtin.Table.stylesheet_path/0`, and serve macaw_component's `priv/static` for the drawn states' notices (`Macaw.Component.Drawn.stylesheet_url/0`); link them from the page. Nothing is inline.
 
+New to Macaw? [The tutorial](guides/tutorial.md) goes from a first surface to sources, components, documents, themes and Phoenix, every example run against this release.
+
 | Module | What it is | Spec |
 |---|---|---|
 | `Macaw.Surface`, `Macaw.Surface.Cell` | the surface document and its cells: forms, version line, fragment type; validation, fetching and rendering | [06 §3.1–3.6](https://github.com/dcoai/macaw/blob/main/spec/06-pages.md#pages-surface-document) |

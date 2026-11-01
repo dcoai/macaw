@@ -4,6 +4,22 @@ defmodule Macaw.MixProject do
   @source_url "https://github.com/dcoai/macaw"
   @version "0.2.0"
 
+  # The tutorial, in reading order: its overview, then one chapter per file.
+  @tutorial [
+    "guides/tutorial.md",
+    "guides/tutorial/01-first-surface.md",
+    "guides/tutorial/02-sources.md",
+    "guides/tutorial/03-schemas-and-data.md",
+    "guides/tutorial/04-surfaces.md",
+    "guides/tutorial/05-the-table.md",
+    "guides/tutorial/06-components.md",
+    "guides/tutorial/07-testing.md",
+    "guides/tutorial/08-documents.md",
+    "guides/tutorial/09-themes.md",
+    "guides/tutorial/10-phoenix.md",
+    "guides/tutorial/11-operations-and-derived.md"
+  ]
+
   def project do
     [
       app: :macaw,
@@ -20,7 +36,8 @@ defmodule Macaw.MixProject do
       package: package(),
       docs: [
         main: "readme",
-        extras: ["README.md", "CHANGELOG.md"],
+        extras: ["README.md" | @tutorial] ++ ["CHANGELOG.md"],
+        groups_for_extras: [Tutorial: @tutorial],
         source_ref: "v#{@version}",
         logo: "brand/logo/macaw_scarlet.svg",
         assets: %{"brand/logo" => "brand/logo"}
