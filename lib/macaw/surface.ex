@@ -70,9 +70,17 @@ defmodule Macaw.Surface do
     {name, n} = name(Map.get(attrs, :name))
     {title, t} = title(Map.get(attrs, :title))
     {given, order, o} = listed(Map.get(attrs, :cells))
-    {layout_given, d} = placement(Map.get(attrs, :layout), given, order)
+    # A list none of whose entries could be named has only their faults (#233): there are
+    # no cells to place, and the list wasn't empty.
+    unnamed? = o != [] and given == %{}
+
+    {layout_given, d} =
+      if unnamed?,
+        do: {Map.get(attrs, :layout, :grid), []},
+        else: placement(Map.get(attrs, :layout), given, order)
+
     {layout, module, l} = layout(layout_given)
-    {cells, c} = cells(given, if(d == [], do: module))
+    {cells, c} = if unnamed?, do: {%{}, []}, else: cells(given, if(d == [], do: module))
 
     case Fault.sort(unknown ++ n ++ t ++ o ++ d ++ l ++ c) do
       [] -> {:ok, %__MODULE__{name: name, title: title, layout: layout, cells: cells}}

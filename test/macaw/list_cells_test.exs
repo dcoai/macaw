@@ -2,6 +2,7 @@ defmodule Macaw.ListCellsTest do
   # Cells as a list (spec/06 §3.2): the list's order kept, names derived where none is
   # given, and a stack as the placement when no cell has a place (spec/06 §3.3).
   use ExUnit.Case, async: true
+  use ExUnitProperties
 
   alias Macaw.{Registry, Surface}
 
@@ -102,5 +103,37 @@ defmodule Macaw.ListCellsTest do
            ]
 
     assert Surface.new(name: "ops", cells: []) == {:error, [{[:cells], :empty}]}
+  end
+
+  # A listed entry, and the fault it gives at its index (nil for a good one).
+  defp entry do
+    one_of([
+      constant({%{component: "test.note"}, :unplaced}),
+      map(
+        integer(0..60),
+        &{%{component: "test.note", place: %{x: 0, y: &1, w: 1, h: 1}}, :placed}
+      ),
+      constant({%{settings: %{}}, {[:component], :required}}),
+      constant({%{name: "Bad Name", component: "test.note"}, {[:name], {:type, :name}}}),
+      constant({:nope, {[], {:type, :map}}})
+    ])
+  end
+
+  @tag verifies: "surface-list"
+  property "a list's faults are its entries' own, and :place_mixed only when it places some cells and not others" do
+    check all(entries <- list_of(entry(), min_length: 1, max_length: 6)) do
+      own =
+        for {{_attrs, {path, reason}}, i} <- Enum.with_index(entries),
+            do: {[:cells, i | path], reason}
+
+      kinds = for {_attrs, kind} <- entries, kind in [:placed, :unplaced], uniq: true, do: kind
+      mixed = if length(kinds) == 2, do: [{[:cells], :place_mixed}], else: []
+      expected = Macaw.Layers.Fault.sort(own ++ mixed)
+
+      case Surface.new(name: "ops", cells: Enum.map(entries, &elem(&1, 0))) do
+        {:ok, _surface} -> assert expected == []
+        {:error, faults} -> assert faults == expected
+      end
+    end
   end
 end

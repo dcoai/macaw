@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Fixed:** a list of cells none of which could be named also reported `:place_mixed` and `:empty`; it now gives only its entries' faults, a property over generated lists guarding it (#235, #233).
 - **Fixed:** a bound cell under `:stack` or `:flow` (and a stacked list cell) was never fetched and always drew no data: the fetch read the cell's place as a comprehension filter, which drops a `nil` place. Every built-in layout's bound cells are now tested to fetch at their declared size (#234, #232).
 - A cell's single source (#229, #204): `source:` (with `fields:` and `params:` beside it) binds the component's one slot, resolved at validation, kept short in the document; a component with no slot or several is `{:ambiguous_slot, slots}` at `[:cells, name, :source]`, and `source` with `slots` is `:source_and_slots`. `Cell.keys/0` gains `:source`, `:fields` and `:params`.
 - Cells as a list (#228, #204): `cells: [cell, …]` keeps the list's order; a cell may omit its name, derived as `<component's last word>_<source>`, numbered on a collision; with no layout and no place, the cells stack in the list's order (`{:stack, order: …}`), and a list placing only some cells is `:place_mixed`. The forms write the expanded document.
