@@ -69,10 +69,12 @@ defmodule Macaw.Surface do
     unknown = for key <- Map.keys(attrs), key not in @keys, do: {[key], :unknown_key}
     {name, n} = name(Map.get(attrs, :name))
     {title, t} = title(Map.get(attrs, :title))
-    {layout, module, l} = layout(Map.get(attrs, :layout, :grid))
-    {cells, c} = cells(Map.get(attrs, :cells), module)
+    {given, order, o} = listed(Map.get(attrs, :cells))
+    {layout_given, d} = placement(Map.get(attrs, :layout), given, order)
+    {layout, module, l} = layout(layout_given)
+    {cells, c} = cells(given, if(d == [], do: module))
 
-    case Fault.sort(unknown ++ n ++ t ++ l ++ c) do
+    case Fault.sort(unknown ++ n ++ t ++ o ++ d ++ l ++ c) do
       [] -> {:ok, %__MODULE__{name: name, title: title, layout: layout, cells: cells}}
       faults -> {:error, faults}
     end
@@ -120,6 +122,122 @@ defmodule Macaw.Surface do
         end
     end
   end
+
+  # Cells given as a list (spec/06 §3.2): each named by its `name`, or by a name derived
+  # from its component and its source, and the list's order kept. A map is as it is.
+  defp listed(cells) when is_list(cells) and cells != [] do
+    attrs = cells |> Enum.with_index() |> Enum.map(&cell_attrs/1)
+    explicit = for {%{name: name}, _i} <- attrs, name != nil, do: Names.name(name)
+
+    Enum.reduce(attrs, {%{}, [], []}, fn {a, i}, {named, order, faults} ->
+      case cell_name(a, explicit, order) do
+        {:ok, name} when is_map_key(named, name) ->
+          {named, order, faults ++ [{[:cells, i, :name], {:duplicate, name}}]}
+
+        {:ok, name} ->
+          {Map.put(named, name, Map.delete(a, :name)), order ++ [name], faults}
+
+        {:error, reason} ->
+          {named, order, faults ++ [{[:cells, i | reason_path(reason)], reason_of(reason)}]}
+      end
+    end)
+  end
+
+  defp listed([]), do: {%{}, nil, []}
+  defp listed(cells), do: {cells, nil, []}
+
+  defp cell_attrs({attrs, i}) when is_list(attrs) do
+    if Keyword.keyword?(attrs), do: {Map.new(attrs), i}, else: {attrs, i}
+  end
+
+  defp cell_attrs({attrs, i}), do: {attrs, i}
+
+  # A listed cell's name: its own, a name; else one derived; else why it has none.
+  defp cell_name(%{} = attrs, explicit, earlier) when not is_struct(attrs) do
+    case Map.get(attrs, :name) do
+      nil ->
+        case derive(attrs, explicit, earlier) do
+          nil when is_map_key(attrs, :component) -> {:error, {[:name], :required}}
+          nil -> {:error, {[:component], :required}}
+          name -> {:ok, name}
+        end
+
+      given ->
+        spelled = Names.name(given)
+
+        if is_binary(spelled) and Regex.match?(@name, spelled),
+          do: {:ok, spelled},
+          else: {:error, {[:name], {:type, :name}}}
+    end
+  end
+
+  defp cell_name(_other, _explicit, _earlier), do: {:error, {[], {:type, :map}}}
+
+  defp reason_path({path, _reason}), do: path
+  defp reason_of({_path, reason}), do: reason
+
+  # `<component's last word>_<source>` (`table_services`), the last word alone with no
+  # source, numbered `_2`, `_3`, … past every name taken: the explicit names, then the
+  # names derived before it in list order.
+  defp derive(attrs, explicit, earlier) do
+    word = attrs |> Map.get(:component) |> Names.name() |> last_word()
+    base = if source = source_of(attrs), do: "#{word}_#{source}", else: word
+    taken = MapSet.new(explicit ++ earlier)
+
+    if is_binary(base) and Regex.match?(@name, base),
+      do:
+        Enum.find(
+          [base | for(n <- 2..(MapSet.size(taken) + 2), do: "#{base}_#{n}")],
+          &(not MapSet.member?(taken, &1))
+        ),
+      else: nil
+  end
+
+  defp last_word(component) when is_binary(component),
+    do: component |> String.split(".") |> List.last()
+
+  defp last_word(_other), do: nil
+
+  # The source a cell reads: its one slot's.
+  defp source_of(attrs) do
+    case Map.get(attrs, :slots) do
+      %{} = slots when map_size(slots) == 1 ->
+        [binding] = Map.values(slots)
+        if is_map(binding), do: binding |> Map.get(:source) |> Names.name(), else: nil
+
+      _other ->
+        nil
+    end
+  end
+
+  # The layout a surface takes when it names none (spec/06 §3.3): listed cells with no
+  # place are stacked in the list's order, and a stack or a flow named with no order takes
+  # the list's. A list of placed cells is a grid, as a map's is; one that places some cells
+  # and not others is `:place_mixed`, never a guess, and its places are not judged.
+  defp placement(nil, _cells, nil), do: {:grid, []}
+
+  defp placement(nil, cells, order) do
+    case cells |> Map.values() |> Enum.map(&placed?/1) |> Enum.uniq() do
+      [false] -> {{:stack, order: order}, []}
+      [true] -> {:grid, []}
+      _mixed -> {:grid, [{[:cells], :place_mixed}]}
+    end
+  end
+
+  defp placement(given, _cells, nil), do: {given, []}
+
+  defp placement(given, _cells, order) do
+    case Layout.split(given) do
+      {:ok, {name, options}} when name in ["stack", "flow"] and not is_map_key(options, :order) ->
+        {{name, Map.put(options, :order, order)}, []}
+
+      _other ->
+        {given, []}
+    end
+  end
+
+  defp placed?(%{place: place}) when place != nil, do: true
+  defp placed?(_attrs), do: false
 
   defp cells(nil, _layout), do: {%{}, [{[:cells], :required}]}
 

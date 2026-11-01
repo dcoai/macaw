@@ -96,7 +96,7 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 | `name` | the surface's name: lower-case words joined by `_`, a name in the kernel's sense ([macaw_layers 01 §1](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-names)), unique where it is stored; it prefixes its cells' instance ids (§3.6) | required |
 | `title` | a non-empty string, its heading; `nil` for a surface without one | `nil` |
 | `layout` | the layout its cells are placed by (§3.3): a name, or `{name, options}`; `:grid` is the 12-column grid, `{:grid, columns: 24}` one of 24, `{:stack, order: [...]}` one column, `{:flow, order: [...]}` sections for prose, and `{:areas, template: [...]}` named regions. Built in, a name's options and its cells' places are judged here; one only the host's registry knows is held as given and judged by `validate/3` | `:grid` |
-| `cells` | the cells by name (§3.2), a map, at least one | required |
+| `cells` | the cells by name (§3.2), a map, at least one; given as a list, each cell's name is its `name` or derived, and the list's order is kept (§3.2) | required |
 
 - **Building one:** `Macaw.Surface.new/1` from a keyword list or a map with atom keys answers `{:ok, surface}` or `{:error, faults}`, every fault at once by path from the surface, as the kernel orders them ([macaw_layers 01 §3](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-faults)). A key it doesn't have is `:unknown_key`; a missing one `:required`. Names in it are strings; an atom is read as its spelling, and no atom is made.
 - **The value** is `%{version: v, surface: node}` (`to_map/1`), the node the surface's keys with each cell as its map, every name a string and every setting and param the term it is. `from_map/1` judges a value as terms: the version first, so nothing of a newer document is judged, then the envelope (`surface` and no other key), then `new/1`, whose faults it puts under `:surface`: **every fault a reader gives is by path from the document it was given** (`[:surface, :cells, "a", :kind]`), where `new/1`'s are from the surface (`[:cells, "a", :kind]`). No form is written or read on the way, so a value JSON can't hold reads back as the term it is, and no limit applies.
@@ -139,6 +139,16 @@ stacking a layer on a surface adds and replaces cells by name and overrides the 
 | `place` | where it sits, as the surface's layout reads it (§3.3): `%{x, y, w, h}` on the grid. `Cell.new/2` takes the layout that judges it, the grid by default; `nil` holds it as given | required on a grid |
 
 Cell names are names in the kernel's sense, unique within the surface (the map's keys).
+
+**Cells may be given as a list,** `cells: [cell, …]`, an input form: the surface holds them as the map it always does, and their order where its layout reads one.
+- **A listed cell's name** is its `name` key, a name, else one **derived** from it: its component's last word and its one slot's source, `<word>_<source>` (`"macaw.table"` reading `"services"` is `table_services`), the word alone with no single source. A derived name is numbered `_2`, `_3`, … past every name taken, the list's explicit names first, then the names derived before it in list order, so names are deterministic from the document and instance ids stable across renders.
+- **Its faults** are at `[:cells, i | path]` until it has a name: an explicit name given again is `{:duplicate, name}` at `[:cells, i, :name]`, one that isn't a name `{:type, :name}` there, a cell with no name and no component `:required` at `[:cells, i, :component]`, and an entry that isn't a map `{:type, :map}` at `[:cells, i]`. Once named, its faults are at `[:cells, name | path]` as a mapped cell's.
+- **Placement by order** (§3.3): with no `layout`, listed cells none of which has a place are laid out by `{:stack, order: names}`, the list's names in its order; listed cells all with a place are on the grid, as mapped ones are; a list placing some cells and not others is `:place_mixed` at `[:cells]`, never a guess, and no place is judged. A `:stack` or `:flow` named with no `order` takes the list's.
+- **The forms write the expanded document:** `to_map/1` and `to_json/1` write the map of cells and the layout with its order, so a stored surface never depends on a default that could change under it.
+
+```test:surface-list
+listed cells with no place expand to the explicit stack in the list's order, equal structs and equal map forms, and render in it; derived names are deterministic, numbered past every name taken, explicit names winning; a flow takes the list's order and placed cells a grid; a mixed list is :place_mixed, and every bad listed cell is a fault by path
+```
 
 ```test:cells-shape
 a cell builds with its defaults, kind read from an atom or its spelling, setting and param names normalized to strings and their values kept as given; a missing component or place, an unknown kind, settings or params that aren't a map of names, a slot without a source and an unknown key are faults at their paths
