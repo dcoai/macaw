@@ -7,7 +7,8 @@ defmodule Macaw.Builtin.Table do
       each row, `""` for rows that can't be selected; `sort` (text, `""`, bindable), the
       field rows are sorted by; `order` (`"asc"` or `"desc"`, bindable);
     * **declarations:** one slot, `rows`, whose optional `columns` role names the fields
-      shown, in order (any type, many), every column in the delivered order when unbound;
+      shown, in order (any type, many), when unbound every column in the delivered table's
+      order (`Macaw.Data.Table.names/1`: name order for rows given as maps);
       events `"sort"` and `"select"`; it writes
       `selection` as an identity; it observes `:activate` and `:select`; reading load
       `:scan`;

@@ -115,6 +115,15 @@ defmodule Macaw.TableTest do
   end
 
   @tag verifies: "table-columns"
+  test "unbound, the columns are the delivered table's, in its order: name order for map rows" do
+    headers = for [_, h] <- Regex.scan(~r/data-mw-event="sort" value="([^"]+)"/, html(%{})), do: h
+
+    {:ok, table} = Macaw.Data.Delivery.table(@delivery)
+    assert headers == Macaw.Data.Table.names(table)
+    assert headers == Enum.sort(Map.keys(hd(@rows)))
+  end
+
+  @tag verifies: "table-columns"
   test "the columns role chooses the columns and their order; unbound shows every column" do
     headers = fn html ->
       for [_, h] <- Regex.scan(~r/data-mw-event="sort" value="([^"]+)"/, html), do: h
