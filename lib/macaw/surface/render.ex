@@ -19,6 +19,8 @@ defmodule Macaw.Surface.Render do
     title = if surface.title, do: title(surface.title, level), else: []
     cell_level = if surface.title, do: min(level + 1, 6), else: level
 
+    {layout, options} = validated.layout
+
     cells =
       for name <- validated.order do
         cell(validated, name, Map.fetch!(fetched, name), cell_level, env)
@@ -28,7 +30,7 @@ defmodule Macaw.Surface.Render do
      [
        ~s(<div class="mw-surface" id="#{surface.name}">),
        title,
-       ~s(<div class="mw-grid">),
+       ~s(<div class="#{layout.container(options)}">),
        cells,
        "</div></div>"
      ]}

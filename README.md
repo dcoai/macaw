@@ -47,7 +47,7 @@ Serve `Macaw.Grid.stylesheet/0` at `Macaw.Grid.stylesheet_path/0` and `Macaw.Bui
 | Module | What it is | Spec |
 |---|---|---|
 | `Macaw.Surface`, `Macaw.Surface.Cell` | the surface document and its cells: forms, version line, fragment type; validation, fetching and rendering | [06 §3.1–3.6](https://github.com/dcoai/macaw/blob/main/spec/06-pages.md#pages-surface-document) |
-| `Macaw.Grid` | the 12-column grid: bounds, overlaps, reading order, classes and the static stylesheet | [06 §3.3](https://github.com/dcoai/macaw/blob/main/spec/06-pages.md#pages-grid) |
+| `Macaw.Grid` | the grid, 12 columns or 6 or 24: bounds, overlaps, reading order, classes and the static stylesheet | [06 §3.3](https://github.com/dcoai/macaw/blob/main/spec/06-pages.md#pages-grid) |
 | `Macaw.Registry` | a host's registry of components, built from the packages it enables | [12 §1.1](https://github.com/dcoai/macaw/blob/main/spec/12-registry.md#registry-host) |
 | `Macaw.Builtin`, `Macaw.Builtin.Table` | the built-in package and its table | [05 §6.1](https://github.com/dcoai/macaw/blob/main/spec/05-components.md#components-table) |
 

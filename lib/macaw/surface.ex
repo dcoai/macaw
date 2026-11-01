@@ -325,10 +325,18 @@ defmodule Macaw.Surface do
   def name_map?([:surface, :cells, _cell, :settings | _]), do: true
   def name_map?(_path), do: false
 
-  # A point is `$point`, a color by the colors' own tags (`Macaw.Layers.Color.Form`).
+  # A point is `$point`, a layout with options `$layout` (its name and its options, a node
+  # of the surface's keys), a color by the colors' own tags (`Macaw.Layers.Color.Form`).
   @impl Form
   def encode_value({lon, lat}) when is_number(lon) and is_number(lat),
     do: {:ok, %{"$point" => [lon, lat]}}
+
+  def encode_value({name, options}) when is_binary(name) and is_map(options) do
+    case Form.encode_term(options, __MODULE__, [{:tag, "$layout"}, 1]) do
+      {:ok, form} -> {:ok, %{"$layout" => [name, form]}}
+      {:error, _faults} -> :default
+    end
+  end
 
   def encode_value(term), do: ColorForm.encode_value(term)
 
@@ -337,6 +345,11 @@ defmodule Macaw.Surface do
     do: {:ok, {lon, lat}}
 
   def decode_value("$point", _other), do: :default
+
+  def decode_value("$layout", [name, options]) when is_binary(name) and is_map(options),
+    do: {:ok, {name, options}}
+
+  def decode_value("$layout", _other), do: :default
   def decode_value(tag, payload), do: ColorForm.decode_value(tag, payload)
 
   @impl Macaw.Layers.Fragment

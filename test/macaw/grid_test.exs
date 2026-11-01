@@ -121,4 +121,102 @@ defmodule Macaw.GridTest do
     assert Grid.size(p(0, 0, 6, 2), 1200, 64) == {600.0, 128}
     assert Grid.size(p(3, 1, 12, 1), 960, 48) == {960.0, 48}
   end
+
+  @tag verifies: "grid-columns"
+  test "a grid of 6 or 24 columns places and faults on its own bounds, and sizes by its width" do
+    assert Grid.widths() == [6, 12, 24]
+    assert Grid.options(%{}) == {:ok, %{columns: 12}}
+    assert Grid.options(columns: 24) == {:ok, %{columns: 24}}
+
+    for bad <- [7, 0, "24", nil] do
+      assert Grid.options(columns: bad) ==
+               {:error, [{[:layout, :options, :columns], {:enum, [6, 12, 24]}}]}
+    end
+
+    wide = %{columns: 24}
+    assert Grid.faults(cells(%{"a" => p(20, 0, 4, 1), "b" => p(0, 0, 13, 1)}), wide) == []
+
+    assert Grid.faults(cells(%{"a" => p(23, 0, 2, 1)}), wide) ==
+             [{[:cells, "a", :place], {:out_of_bounds, :x_plus_w, 25}}]
+
+    # The same place on the default 12 is out of bounds.
+    assert {[:cells, "a", :place], {:out_of_bounds, :x, 20}} in Grid.faults(
+             cells(%{"a" => p(20, 0, 4, 1)}),
+             %{columns: 12}
+           )
+
+    assert Grid.faults(cells(%{"a" => p(0, 0, 7, 1)}), %{columns: 6}) ==
+             [
+               {[:cells, "a", :place], {:out_of_bounds, :w, 7}},
+               {[:cells, "a", :place], {:out_of_bounds, :x_plus_w, 7}}
+             ]
+
+    assert Grid.size(p(0, 0, 6, 2), wide, 1200, 64) == {300.0, 128}
+    assert Grid.size(p(0, 0, 3, 1), %{columns: 6}, 1200, 64) == {600.0, 64}
+    assert Grid.container(%{columns: 12}) == "mw-grid"
+    assert Grid.container(wide) == "mw-grid mw-grid-24"
+
+    # One sheet for every width: each width's columns, and a rule for every class a
+    # placement on the widest can name.
+    css = Grid.stylesheet()
+    assert Grid.stylesheet(wide) == css and Grid.stylesheet(%{columns: 6}) == css
+    assert css =~ ".mw-grid-6{grid-template-columns:repeat(6,minmax(0,1fr))}"
+    assert css =~ ".mw-grid-24{grid-template-columns:repeat(24,minmax(0,1fr))}"
+
+    for class <- String.split(Grid.classes(p(23, 63, 1, 1))) -- ["mw-cell"],
+        do: assert(css =~ "." <> class <> "{")
+
+    assert css =~ ".mw-span-24{"
+    refute css =~ ".mw-col-25{"
+  end
+
+  @tag verifies: "grid-columns"
+  test "a surface on 24 columns validates, renders its container's width, and round-trips its layout" do
+    note = %{"a" => %{component: "test.note", place: p(18, 0, 6, 1)}}
+
+    {:ok, s} =
+      Macaw.Surface.new(
+        name: "ops",
+        layout: {:grid, columns: 24},
+        cells: note
+      )
+
+    assert s.layout == {"grid", %{columns: 24}}
+    registry = Macaw.Registry.new!([Macaw.Test.Package])
+    assert {:ok, v} = Macaw.Surface.validate(s, registry, %{})
+    assert v.layout == {Grid, %{columns: 24}}
+
+    html =
+      v
+      |> Macaw.Surface.render(sources: %{}, now: ~U[2026-11-01 00:00:00Z], ceiling: 100)
+      |> Phoenix.HTML.safe_to_string()
+
+    assert html =~ ~s(<div class="mw-grid mw-grid-24"><div class="mw-cell mw-col-19 mw-span-6 )
+
+    # The layout's forms: a tag in JSON, the term in the value.
+    assert {:ok, json} = Macaw.Surface.to_json(s)
+    assert JSON.decode!(json)["surface"]["layout"] == %{"$layout" => ["grid", %{"columns" => 24}]}
+    assert Macaw.Surface.from_json(json) == {:ok, s}
+    assert Macaw.Surface.from_map(Macaw.Surface.to_map(s)) == {:ok, s}
+
+    {:ok, plain} = Macaw.Surface.new(name: "ops", cells: note)
+    assert {:ok, json} = Macaw.Surface.to_json(plain)
+    assert Macaw.Surface.from_json(json) == {:ok, plain}
+
+    # A width outside the set is a fault by path, in the value and in JSON alike.
+    bad =
+      String.replace(
+        json,
+        ~s("layout":{"$atom":"grid"}),
+        ~s("layout":{"$layout":["grid",{"columns":7}]})
+      )
+
+    refute bad == json
+
+    assert Macaw.Surface.from_json(bad) ==
+             {:error, [{[:surface, :layout, :options, :columns], {:enum, [6, 12, 24]}}]}
+
+    assert {:error, [{[:layout, :options, :columns], {:enum, [6, 12, 24]}}]} =
+             Macaw.Surface.new(name: "ops", layout: {:grid, columns: 7}, cells: note)
+  end
 end

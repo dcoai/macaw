@@ -27,6 +27,7 @@ defmodule Macaw.LayoutTest do
     def order(cells, _options),
       do: cells |> Enum.sort_by(fn {name, c} -> {c.place.row, name} end) |> Enum.map(&elem(&1, 0))
 
+    def container(_options), do: "mw-rows"
     def classes(%{row: n}, _options), do: "mw-cell mw-rows-row-#{n + 1}"
     def size(_place, _options, width, row_height), do: {width, row_height}
     def stylesheet(_options), do: ".mw-rows-row-1{grid-row:1}\n"
@@ -40,6 +41,7 @@ defmodule Macaw.LayoutTest do
     def place(p), do: {:ok, p}
     def faults(_, _), do: []
     def order(cells, _), do: Map.keys(cells)
+    def container(_), do: ""
     def classes(_, _), do: ""
     def size(_, _, w, h), do: {w, h}
     def stylesheet(_), do: ""
@@ -67,14 +69,14 @@ defmodule Macaw.LayoutTest do
     assert Grid.stylesheet(%{}) == Grid.stylesheet()
     assert Grid.place(nil) == {:error, [{[], :required}]}
     assert Grid.place(:x) == {:error, [{[], {:type, :map}}]}
-    assert Grid.options(columns: 24) == {:error, [{[:layout, :options, :columns], :unknown_key}]}
+    assert Grid.options(depth: 2) == {:error, [{[:layout, :options, :depth], :unknown_key}]}
 
-    # The grid with no options is held as it always was; with options, refused by the grid.
+    # The grid with no options is held as it always was; options it doesn't take are refused.
     assert surface(:grid, %{"a" => note(place)}).layout == :grid
     assert surface("grid", %{"a" => note(place)}).layout == :grid
 
-    assert {:error, [{[:layout, :options, :columns], :unknown_key}]} =
-             Surface.new(name: "ops", layout: {:grid, columns: 24}, cells: %{"a" => note(place)})
+    assert {:error, [{[:layout, :options, :depth], :unknown_key}]} =
+             Surface.new(name: "ops", layout: {:grid, depth: 2}, cells: %{"a" => note(place)})
   end
 
   @tag verifies: "layout-registry"

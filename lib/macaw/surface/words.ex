@@ -24,7 +24,8 @@ defmodule Macaw.Surface.Words do
     :x,
     :y,
     :w,
-    :h
+    :h,
+    :columns
   ]
 
   @atoms [:grid, :navigation, :content, :control, :container]
@@ -43,6 +44,7 @@ end
 
 defmodule Macaw.Surface.Tags do
   @moduledoc false
-  # The surface document's tag table (spec/01 §6 of macaw_layers): a point, and the colors'.
-  use Macaw.Layers.Tags, live: ["$point" | Macaw.Layers.Color.Form.tags()]
+  # The surface document's tag table (spec/01 §6 of macaw_layers): a point, a layout with
+  # options, and the colors'.
+  use Macaw.Layers.Tags, live: ["$point", "$layout" | Macaw.Layers.Color.Form.tags()]
 end

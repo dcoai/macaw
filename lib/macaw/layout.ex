@@ -43,6 +43,9 @@ defmodule Macaw.Layout do
   @doc "The cells' names in reading order, which is the visual order and the DOM's."
   @callback order(cells(), options :: term()) :: [String.t()]
 
+  @doc "The classes of the element holding the cells, which the layout's stylesheet styles."
+  @callback container(options :: term()) :: String.t()
+
   @doc "A cell's classes, the only way it is placed."
   @callback classes(place :: term(), options :: term()) :: String.t()
 
@@ -61,7 +64,17 @@ defmodule Macaw.Layout do
   @doc "The callbacks a layout exports, each `{name, arity}`."
   @spec callbacks() :: keyword(non_neg_integer())
   def callbacks,
-    do: [name: 0, options: 1, place: 1, faults: 2, order: 2, classes: 2, size: 4, stylesheet: 1]
+    do: [
+      name: 0,
+      options: 1,
+      place: 1,
+      faults: 2,
+      order: 2,
+      container: 1,
+      classes: 2,
+      size: 4,
+      stylesheet: 1
+    ]
 
   @doc "The built-in layouts, which every registry holds."
   @spec builtins() :: [module(), ...]
