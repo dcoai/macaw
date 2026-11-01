@@ -167,7 +167,7 @@ a cell builds with its defaults, kind read from an atom or its spelling, setting
 |---|---|
 | `name/0` | the name a surface spells it by (`"grid"`) |
 | `options/1` | its options checked, `{:ok, options}` or the faults by path (`[:layout, :options, key]`); none given is `%{}` |
-| `place/1` | a cell's place checked, `{:ok, place}` or the faults by path from the place; `nil` is a cell with no place, which a layout that needs one refuses as `:required` |
+| `place/1` | a cell's place checked, `{:ok, place}` or the faults by path from the place; `nil` is a cell with no place, which a layout that needs one refuses as `:required`. It judges the shape alone, never by the options, so places are judged even when the options fail: every fault at once (#236). A rule that needs the options (the grid's bounds) is `faults/2`'s |
 | `faults/2` | the placement faults of the cells (each with a checked place) under the options, by path from the surface, all at once |
 | `order/2` | the cells' names in reading order, which is the DOM order and the visual order ([10 §4](10-web.md#web-a11y)) |
 | `container/1` | the classes of the element holding the cells, which the stylesheet styles |
@@ -316,7 +316,7 @@ each cell renders with its context: its instance, declared size, heading level b
 
 ### 3.7 One call {#pages-surface-show}
 
-**`Macaw.Surface.show/2`** validates, fetches and renders a surface in one call: `{:ok, html}`, a `Phoenix.HTML` safe value, or `{:error, faults}`, the faults `validate/3` gives, unchanged. Its first argument is a `%Macaw.Surface{}`, `{:ok, surface}`, or the attrs `new/1` takes, whose faults it answers as they are. Its `env` is `fetch/2`'s and `render/3`'s, with the defaults a host would otherwise restate on every call:
+**`Macaw.Surface.show/2`** validates, fetches and renders a surface in one call: `{:ok, html}`, a `Phoenix.HTML` safe value, or `{:error, faults}`, the faults `validate/3` gives, unchanged. Its first argument is a `%Macaw.Surface{}`, `{:ok, surface}` or `{:error, faults}` (a pipe from `new/1` or `build/2`, whose faults it answers as they are), or the attrs `new/1` takes. Its `env` is `fetch/2`'s and `render/3`'s, with the defaults a host would otherwise restate on every call:
 - `sources:`, given once, required;
 - `registry:`, `Macaw.Registry.default/0` ([12 §1.1](12-registry.md#registry-host)) unless given;
 - `now:`, **one clock read in this call**, a host-side call, unless given; never in a source or a component, and never in a test, which gives its own;

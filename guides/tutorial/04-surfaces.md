@@ -44,8 +44,17 @@ Surface.new(name: "Status Board", title: "", layout: {:grid, columns: 10}, cells
 #    ]}
 ```
 
-A layout whose options fail judges no places: fix the options, and the cells' places are
-checked the next time.
+A layout whose options fail still judges its cells' places, since a place's shape needs no
+options, so a missing place is reported beside the options' fault:
+
+```elixir
+Surface.new(name: "ops", layout: {:grid, columns: 10}, cells: %{"a" => %{component: "macaw.table"}})
+#=> {:error,
+#    [
+#      {[:cells, "a", :place], :required},
+#      {[:layout, :options, :columns], {:enum, [6, 12, 24]}}
+#    ]}
+```
 
 Cell names follow the same rule as the surface's name: lower-case words joined by `_`.
 A layout name `new/1` doesn't know, such as `"wall"`, is held as given, with its cells'

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Fixed:** a layout's bad options no longer hide its cells' place faults, at `new/1` or at validation, since `place/1` judges a place's shape alone; and `Surface.show/2` answers a failed `new/1` or `build/2` result's faults instead of raising (#238, #236).
 - The table's docs and spec state its unbound column order as the code gives it: the delivered table's, name order for rows given as maps (#239, #237).
 - The short code form (#231, #204): `Macaw.Surface.build/2` and `build!/2`, a surface's name and keys with its cells `{component, opts}` in a list, equal to the surface written out; with the defaults, a predefined source and the table are five lines.
 - The host's default registry and the one-call render (#230, #204): `Macaw.Registry.default/0` (and `from_config/1`) from `config :macaw, packages:, layouts:`, `Macaw.Builtin` always included, kept in `:persistent_term` and rebuilt when the configuration changes; `Macaw.Surface.show/2` validates, fetches and renders in one call, `sources:` given once, the registry, `now:` (one clock read in the call), `ceiling:` (from `config :macaw, :ceiling`) and `mode:` (from a LiveView `socket:`) defaulted.

@@ -170,7 +170,8 @@ defmodule Macaw.Surface do
           module ->
             case module.options(options) do
               {:ok, checked} -> {{name, checked}, module, []}
-              {:error, faults} -> {{name, options}, nil, faults}
+              # Its places are judged all the same: place/1 needs no options.
+              {:error, faults} -> {{name, options}, module, faults}
             end
         end
     end
@@ -370,7 +371,8 @@ defmodule Macaw.Surface do
   @doc """
   A surface validated, fetched and rendered in one call (spec/06 §3.7): `{:ok, html}`, a
   safe value, or `{:error, faults}`, validation's own. `surface` is a `%Macaw.Surface{}`,
-  `{:ok, surface}`, or the attrs `new/1` takes, whose faults are answered as they are.
+  `{:ok, surface}` or `{:error, faults}` (a pipe from `new/1` or `build/2`), or the attrs
+  `new/1` takes, whose faults are answered as they are.
 
   `env` is as `fetch/2` and `render/3` take it, with defaults a host would otherwise
   restate on every call:
@@ -385,6 +387,7 @@ defmodule Macaw.Surface do
   @spec show(t() | {:ok, t()} | keyword() | map(), keyword()) ::
           {:ok, Phoenix.HTML.safe()} | {:error, [Fault.t(), ...]}
   def show({:ok, %__MODULE__{} = surface}, env), do: show(surface, env)
+  def show({:error, faults}, _env) when is_list(faults), do: {:error, faults}
 
   def show(%__MODULE__{} = surface, env) when is_list(env) do
     sources = Keyword.fetch!(env, :sources)

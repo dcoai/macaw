@@ -33,7 +33,9 @@ defmodule Macaw.Layout do
 
   @doc """
   A cell's place under this layout, checked: `{:ok, place}` or the faults, by path from
-  the place. `nil` is a cell with no place.
+  the place. `nil` is a cell with no place. It judges the place's shape alone, never by
+  the options, so a place is judged even when the options fail (#236); a rule that needs
+  the options (the grid's bounds) is `faults/2`'s.
   """
   @callback place(given :: term()) :: {:ok, term()} | {:error, [Fault.t(), ...]}
 
@@ -125,19 +127,27 @@ defmodule Macaw.Layout do
   """
   @spec judge(module(), term(), cells()) :: [Fault.t()]
   def judge(layout, options, cells) when is_atom(layout) and is_map(cells) do
-    {placed, faults} =
-      Enum.reduce(cells, {%{}, []}, fn {name, cell}, {placed, faults} ->
-        case layout.place(cell.place) do
-          {:ok, place} ->
-            {Map.put(placed, name, %{cell | place: place}), faults}
-
-          {:error, more} ->
-            {placed, faults ++ for({path, r} <- more, do: {[:cells, name, :place | path], r})}
-        end
-      end)
+    {placed, faults} = places(layout, cells)
 
     # Placement is judged over the places that are well formed, so a bad place is named
     # once, at itself, never again as a collision.
     Fault.sort(faults ++ layout.faults(placed, options))
+  end
+
+  @doc """
+  The cells' places judged by a layout's `place/1` alone, which needs no options: the
+  cells whose places are well formed, and every other's faults by path from the surface.
+  """
+  @spec places(module(), cells()) :: {cells(), [Fault.t()]}
+  def places(layout, cells) when is_atom(layout) and is_map(cells) do
+    Enum.reduce(cells, {%{}, []}, fn {name, cell}, {placed, faults} ->
+      case layout.place(cell.place) do
+        {:ok, place} ->
+          {Map.put(placed, name, %{cell | place: place}), faults}
+
+        {:error, more} ->
+          {placed, faults ++ for({path, r} <- more, do: {[:cells, name, :place | path], r})}
+      end
+    end)
   end
 end

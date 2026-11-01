@@ -82,17 +82,26 @@ defmodule Macaw.Surface.Validated do
   defp layout(surface, registry) do
     {:ok, {name, given}} = Layout.split(surface.layout)
 
+    builtin? = Layout.builtin(name) != nil
+
     with {:ok, module} <- Registry.layout(registry, name),
          {:ok, options} <- module.options(given) do
       faults =
-        if Layout.builtin(name) == module,
+        if builtin?,
           do: module.faults(surface.cells, options),
           else: Layout.judge(module, options, surface.cells)
 
       {{module, options}, faults}
     else
-      :error -> {nil, [{[:layout], {:unknown, :layout}}]}
-      {:error, faults} -> {nil, faults}
+      :error ->
+        {nil, [{[:layout], {:unknown, :layout}}]}
+
+      # Options that fail still leave the places to judge (a built-in's were judged when
+      # the surface was built).
+      {:error, faults} ->
+        {:ok, module} = Registry.layout(registry, name)
+        places = if builtin?, do: [], else: elem(Layout.places(module, surface.cells), 1)
+        {nil, faults ++ places}
     end
   end
 
