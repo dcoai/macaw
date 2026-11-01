@@ -59,7 +59,7 @@ defmodule Macaw.Layout do
   @doc "The layout's static stylesheet for these options."
   @callback stylesheet(options :: term()) :: String.t()
 
-  @builtins [Macaw.Grid]
+  @builtins [Macaw.Grid, Macaw.Layout.Stack, Macaw.Layout.Flow]
 
   @doc "The callbacks a layout exports, each `{name, arity}`."
   @spec callbacks() :: keyword(non_neg_integer())

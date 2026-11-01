@@ -80,7 +80,7 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 
 <!-- surfex: deferred #165: pages, templates, layers, containers and navigation -->
 
-- **A region holds surfaces in a flow.** A surface lays out its cells as a **flow** (sections, for prose) or a **12-column grid** (§3.3), metresis's and visualize's grid. (visualize.md C4; metresis.md C4.)
+- **A region holds surfaces in a flow.** A surface lays out its cells by its layout (§3.3): a **flow** (sections, for prose), a **stack** or a **grid** of 12 columns (or 6 or 24), metresis's and visualize's grid. (visualize.md C4; metresis.md C4.)
 - **A surface is reusable:** the same surface can appear on several pages, in a tab or in a drawer.
 - **A cell's settings are inline or referenced** ([07](07-documents.md#documents-everything)): a preset by typed reference, with the cell's own settings stacked over it.
 - **Its title** takes the next heading level from context ([10](10-web.md#web-a11y)).
@@ -95,7 +95,7 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 |---|---|---|
 | `name` | the surface's name: lower-case words joined by `_`, a name in the kernel's sense ([macaw_layers 01 §1](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-names)), unique where it is stored; it prefixes its cells' instance ids (§3.6) | required |
 | `title` | a non-empty string, its heading; `nil` for a surface without one | `nil` |
-| `layout` | the layout its cells are placed by (§3.3): a name, or `{name, options}`; `:grid` is the 12-column grid, `{:grid, columns: 24}` one of 24. Built in, a name's options and its cells' places are judged here; one only the host's registry knows is held as given and judged by `validate/3` | `:grid` |
+| `layout` | the layout its cells are placed by (§3.3): a name, or `{name, options}`; `:grid` is the 12-column grid, `{:grid, columns: 24}` one of 24, `{:stack, order: [...]}` one column and `{:flow, order: [...]}` sections for prose. Built in, a name's options and its cells' places are judged here; one only the host's registry knows is held as given and judged by `validate/3` | `:grid` |
 | `cells` | the cells by name (§3.2), a map, at least one | required |
 
 - **Building one:** `Macaw.Surface.new/1` from a keyword list or a map with atom keys answers `{:ok, surface}` or `{:error, faults}`, every fault at once by path from the surface, as the kernel orders them ([macaw_layers 01 §3](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-faults)). A key it doesn't have is `:unknown_key`; a missing one `:required`. Names in it are strings; an atom is read as its spelling, and no atom is made.
@@ -160,16 +160,30 @@ a cell builds with its defaults, kind read from an atom or its spelling, setting
 | `size/4` | a place's declared size in CSS pixels from the surface's width and row height, what its component lays out at and its budget is evaluated at, before any render (§3.5) |
 | `stylesheet/1` | its static stylesheet for the options, served from `'self'` by its content address |
 
-- **The built-in layouts** are `Macaw.Layout.builtins/0`, the grid (`Macaw.Grid`, below); `Layout.default/0`, the grid, is a surface's layout when it names none. `Layout.split/1` reads a `layout` value as its spelled name and its options; anything else is `{:type, :layout}` at `[:layout]`.
+- **The built-in layouts** are `Macaw.Layout.builtins/0`: the grid (`Macaw.Grid`), the stack (`Macaw.Layout.Stack`) and the flow (`Macaw.Layout.Flow`), below; `Layout.default/0`, the grid, is a surface's layout when it names none. `Layout.split/1` reads a `layout` value as its spelled name and its options; anything else is `{:type, :layout}` at `[:layout]`.
 - **Which layouts exist is the host's** ([12 §1.1](12-registry.md#registry-host)): its registry holds the built-in layouts and the ones it adds, and nothing else. `Macaw.Surface.new/1` judges a built-in layout's options and its cells' places as it builds the surface; a name no built-in has is held as given, with its cells' places, and judged by `validate/3` through the registry (§3.4). A name the registry doesn't hold is `{:unknown, :layout}` at `[:layout]`, and nothing is placed.
 - **Nothing reaches a layout's module but through the behavior:** validation, fetching and rendering ask the validated surface's layout, never `Macaw.Grid` by name.
 
 ```test:layout-behavior
-the grid is the one built-in layout and the default, its callbacks its own rules; a surface holds :grid for the grid with no options and refuses options the grid doesn't take, and a layout that is neither a name nor {name, options}; nothing in the library reaches the grid but through the behavior
+the grid, the stack and the flow are the built-in layouts, the grid the default, its callbacks its own rules; a surface holds :grid for the grid with no options and refuses options the grid doesn't take, and a layout that is neither a name nor {name, options}; nothing in the library reaches the grid but through the behavior
 ```
 
 ```test:layout-registry
 a layout no registry holds is {:unknown, :layout} at validation, its places held as given until then; an adopter's layout, registered, validates its places and placement by path, orders, classes and sizes the rendered cells; a registry's layouts are layouts, each name once, the built-ins always among them
+```
+
+#### The stack and the flow {#pages-ordered}
+
+**Two layouts order their cells by a list:** the stack, `:stack`, one column (what the grid collapses to on a narrow screen, chosen on purpose), and the flow, `:flow`, sections for prose. Their one option, **`order`**, required, is every cell's name once in reading order (`{:stack, order: ["header", "chart", "table"]}`), each a name read as its spelling. A surface's cells are a map, which keeps no order, so the order is the layout's to state; a layer that adds a cell restates the order, as it overrides the layout whole (§3.1).
+
+- **A cell has no place:** one given is `{:not_taken, "stack"}` (or `"flow"`) at `[:cells, name, :place]`. The order missing is `:required` at `[:layout, :options, :order]`, one that isn't a list `{:type, {:list, :name}}` there, an entry that isn't a name `{:type, :name}` at its index, and another option `:unknown_key`.
+- **The order names every cell exactly once,** checked at validation with the cells (§3.4): a name no cell has is `{:unknown_cell, name}` and a name given again `{:duplicate, name}`, each at `[:layout, :options, :order, i]`, and a cell it leaves out `{:missing, name}` at `[:layout, :options, :order]`, all at once.
+- **Reading order is the order,** and so the DOM order and the visual order ([10 §4](10-web.md#web-a11y)).
+- **Classes:** the stack's container is `"mw-stack"` and each cell `"mw-cell"`; the flow's container `"mw-flow"` and each cell `"mw-cell mw-section"`. Each has one static stylesheet served by its content address: `Macaw.Layout.Stack.stylesheet/0` (one column of rows at least `var(--mw-grid-row, 4rem)`, the grid's gap) and `Macaw.Layout.Flow.stylesheet/0` (block sections, each its content's height, `var(--mw-flow-gap, 1.5rem)` apart), at their `stylesheet_path/0`. No style is inline.
+- **A cell's declared size** is the surface's width and four rows, `{width, 4 * row_height}`, known before it renders.
+
+```test:layout-ordered
+a stack and a flow render in the order given, which is the DOM order, with their classes and no inline style; a cell with a place is refused, and a missing, mistyped or extra option; at validation a name no cell has, a name given twice and a cell left out are all faults by path; a cell's size is the width and four rows; each stylesheet is served by its address; an ordered layout round-trips through the map and JSON forms
 ```
 
 #### The grid {#pages-grid}

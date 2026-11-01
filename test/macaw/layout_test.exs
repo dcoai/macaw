@@ -56,9 +56,9 @@ defmodule Macaw.LayoutTest do
 
   @tag verifies: "layout-behavior"
   test "the grid is the built-in layout, its callbacks the grid's own rules" do
-    assert Layout.builtins() == [Grid]
+    assert Layout.builtins() == [Grid, Macaw.Layout.Stack, Macaw.Layout.Flow]
     assert Layout.builtin(:grid) == Grid and Layout.builtin("grid") == Grid
-    assert Layout.builtin("flow") == nil
+    assert Layout.builtin("flow") == Macaw.Layout.Flow and Layout.builtin("areas") == nil
 
     place = %{x: 1, y: 2, w: 3, h: 4}
     cells = %{"a" => %{place: place}, "b" => %{place: %{place | x: 2}}}
@@ -91,7 +91,10 @@ defmodule Macaw.LayoutTest do
     registry = Registry.new!([Package], layouts: [Rows])
     assert Registry.layout(registry, "rows") == {:ok, Rows}
     assert Registry.layout(registry, :grid) == {:ok, Grid}
-    assert Registry.layouts(registry) == [{"grid", Grid}, {"rows", Rows}]
+
+    assert {"rows", Rows} in Registry.layouts(registry) and
+             {"grid", Grid} in Registry.layouts(registry)
+
     assert Registry.layout(Registry.new!([]), "rows") == :error
 
     assert {:ok, v} = Surface.validate(s, registry, %{})
@@ -125,7 +128,7 @@ defmodule Macaw.LayoutTest do
              {:error, [{[:layouts], {:duplicate_layout, "grid", [Grid, Impostor]}}]}
 
     assert {:error, [{[:layouts], {:not_a_list, :rows}}]} = Registry.new([], layouts: :rows)
-    assert Registry.layouts(Registry.new!([], layouts: [Rows, Rows])) |> length() == 2
+    assert Registry.layouts(Registry.new!([], layouts: [Rows, Rows])) |> length() == 4
   end
 
   @tag verifies: "layout-behavior"

@@ -25,7 +25,8 @@ defmodule Macaw.Surface.Words do
     :y,
     :w,
     :h,
-    :columns
+    :columns,
+    :order
   ]
 
   @atoms [:grid, :navigation, :content, :control, :container]

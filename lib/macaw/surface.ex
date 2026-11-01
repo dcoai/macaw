@@ -96,27 +96,27 @@ defmodule Macaw.Surface do
 
   # The layout as the surface holds it, the built-in layout that judges its places now
   # (nil for one only a registry knows, judged at validation), and its faults. The grid
-  # with no options is `:grid`, as it always was; any other is `{name, options}`, its
-  # name a string, or a bare name a string.
+  # with no options is `:grid`, as it always was; a built-in layout with options holds
+  # them checked (`{"stack", %{order: ["a", "b"]}}`, every name a string); a layout only a
+  # registry knows holds its name, a string, and its options as given.
   defp layout(given) do
     case Layout.split(given) do
       {:error, faults} ->
         {:grid, nil, faults}
 
+      {:ok, {"grid", options}} when options == %{} ->
+        {:grid, Layout.builtin("grid"), []}
+
       {:ok, {name, options}} ->
-        module = Layout.builtin(name)
+        case Layout.builtin(name) do
+          nil ->
+            {if(options == %{}, do: name, else: {name, options}), nil, []}
 
-        held =
-          cond do
-            name == "grid" and options == %{} -> :grid
-            options == %{} -> name
-            true -> {name, options}
-          end
-
-        case module && module.options(options) do
-          nil -> {held, nil, []}
-          {:ok, _options} -> {held, module, []}
-          {:error, faults} -> {held, nil, faults}
+          module ->
+            case module.options(options) do
+              {:ok, checked} -> {{name, checked}, module, []}
+              {:error, faults} -> {{name, options}, nil, faults}
+            end
         end
     end
   end
