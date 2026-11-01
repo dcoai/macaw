@@ -34,11 +34,8 @@ defmodule Macaw.SourceShorthandTest do
        }, nil}
   }
 
-  # On the grid: a stacked bound cell isn't fetched yet (#232).
-  @place %{x: 0, y: 0, w: 12, h: 4}
-
   defp html(cells) do
-    {:ok, s} = Surface.new(name: "ops", cells: Enum.map(cells, &Map.put(&1, :place, @place)))
+    {:ok, s} = Surface.new(name: "ops", cells: cells)
     {:ok, v} = Surface.validate(s, @registry, @sources)
 
     v

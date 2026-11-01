@@ -56,10 +56,12 @@ defmodule Macaw.Surface.Fetch do
   # One reader per bound slot: its cell, slot, source, params, description and budget at
   # its cell's declared size, clamped to the ceiling. A bad budget is the cell's `invalid`.
   defp readers(validated, env, ceiling) do
+    # The place is read in the body: a comprehension's `place = …` is a filter, which drops
+    # a cell whose place is `nil`, a stack's or a flow's (#232).
     for name <- validated.order,
         cell = Map.fetch!(validated.cells, name),
-        place = Map.fetch!(validated.surface.cells, name).place,
         {slot, binding} <- Enum.sort(cell.slots) do
+      place = Map.fetch!(validated.surface.cells, name).place
       {layout, options} = validated.layout
       size = layout.size(place, options, env[:width], env[:row_height])
 

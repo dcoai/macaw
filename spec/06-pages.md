@@ -277,7 +277,7 @@ one cell failing its kind, settings, a source and a binding's params reports eve
 - **Drawn states** ([macaw_component 02 §6](https://github.com/dcoai/macaw_component/blob/main/spec/02-rendering.md#components-states)), the highest of its slots': a fetch that answers an error or whose process exits is `down`; one that hasn't answered within `timeout:` is `loading`; a delivery `capped` or `reduced_by` anything is `capped`; one with no rows is `no_data`; otherwise `live`. A cell with no slots is `live`.
 
 ```test:fetch-budgets
-each slot is fetched at its budget at its cell's size, clamped to the ceiling and marked runtime when clamped; slots sharing a source and params are fetched once at the largest budget and each reduced to its own
+each slot is fetched at its budget at its cell's size, under every built-in layout, a place or none, clamped to the ceiling and marked runtime when clamped; slots sharing a source and params are fetched once at the largest budget and each reduced to its own
 ```
 
 ```test:fetch-drawn
