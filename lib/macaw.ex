@@ -7,7 +7,8 @@ defmodule Macaw do
   complete without a socket (spec/06 §3), and the built-in table.
 
     * `Macaw.Surface`: the surface document, its cells, validation, fetching and rendering;
-    * `Macaw.Grid`: the 12-column grid, its reading order, classes and static stylesheet;
+    * `Macaw.Layout`: how a surface lays out its cells, a behavior; `Macaw.Grid`, the
+      12-column grid on it, its reading order, classes and static stylesheet;
     * `Macaw.Registry`: a host's registry of components, built from enabled packages;
     * `Macaw.Builtin`: the built-in components, a package like any other.
 

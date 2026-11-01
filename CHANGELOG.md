@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- A layout is a behavior, `Macaw.Layout` (spec/06 §3.3, #224, #198): the grid is the built-in one, and validation, fetching and rendering reach it only through the behavior. A host's registry holds the built-in layouts and the ones it adds (`Registry.new/2`'s `layouts:`), closed by default; a surface naming a layout no registry holds is `{:unknown, :layout}` at validation. **Changed:** `Surface.new/1` no longer refuses a layout name it doesn't know (it was `{:unknown_layout, name}`), since which layouts exist is the host's; a `layout` that is neither a name nor `{name, options}` is `{:type, :layout}`. `Validated` gains `layout`.
 - The built-in table heads each column with its field's label from the source's schema, its unit after it (`Request time (s)`); a cell's context carries each slot's schema (`schemas`, read with `Context.label/3` and `unit/3`). Needs macaw_component `~> 0.2.1` (#219, #196).
 - The built-in table has a static stylesheet, `Macaw.Builtin.Table.stylesheet/0` at its content address `stylesheet_path/0`, as the grid's is: every color a theme custom property, and the sorted column marked (#196, #220, spec/05 §6.1).
 - The built-in table's columns are chosen by its `rows` slot's optional `columns` role (`fields: %{"columns" => ["host", "p50"]}`), in the order bound, each field checked against the source's schema at validation; unbound, every column shows, as before (#196, #218, spec/05 §6.1).

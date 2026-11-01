@@ -1,6 +1,7 @@
 defmodule Macaw.Surface do
   @moduledoc """
-  A surface: a reusable composed unit of cells in a 12-column grid (spec/06 §3.1).
+  A surface: a reusable composed unit of cells, laid out by its layout (spec/06 §3.1,
+  §3.3), the 12-column grid by default.
 
       {:ok, surface} =
         Macaw.Surface.new(
@@ -36,6 +37,7 @@ defmodule Macaw.Surface do
   import Kernel, except: [node: 1]
 
   alias Macaw.Layers.{Document, Fault, Form, Names, Version}
+  alias Macaw.Layout
   alias Macaw.Layers.Color.Form, as: ColorForm
   alias Macaw.Surface.{Cell, Words}
 
@@ -45,7 +47,7 @@ defmodule Macaw.Surface do
   @type t :: %__MODULE__{
           name: String.t(),
           title: String.t() | nil,
-          layout: :grid,
+          layout: Macaw.Layout.spec(),
           cells: %{String.t() => Cell.t()}
         }
 
@@ -67,8 +69,8 @@ defmodule Macaw.Surface do
     unknown = for key <- Map.keys(attrs), key not in @keys, do: {[key], :unknown_key}
     {name, n} = name(Map.get(attrs, :name))
     {title, t} = title(Map.get(attrs, :title))
-    {layout, l} = layout(Map.get(attrs, :layout, :grid))
-    {cells, c} = cells(Map.get(attrs, :cells))
+    {layout, module, l} = layout(Map.get(attrs, :layout, :grid))
+    {cells, c} = cells(Map.get(attrs, :cells), module)
 
     case Fault.sort(unknown ++ n ++ t ++ l ++ c) do
       [] -> {:ok, %__MODULE__{name: name, title: title, layout: layout, cells: cells}}
@@ -92,18 +94,39 @@ defmodule Macaw.Surface do
   defp title(title) when is_binary(title) and title != "", do: {title, []}
   defp title(_other), do: {nil, [{[:title], {:type, :string}}]}
 
-  defp layout(layout) do
-    if Names.name(layout) == "grid",
-      do: {:grid, []},
-      else: {:grid, [{[:layout], {:unknown_layout, layout}}]}
+  # The layout as the surface holds it, the built-in layout that judges its places now
+  # (nil for one only a registry knows, judged at validation), and its faults. The grid
+  # with no options is `:grid`, as it always was; any other is `{name, options}`, its
+  # name a string, or a bare name a string.
+  defp layout(given) do
+    case Layout.split(given) do
+      {:error, faults} ->
+        {:grid, nil, faults}
+
+      {:ok, {name, options}} ->
+        module = Layout.builtin(name)
+
+        held =
+          cond do
+            name == "grid" and options == %{} -> :grid
+            options == %{} -> name
+            true -> {name, options}
+          end
+
+        case module && module.options(options) do
+          nil -> {held, nil, []}
+          {:ok, _options} -> {held, module, []}
+          {:error, faults} -> {held, nil, faults}
+        end
+    end
   end
 
-  defp cells(nil), do: {%{}, [{[:cells], :required}]}
+  defp cells(nil, _layout), do: {%{}, [{[:cells], :required}]}
 
-  defp cells(%{} = cells) when not is_struct(cells) and map_size(cells) == 0,
+  defp cells(%{} = cells, _layout) when not is_struct(cells) and map_size(cells) == 0,
     do: {%{}, [{[:cells], :empty}]}
 
-  defp cells(%{} = cells) when not is_struct(cells) do
+  defp cells(%{} = cells, layout) when not is_struct(cells) do
     Enum.reduce(cells, {%{}, []}, fn {name, attrs}, {acc, faults} ->
       spelled = Names.name(name)
 
@@ -112,9 +135,16 @@ defmodule Macaw.Surface do
           {acc, faults ++ [{[:cells, name], {:type, :name}}]}
 
         true ->
-          case Cell.new(attrs) do
-            {:ok, %Cell{place: nil} = cell} ->
-              {Map.put(acc, spelled, cell), faults ++ [{[:cells, spelled, :place], :required}]}
+          case Cell.new(attrs, layout) do
+            # Whether a cell needs a place is its layout's: the grid's does.
+            {:ok, %Cell{place: nil} = cell} when layout != nil ->
+              absent =
+                case layout.place(nil) do
+                  {:ok, _none} -> []
+                  {:error, more} -> for {p, r} <- more, do: {[:cells, spelled, :place | p], r}
+                end
+
+              {Map.put(acc, spelled, cell), faults ++ absent}
 
             {:ok, cell} ->
               {Map.put(acc, spelled, cell), faults}
@@ -126,7 +156,7 @@ defmodule Macaw.Surface do
     end)
   end
 
-  defp cells(_other), do: {%{}, [{[:cells], {:type, :map}}]}
+  defp cells(_other, _layout), do: {%{}, [{[:cells], {:type, :map}}]}
 
   # -- validation --------------------------------------------------------------------------
 

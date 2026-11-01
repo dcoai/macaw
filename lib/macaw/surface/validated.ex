@@ -2,7 +2,9 @@ defmodule Macaw.Surface.Validated do
   @moduledoc """
   A surface that passed the static pass (spec/06 §3.4), and what rendering needs of it:
   each cell's component module, validated settings and declarations, and each slot's
-  source, description, resolved binding (`Slot.resolve/3`) and request params; `order` is the cells in reading order.
+  source, description, resolved binding (`Slot.resolve/3`) and request params; `layout` the
+  layout module and its checked options, from the host's registry; `order` is the cells
+  in reading order.
 
   Rendering takes only a validated surface, so nothing renders that hasn't passed.
   """
@@ -12,11 +14,11 @@ defmodule Macaw.Surface.Validated do
   alias Macaw.Data.Source
   alias Macaw.Data.Source.Description
   alias Macaw.Layers.Fault
-  alias Macaw.{Grid, Registry, Surface}
+  alias Macaw.{Layout, Registry, Surface}
   alias Macaw.Component.Slot
 
-  @enforce_keys [:surface, :cells, :order]
-  defstruct [:surface, :cells, :order]
+  @enforce_keys [:surface, :cells, :layout, :order]
+  defstruct [:surface, :cells, :layout, :order]
 
   @type slot :: %{
           source: String.t(),
@@ -35,6 +37,7 @@ defmodule Macaw.Surface.Validated do
   @type t :: %__MODULE__{
           surface: Surface.t(),
           cells: %{String.t() => cell()},
+          layout: {module(), term()},
           order: [String.t()]
         }
 
@@ -53,9 +56,43 @@ defmodule Macaw.Surface.Validated do
         end
       end)
 
-    case Fault.sort(Grid.faults(surface.cells) ++ faults) do
-      [] -> {:ok, %__MODULE__{surface: surface, cells: cells, order: Grid.order(surface.cells)}}
-      all -> {:error, all}
+    {layout, placement} = layout(surface, registry)
+
+    case Fault.sort(placement ++ faults) do
+      [] ->
+        {module, options} = layout
+
+        {:ok,
+         %__MODULE__{
+           surface: surface,
+           cells: cells,
+           layout: layout,
+           order: module.order(surface.cells, options)
+         }}
+
+      all ->
+        {:error, all}
+    end
+  end
+
+  # The surface's layout from the host's registry, and its placement faults (spec/06 §3.3).
+  # A built-in layout judged the options and places when the surface was built; one only
+  # the registry knows judges them here. A layout the registry lacks is `{:unknown,
+  # :layout}`, and nothing is placed.
+  defp layout(surface, registry) do
+    {:ok, {name, given}} = Layout.split(surface.layout)
+
+    with {:ok, module} <- Registry.layout(registry, name),
+         {:ok, options} <- module.options(given) do
+      faults =
+        if Layout.builtin(name) == module,
+          do: module.faults(surface.cells, options),
+          else: Layout.judge(module, options, surface.cells)
+
+      {{module, options}, faults}
+    else
+      :error -> {nil, [{[:layout], {:unknown, :layout}}]}
+      {:error, faults} -> {nil, faults}
     end
   end
 

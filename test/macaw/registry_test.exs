@@ -17,6 +17,12 @@ defmodule Macaw.RegistryTest do
 
     assert {:ok, empty} = Registry.new([])
     assert Registry.components(empty) == []
+    # Layouts too: the built-in ones, and none the host did not add (spec/06 §3.3).
+    assert Registry.layouts(empty) == [{"grid", Macaw.Grid}]
+
+    assert Registry.layout(empty, :grid) == {:ok, Macaw.Grid} and
+             Registry.layout(empty, "rows") == :error
+
     # Loaded, but its package isn't listed.
     assert Code.ensure_loaded?(Other) and Registry.component(empty, "test.note") == :error
 

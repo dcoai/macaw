@@ -6,7 +6,6 @@ defmodule Macaw.Surface.Render do
 
   alias Macaw.Component
   alias Macaw.Component.{Assigns, Context}
-  alias Macaw.Grid
   alias Macaw.Surface.Validated
 
   @defaults [mode: :socketless, heading_level: 2, width: 1200, row_height: 64]
@@ -40,6 +39,7 @@ defmodule Macaw.Surface.Render do
 
   defp cell(validated, name, %{deliveries: deliveries, drawn: drawn}, level, env) do
     cell = Map.fetch!(validated.cells, name)
+    {layout, options} = validated.layout
     place = Map.fetch!(validated.surface.cells, name).place
     kind = Map.fetch!(validated.surface.cells, name).kind
     instance = "#{validated.surface.name}-#{name}"
@@ -48,7 +48,7 @@ defmodule Macaw.Surface.Render do
       Context.new(
         mode: env[:mode],
         instance: instance,
-        size: Grid.size(place, env[:width], env[:row_height]),
+        size: layout.size(place, options, env[:width], env[:row_height]),
         heading_level: level,
         theme: Keyword.get_lazy(env, :theme, &Macaw.Layers.Theme.default/0),
         now: Keyword.fetch!(env, :now),
@@ -73,7 +73,7 @@ defmodule Macaw.Surface.Render do
       )
 
     [
-      ~s(<div class="#{Grid.classes(place)}" id="#{instance}">),
+      ~s(<div class="#{layout.classes(place, options)}" id="#{instance}">),
       cell.module.render(kind, assigns) |> Phoenix.HTML.Safe.to_iodata(),
       "</div>"
     ]

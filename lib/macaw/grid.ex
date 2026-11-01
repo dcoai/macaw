@@ -1,6 +1,7 @@
 defmodule Macaw.Grid do
   @moduledoc """
-  The 12-column grid a surface places its cells on (spec/06 §3.3).
+  The 12-column grid a surface places its cells on (spec/06 §3.3), the built-in layout
+  `:grid` (`Macaw.Layout`).
 
   Places are `%{x, y, w, h}` in integer units: `x` from 0 to 11, `w` from 1 to 12 with
   `x + w` at most 12, `y` from 0, `h` from 1, and `y + h` at most `rows/0`. Reading order is
@@ -11,11 +12,69 @@ defmodule Macaw.Grid do
       "mw-cell mw-col-1 mw-span-6 mw-row-3 mw-rows-3"
   """
 
+  @behaviour Macaw.Layout
+
   @columns 12
   @rows 64
   @breakpoint "40rem"
 
   @type place :: %{x: non_neg_integer(), y: non_neg_integer(), w: pos_integer(), h: pos_integer()}
+
+  @place_keys [:x, :y, :w, :h]
+
+  # -- the layout ---------------------------------------------------------------------------
+
+  @impl Macaw.Layout
+  def name, do: "grid"
+
+  @impl Macaw.Layout
+  # The grid takes no options yet (spec/06 §3.3).
+  def options(given) when given == %{} or given == [], do: {:ok, %{}}
+
+  def options(given) when is_map(given) or is_list(given),
+    do: {:error, for({key, _value} <- given, do: {[:layout, :options, key], :unknown_key})}
+
+  @impl Macaw.Layout
+  # A place is four integers, `x`, `y`, `w` and `h`; a cell on a grid has one.
+  def place(nil), do: {:error, [{[], :required}]}
+
+  def place(%{} = place) when not is_struct(place) do
+    unknown = for key <- Map.keys(place), key not in @place_keys, do: {[key], :unknown_key}
+
+    values =
+      for key <- @place_keys,
+          fault <-
+            (case Map.fetch(place, key) do
+               {:ok, n} when is_integer(n) -> []
+               {:ok, _other} -> [{[key], {:type, :integer}}]
+               :error -> [{[key], :required}]
+             end),
+          do: fault
+
+    case unknown ++ values do
+      [] -> {:ok, Map.take(place, @place_keys)}
+      faults -> {:error, faults}
+    end
+  end
+
+  def place(_other), do: {:error, [{[], {:type, :map}}]}
+
+  @impl Macaw.Layout
+  def faults(cells, _options), do: faults(cells)
+
+  @impl Macaw.Layout
+  def order(cells, _options), do: order(cells)
+
+  @impl Macaw.Layout
+  def classes(place, _options), do: classes(place)
+
+  @impl Macaw.Layout
+  def size(place, _options, width, row_height), do: size(place, width, row_height)
+
+  @impl Macaw.Layout
+  def stylesheet(_options), do: stylesheet()
+
+  # -- the grid's own -----------------------------------------------------------------------
 
   @doc "The grid's columns, 12."
   @spec columns() :: pos_integer()

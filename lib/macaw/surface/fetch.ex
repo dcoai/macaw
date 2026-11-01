@@ -8,7 +8,6 @@ defmodule Macaw.Surface.Fetch do
   alias Macaw.Component.Drawn
   alias Macaw.Data.{Bounded, Delivery, Source}
   alias Macaw.Data.Source.{Finish, Request}
-  alias Macaw.Grid
   alias Macaw.Surface.Validated
 
   @defaults [viewer: nil, width: 1200, row_height: 64, timeout: 5_000]
@@ -61,7 +60,8 @@ defmodule Macaw.Surface.Fetch do
         cell = Map.fetch!(validated.cells, name),
         place = Map.fetch!(validated.surface.cells, name).place,
         {slot, binding} <- Enum.sort(cell.slots) do
-      size = Grid.size(place, env[:width], env[:row_height])
+      {layout, options} = validated.layout
+      size = layout.size(place, options, env[:width], env[:row_height])
 
       {budget, clamped} =
         case Component.budget(cell.module, slot, cell.settings, size) do

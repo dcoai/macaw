@@ -16,10 +16,11 @@ A host enables what pages may name, by package. **The package side is `macaw_com
 
 ### 1.1 The host side {#registry-host}
 
-**`Macaw.Registry` is a host's registry of components:** built from the packages it enables, in its configuration, and nothing else.
+**`Macaw.Registry` is a host's registry of components and layouts:** built from the packages it enables and the layouts it adds, in its configuration, and nothing else.
 - **`Macaw.Registry.new/1`** of a list of packages reads each package's components through `Macaw.Component.Package.components/1` ([macaw_component 03](https://github.com/dcoai/macaw_component/blob/main/spec/03-packages.md#components-packages)) and answers `{:ok, registry}`, or `{:error, faults}` with every fault at once: a package's own faults at `[package]`, and **two components of one name across packages** as `{:duplicate, name, [{module, package}, {module, package}]}`. **`new!/1`** answers the registry or raises `ArgumentError` with every fault formatted, which is how a host fails at boot.
 - **Closed by default:** `new([])` holds nothing, and a component whose package isn't listed is unknown though its module is loaded. `macaw`'s built-in components are the package `Macaw.Builtin`, listed like any other.
 - **Lookup by spelling:** `component(registry, name)` answers `{:ok, module}` or `:error`, a name a string or an atom read as its spelling; no atom is made from a document's name. `components/1` lists `{name, module}` in name order, and `packages/1` the packages as given, each once.
+- **Layouts** ([06 §3.3](06-pages.md#pages-layouts)): `new/2` and `new!/2` take `layouts:`, the modules implementing `Macaw.Layout` the host adds. The registry holds the built-in layouts (`Macaw.Layout.builtins/0`) and those, and nothing else: closed by default, so a surface naming a layout the host didn't add fails validation. A module that isn't a layout is `:not_a_layout` at `[:layouts, module]`, and a name two layouts share, a built-in's among them, `{:duplicate_layout, name, [module, module]}` at `[:layouts]`. `layout(registry, name)` answers `{:ok, module}` or `:error` by spelling, no atom made, and `layouts/1` lists `{name, module}` in name order.
 - **Hooks:** `hooks/1` is `Macaw.Component.Package.hooks/1` over the registry's packages, from which a host or `macaw_live` generates the module that registers them.
 
 ```test:registry-build

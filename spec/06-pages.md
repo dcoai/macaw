@@ -95,7 +95,7 @@ layer :project_toc, on: :site, do: fill(:sidebar, surface: :table_of_contents)
 |---|---|---|
 | `name` | the surface's name: lower-case words joined by `_`, a name in the kernel's sense ([macaw_layers 01 §1](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-names)), unique where it is stored; it prefixes its cells' instance ids (§3.6) | required |
 | `title` | a non-empty string, its heading; `nil` for a surface without one | `nil` |
-| `layout` | `:grid`, the only layout of v0.1.0 | `:grid` |
+| `layout` | the layout its cells are placed by (§3.3): a name, or `{name, options}`; `:grid` is the 12-column grid. Built in, a name's options and its cells' places are judged here; one only the host's registry knows is held as given and judged by `validate/3` | `:grid` |
 | `cells` | the cells by name (§3.2), a map, at least one | required |
 
 - **Building one:** `Macaw.Surface.new/1` from a keyword list or a map with atom keys answers `{:ok, surface}` or `{:error, faults}`, every fault at once by path from the surface, as the kernel orders them ([macaw_layers 01 §3](https://github.com/dcoai/macaw_layers/blob/main/spec/01-kernel.md#kernel-faults)). A key it doesn't have is `:unknown_key`; a missing one `:required`. Names in it are strings; an atom is read as its spelling, and no atom is made.
@@ -136,7 +136,7 @@ stacking a layer on a surface adds and replaces cells by name and overrides the 
 | `kind` | the kind it renders as, one of `Macaw.Component.kinds/0`, given as an atom or its spelling | `:content` |
 | `settings` | its settings by parameter name, inline, each a term of its parameter's type: a color term, a typed color, a time, a point, an atom where the type takes one. The cell checks only that it is a map of names; each value is checked against the component's declared parameter types where the component is known (§3.4), and a setting with no declared parameter is `:unknown_param` | `%{}` |
 | `slots` | each of its slots bound to a source: `%{source: name, fields: %{role => field}, params: %{name => value}}`, `fields` and `params` defaulting to `%{}`, a `many` role's fields a list; each param a term, checked against the source's declared parameters (§3.4) | `%{}` |
-| `place` | where it sits in the grid: `%{x, y, w, h}` (§3.3) | required on a grid |
+| `place` | where it sits, as the surface's layout reads it (§3.3): `%{x, y, w, h}` on the grid. `Cell.new/2` takes the layout that judges it, the grid by default; `nil` holds it as given | required on a grid |
 
 Cell names are names in the kernel's sense, unique within the surface (the map's keys).
 
@@ -144,7 +144,34 @@ Cell names are names in the kernel's sense, unique within the surface (the map's
 a cell builds with its defaults, kind read from an atom or its spelling, setting and param names normalized to strings and their values kept as given; a missing component or place, an unknown kind, settings or params that aren't a map of names, a slot without a source and an unknown key are faults at their paths
 ```
 
-### 3.3 The grid {#pages-grid}
+### 3.3 Layouts {#pages-layouts}
+
+**A layout is a behavior, the way a component is one:** `Macaw.Layout`. A surface names its layout by `layout`, a name or `{name, options}`, and every rule of placing its cells is the layout's:
+
+| Callback | Answers |
+|---|---|
+| `name/0` | the name a surface spells it by (`"grid"`) |
+| `options/1` | its options checked, `{:ok, options}` or the faults by path (`[:layout, :options, key]`); none given is `%{}` |
+| `place/1` | a cell's place checked, `{:ok, place}` or the faults by path from the place; `nil` is a cell with no place, which a layout that needs one refuses as `:required` |
+| `faults/2` | the placement faults of the cells (each with a checked place) under the options, by path from the surface, all at once |
+| `order/2` | the cells' names in reading order, which is the DOM order and the visual order ([10 §4](10-web.md#web-a11y)) |
+| `classes/2` | a place's classes: placement is by classes only, never inline style ([10 §1](10-web.md#web-csp)) |
+| `size/4` | a place's declared size in CSS pixels from the surface's width and row height, what its component lays out at and its budget is evaluated at, before any render (§3.5) |
+| `stylesheet/1` | its static stylesheet for the options, served from `'self'` by its content address |
+
+- **The built-in layouts** are `Macaw.Layout.builtins/0`, the grid (`Macaw.Grid`, below); `Layout.default/0`, the grid, is a surface's layout when it names none. `Layout.split/1` reads a `layout` value as its spelled name and its options; anything else is `{:type, :layout}` at `[:layout]`.
+- **Which layouts exist is the host's** ([12 §1.1](12-registry.md#registry-host)): its registry holds the built-in layouts and the ones it adds, and nothing else. `Macaw.Surface.new/1` judges a built-in layout's options and its cells' places as it builds the surface; a name no built-in has is held as given, with its cells' places, and judged by `validate/3` through the registry (§3.4). A name the registry doesn't hold is `{:unknown, :layout}` at `[:layout]`, and nothing is placed.
+- **Nothing reaches a layout's module but through the behavior:** validation, fetching and rendering ask the validated surface's layout, never `Macaw.Grid` by name.
+
+```test:layout-behavior
+the grid is the one built-in layout and the default, its callbacks its own rules; a surface holds :grid for the grid with no options and refuses options the grid doesn't take, and a layout that is neither a name nor {name, options}; nothing in the library reaches the grid but through the behavior
+```
+
+```test:layout-registry
+a layout no registry holds is {:unknown, :layout} at validation, its places held as given until then; an adopter's layout, registered, validates its places and placement by path, orders, classes and sizes the rendered cells; a registry's layouts are layouts, each name once, the built-ins always among them
+```
+
+#### The grid {#pages-grid}
 
 A grid surface places its cells on **12 columns** in integer units: `x` from 0 to 11, `w` from 1 to 12 with `x + w` at most 12, `y` from 0, `h` from 1, and `y + h` at most **64** rows (`Macaw.Grid.rows/0`), so every placement has a class; `Macaw.Grid.columns/0` is 12. `Macaw.Grid.faults/1` of the cells is every fault at `[:cells, name, :place]`: a bound broken is `{:out_of_bounds, what, value}` (`what` one of `:x`, `:w`, `:x_plus_w`, `:y`, `:h`, `:y_plus_h`), and two cells overlapping is `{:overlap, other}` at the later cell, later in reading order. A place that isn't four integers is the cell's own fault (§3.2).
 
@@ -163,7 +190,7 @@ a placement's classes name its column, span, row and rows; the stylesheet has a 
 ### 3.4 Validating a surface {#pages-surface-validate}
 
 **The static pass** ([07 §2](07-documents.md#documents-validation-time)): `Macaw.Surface.validate/3`, of a surface, the host's registry (`Macaw.Registry`, [12 §1.1](12-registry.md#registry-host)) and its sources by name, each `{source, context}` as `Macaw.Data.Source.describer/1` takes them. No I/O but `describe`, which a source answers from configuration, and no viewer. It answers `{:ok, %Macaw.Surface.Validated{}}` or `{:error, faults}`, every fault at once by path from the surface:
-- **the grid**: every rule of §3.3, at `[:cells, name, :place]`;
+- **the layout**: the surface's from the registry (`{:unknown, :layout}` at `[:layout]` for one it doesn't hold), and every rule of its placement (§3.3; the grid's at `[:cells, name, :place]`);
 - **the component**: a name the registry doesn't hold is `{:unknown_component, name}` at `[:cells, name, :component]`;
 - **the kind**: one the component doesn't offer is `{:kind_not_offered, kind, kinds}` at `[:cells, name, :kind]`;
 - **the settings and declarations**: `Macaw.Component.declarations/2`'s faults, at `[:cells, name, :settings | path]`;
@@ -177,7 +204,7 @@ a placement's classes name its column, span, row and rows; the stylesheet has a 
   - a cell with bindings whose component is unknown gets `{:unchecked, :component}` at `[:cells, name, :slots]`;
   - one whose settings fail gets `{:unchecked, :settings}` there.
 
-`%Macaw.Surface.Validated{surface, cells, order}` holds, for each cell, its component module, its validated settings, its declarations, and each slot's source, description, request params and **resolved binding** (`Macaw.Component.Slot.resolve/3`: the field each role reads, an unbound `window` role holding the window field and an unbound optional role absent); `order` is the cells in reading order. Rendering takes only a validated surface, so nothing renders that hasn't passed.
+`%Macaw.Surface.Validated{surface, cells, layout, order}` holds, for each cell, its component module, its validated settings, its declarations, and each slot's source, description, request params and **resolved binding** (`Macaw.Component.Slot.resolve/3`: the field each role reads, an unbound `window` role holding the window field and an unbound optional role absent); `layout` is the layout module and its checked options; `order` is the cells in its reading order. Rendering takes only a validated surface, so nothing renders that hasn't passed.
 
 ```test:validate-pass
 a surface of known components bound to described sources validates, with each cell's module, settings, declarations and descriptions, in reading order
@@ -194,7 +221,7 @@ one cell failing its kind, settings, a source and a binding's params reports eve
 ### 3.5 Fetching {#pages-surface-fetch}
 
 **`Macaw.Surface.fetch/2`** of a validated surface and an `env` answers each cell's deliveries and drawn state, `%{cell => %{deliveries: %{slot => delivery}, drawn: state}}`. `env` is a keyword list: `sources:` (the host's sources by name, as given to `validate/3`, required), `viewer:` (the host's viewer, opaque, `nil` the anonymous one), `now:` (required: the surface's now, never a clock read), `ceiling:` (the host's row ceiling, required), `width:` (the surface's width in CSS pixels, `1200` by default), `row_height:` (`64`), and `timeout:` (ms, `5_000`).
-- **Budgets:** each slot's budget is `Macaw.Component.budget/4` at the cell's declared size (§3.3) (a component's bad budget draws its cell `invalid` and fetches nothing for that slot), clamped by `Macaw.Data.Source.Finish.ceiling/2` ([macaw_data 01 §6.1](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-budgets)); a clamped slot's delivery says `reduced_by: :runtime`.
+- **Budgets:** each slot's budget is `Macaw.Component.budget/4` at the cell's declared size, its layout's `size/4` (§3.3) (a component's bad budget draws its cell `invalid` and fetches nothing for that slot), clamped by `Macaw.Data.Source.Finish.ceiling/2` ([macaw_data 01 §6.1](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-budgets)); a clamped slot's delivery says `reduced_by: :runtime`.
 - **Pooling within the surface:** slots bound to one source with equal params cost one fetch, at the largest of their budgets (`Finish.pooled/1`), and each slot is reduced to its own (`Finish.reduce`). Pooling across pages is #108's.
 - **Fetching never blocks or crashes the caller:** each fetch runs in a process of its own (`Macaw.Data.Bounded`), the fetches concurrently, each bounded by `timeout:`; the delivery is finished by `Macaw.Data.Source.Finish.finish/4` against the description.
 - **Drawn states** ([macaw_component 02 §6](https://github.com/dcoai/macaw_component/blob/main/spec/02-rendering.md#components-states)), the highest of its slots': a fetch that answers an error or whose process exits is `down`; one that hasn't answered within `timeout:` is `loading`; a delivery `capped` or `reduced_by` anything is `capped`; one with no rows is `no_data`; otherwise `live`. A cell with no slots is `live`.

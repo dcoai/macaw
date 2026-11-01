@@ -58,7 +58,6 @@ defmodule Macaw.SurfaceTest do
              Surface.new(
                name: "Ops Board",
                title: "",
-               layout: :flow,
                tint_scheme: 1,
                cells: %{
                  "Bad Name" => %{component: "x", place: @place},
@@ -71,13 +70,23 @@ defmodule Macaw.SurfaceTest do
              {[:cells, "Bad Name"], {:type, :name}},
              {[:cells, "a", :component], :required},
              {[:cells, "b", :place], :required},
-             {[:layout], {:unknown_layout, :flow}},
              {[:name], {:type, :name}},
              {[:tint_scheme], :unknown_key},
              {[:title], {:type, :string}}
            ]
 
     assert Surface.new(cells: %{}) == {:error, [{[:cells], :empty}, {[:name], :required}]}
+
+    # A layout is a name or {name, options}; which names exist is the registry's (§3.3).
+    for bad <- [7, {:grid, 7}, {:grid, [1]}, ""] do
+      assert {:error, [{[:layout | _], _}]} =
+               Surface.new(
+                 name: "ops",
+                 layout: bad,
+                 cells: %{"a" => %{component: "x", place: @place}}
+               )
+    end
+
     assert Surface.new(name: "a") == {:error, [{[:cells], :required}]}
 
     name = "never_an_atom_#{System.unique_integer([:positive])}"
