@@ -9,9 +9,9 @@ how Macaw finishes what a source doesn't do itself, and sources that push.
 - the `Macaw.Data.Source` behavior and its dispatch functions;
 - descriptions (`Macaw.Data.Source.Description`) and capabilities;
 - parameters (`Macaw.Data.Parameter`): declaring, validating and binding them;
-- requests (`Macaw.Data.Source.Request`): window, budget, viewer and `now`;
-- finishing (`Macaw.Data.Source.Finish`): the window, `latest`, budgets, the ceiling and
-  pooling;
+- requests (`Macaw.Data.Source.Request`): window, order, budget, viewer and `now`;
+- finishing (`Macaw.Data.Source.Finish`): the window, `latest`, the order, budgets, the
+  ceiling and pooling;
 - push subscriptions (`Macaw.Data.Source.Push`).
 
 Schemas, tables and deliveries, the data a source answers with, are
@@ -152,7 +152,7 @@ describe.("nope")
 
 ## Descriptions
 
-`Macaw.Data.Source.Description.new/1` builds a description from four fields:
+`Macaw.Data.Source.Description.new/1` builds a description from these fields:
 
 | Field | Value | Default |
 |---|---|---|
@@ -160,6 +160,9 @@ describe.("nope")
 | `params` | the parameters it takes, by name | `%{}` |
 | `supports` | the capabilities it honors itself | `[]` |
 | `viewer_independent` | `true` when every viewer gets the same answer | `false` |
+| `lateness` | for a pushing source, the most a change may lag its watermark (a `Duration`, or a number over a number window field) | `nil`, any age |
+| `idle_after` | milliseconds of silence before a derived source's watermark leaves this source out | `nil`, never idle |
+| `chunk_span` | the span of the window field one chunk of the source's table holds | `nil`, from the resolution |
 
 It reports every fault at once, by path, like every constructor in Macaw:
 
@@ -167,10 +170,10 @@ It reports every fault at once, by path, like every constructor in Macaw:
 alias Macaw.Data.Source.Description
 
 Description.new(schema: description.schema, supports: [:window, :teleport])
-#=> {:error, [{[:supports, 1], {:enum, [:window, :box, :region, :latest, :budget, :push, :as_of]}}]}
+#=> {:error, [{[:supports, 1], {:enum, [:window, :box, :region, :latest, :order, :budget, :push, :as_of]}}]}
 
 Description.capabilities()
-#=> [:window, :box, :region, :latest, :budget, :push, :as_of]
+#=> [:window, :box, :region, :latest, :order, :budget, :push, :as_of]
 ```
 
 `Description.new!/1` raises `ArgumentError` instead, which suits a description built
@@ -289,10 +292,12 @@ required, every fault at once:
 | `box` | `%{west, south, east, north}` over a `:point` window field, in degrees | `nil` |
 | `region` | `%{field => [from, to]}`, ranges over named fields | `nil` |
 | `latest` | `true` asks for each identity's latest row | `false` |
+| `order` | `[{field, :asc \| :desc}, …]`, the order the reader looks at the rows in | `[]` |
 | `budget` | the most rows the reader wants | `nil` |
 | `as_of` | the instant the answer is as of, for a source supporting `:as_of` | `nil` |
 | `viewer` | the host's viewer, opaque to Macaw; `nil` is anonymous | `nil` |
 | `now` | the instant the request is made at | required |
+| `subscription` | the push subscription a fetch is a snapshot for (see "Sources that push") | `nil` |
 
 ```elixir
 Request.new(now: now, budget: 0, latest: :yes, zone: 1)
@@ -318,7 +323,7 @@ Three rules make sources predictable:
 
 A source that doesn't declare a capability still gets requests that use it.
 `Macaw.Data.Source.Finish.finish/4` does the rest after the fetch, in a fixed order
-(window, box, region, latest, budget), only ever **removing** rows, and records what it
+(window, box, region, latest, order, budget), only ever **removing** rows, and records what it
 did in the delivery's `served` facts. A surface finishes every delivery this way; you
 call it yourself only when you fetch outside a surface.
 
@@ -338,8 +343,8 @@ Macaw.Data.Delivery.rows(finished)
 ```
 
 Ask for at most 10 rows. The source doesn't support `:budget`, so finishing reduces each
-host's series with Largest-Triangle-Three-Buckets (LTTB), which keeps the shape of a line
-with far fewer points, and marks who did it:
+host's series with LTTB (Largest-Triangle-Three-Buckets, run as MinMaxLTTB, chapter 11),
+which keeps the shape of a line with far fewer points, and marks who did it:
 
 ```elixir
 budgeted = Request.new!(now: now, params: %{"host" => "web-1"}, budget: 10)
@@ -349,6 +354,33 @@ finished = Finish.finish(delivery, description, budgeted)
 {length(Macaw.Data.Delivery.rows(finished)), finished.served.reduced_by}
 #=> {10, :runtime}
 ```
+
+A reduced line is a sample, which suits a chart. A reader that looks at rows in an order
+("slowest first") wants the **first** rows in it instead, so it says so in the request's
+`order`. Finishing sorts by it before the budget, and keeps the head:
+
+```elixir
+slowest = Request.new!(now: now, params: %{"host" => "web-1"}, order: [{"ms", :desc}, {"t", :desc}], budget: 3)
+{:ok, delivery} = Source.fetch(latency, description, slowest)
+finished = Finish.finish(delivery, description, slowest)
+
+{Enum.map(Macaw.Data.Delivery.rows(finished), & &1["ms"]), finished.served.ordered}
+#=> {[49, 49, 48], :runtime}
+```
+
+- **Rows compare by their field's type:** a time by its instant, a number by value, text
+  by string, a category by its declared order, a missing reading last in either
+  direction, ties kept stable.
+- **`served.ordered` says who ordered them.** `:source` for a source that declares the
+  `:order` capability and serves its first `budget` rows in the order; `:runtime` when
+  finishing sorted every row served; `:sample` when the source had already cut its rows
+  (`capped`, or `reduced_by: :source`), so they need not be the first.
+- **An order the schema can't answer is refused** before the source is called, as a bad
+  parameter is: `Source.fetch/3` answers `{:error, {:order, [{[:order, 0],
+  {:unknown_field, "cpu"}}]}}` for an order on a field the schema lacks.
+- **A component asks for one** with its optional `order(slot, settings)` callback
+  (chapter 6), read through `Macaw.Component.order/3`, `{:ok, []}` without it. A surface
+  fetched by `macaw` 0.3.0 doesn't ask it yet: its requests carry no order.
 
 `finish/4` takes `reduce: "m4"` to use the M4 reducer instead of LTTB. A request the
 schema can't answer, such as a `box` on a source with no `:point` field, raises
@@ -391,15 +423,18 @@ by `Macaw.Surface.fetch/2`; knowing them explains what you see.
 ## Sources that push
 
 A source whose data arrives over time (a message queue, a metrics stream) can **push**
-increments instead of being polled. It declares `:push`, implements `subscribe/2` and
-`unsubscribe/2`, and sends the subscriber two kinds of message, built by
+changes instead of being polled. It declares `:push`, implements `subscribe/2` and
+`unsubscribe/2`, and sends the subscriber three kinds of message, built by
 `Macaw.Data.Source.Push`:
 
 - `Push.schema_message(ref, schema)`, first, and again whenever the schema changes;
-- `Push.delivery_message(ref, delivery)`, an increment: the rows new since the last.
+- `Push.increment_message(ref, seq, delivery)`, a change numbered `seq`, from 1 for each
+  subscription: the rows new since the last;
+- `Push.snapshot_message(ref, delivery)`, optionally, the whole relation as of
+  `served.position`, the number of the last increment it reflects.
 
-Here's a small pushing source. Its subscribers live in an `Agent`, and `tick/2` stands for
-whatever brings new data in:
+Here's a small pushing source. Each subscriber's pid and the number of its next
+increment live in an `Agent`, and `tick/2` stands for whatever brings new data in:
 
 ```elixir
 defmodule MyApp.Ticker do
@@ -419,10 +454,16 @@ defmodule MyApp.Ticker do
     %__MODULE__{subscribers: agent}
   end
 
-  @doc "Sends `rows` to every subscriber as one increment."
+  @doc "Sends `rows` to every subscriber as its next numbered increment."
   def tick(%__MODULE__{subscribers: agent}, rows) do
     delivery = Delivery.new(rows, schema: Schema.version(@schema))
-    for {ref, pid} <- Agent.get(agent, & &1), do: send(pid, Push.delivery_message(ref, delivery))
+
+    numbered =
+      Agent.get_and_update(agent, fn subscribers ->
+        {subscribers, Map.new(subscribers, fn {ref, {pid, seq}} -> {ref, {pid, seq + 1}} end)}
+      end)
+
+    for {ref, {pid, seq}} <- numbered, do: send(pid, Push.increment_message(ref, seq, delivery))
     :ok
   end
 
@@ -435,7 +476,7 @@ defmodule MyApp.Ticker do
   @impl true
   def subscribe(%__MODULE__{subscribers: agent}, pid) do
     ref = make_ref()
-    Agent.update(agent, &Map.put(&1, ref, pid))
+    Agent.update(agent, &Map.put(&1, ref, {pid, 1}))
     send(pid, Push.schema_message(ref, @schema))
     {:ok, ref}
   end
@@ -447,19 +488,22 @@ end
 ```
 
 The subscriber holds a `Push`, a plain value it keeps in its state (a GenServer's, a
-LiveView's). `receive/2` takes each message: a schema is cached, a delivery buffered.
-`drain/2` merges everything buffered at once, ordered by the window field, so a burst of
-pushes costs one merge. `held/1` is the result so far:
+LiveView's). `receive/2` takes each message: a schema is cached, an increment or a
+snapshot buffered. `drain/2` applies everything buffered at once, increments in the
+order of their numbers, so a burst of pushes costs one drain. `held/1` is the relation so
+far, a delivery whose rows are a `Macaw.Data.Table` (chapter 3), ordered by the window
+field:
 
 ```elixir
 alias Macaw.Data.Source.Push
+alias Macaw.Data.Table
 
 ticker = MyApp.Ticker.new()
 {:ok, ref} = Source.subscribe(ticker, self())
 push = Push.new("ticker", ref)
 
-:ok = MyApp.Ticker.tick(ticker, [%{"t" => ~U[2026-10-29 12:00:00Z], "value" => 1}])
 :ok = MyApp.Ticker.tick(ticker, [%{"t" => ~U[2026-10-29 12:01:00Z], "value" => 2}])
+:ok = MyApp.Ticker.tick(ticker, [%{"t" => ~U[2026-10-29 12:00:00Z], "value" => 1}])
 
 push =
   Enum.reduce(1..3, push, fn _message, push ->
@@ -470,14 +514,32 @@ push =
     end
   end)
 
-push = Push.drain(push, Source.describer(%{"ticker" => {ticker, nil}}))
+describe = Source.describer(%{"ticker" => {ticker, nil}})
+push = Push.drain(push, describe)
 
-push |> Push.held() |> Macaw.Data.Delivery.rows() |> Enum.map(& &1["value"])
-#=> [1, 2]
-
-Source.unsubscribe(ticker, ref)
-#=> :ok
+{:ok, held} = push |> Push.held() |> Macaw.Data.Delivery.table()
+{Table.column(held, "value"), Table.column(held, "t")}
+#=> {[1, 2], [~U[2026-10-29 12:00:00Z], ~U[2026-10-29 12:01:00Z]]}
 ```
+
+The second reading arrived first but is held in time order. **Rows are never
+deduplicated**: an identical row pushed again is a second row. A source guards
+redelivery by the number instead, and `Push` drops an increment it has already applied,
+whole, counting it in `ignored`:
+
+```elixir
+again = Macaw.Data.Delivery.new([%{"t" => ~U[2026-10-29 12:01:00Z], "value" => 2}])
+{:ok, push} = Push.receive(push, Push.increment_message(ref, 1, again))
+push = Push.drain(push, describe)
+
+{Table.size(push |> Push.held() |> Macaw.Data.Delivery.table!()), push.ignored, Push.refetch(push)}
+#=> {2, %{repeat: 1}, nil}
+```
+
+An increment past the next number is held back until the missing ones arrive, and
+`Push.refetch/1` answers `{:gap, from, to}`: the holder fetches a snapshot (a request
+with `subscription: ref`) and hands it over with `Push.snapshot/2`, which replaces what
+is held and drops the increments the snapshot already reflects.
 
 `Push.receive/2` answers `:ignore` for a message that isn't this subscription's, so a
 process can hold several. `drain/2`'s second argument is a describe function: an
@@ -533,9 +595,10 @@ becomes a cell's drawn state.
   `Macaw.Data.Source`, which checks parameters and turns bad answers into values.
 - A description holds the schema, parameters, capabilities and viewer independence.
 - Parameters share one shape with components'; cells bind them under `params:`.
-- A request carries the window, budget, viewer and `now`; finishing does whatever the
-  source didn't, and the ceiling and pooling decide budgets on a surface.
-- Pushing sources send a schema, then increments; subscribers hold a `Push` value.
+- A request carries the window, order, budget, viewer and `now`; finishing does
+  whatever the source didn't, and the ceiling and pooling decide budgets on a surface.
+- Pushing sources send a schema, then numbered increments and optionally snapshots;
+  subscribers hold a `Push` value, whose held rows are a table.
 
 **Further reading:** [the contract](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-contract), [descriptions](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-description), [parameters](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-parameters), [requests](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-request), [finishing](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-finishing), [the ceiling and pooling](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-budgets) and [push](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-push), in `macaw_data`'s spec/01.
 

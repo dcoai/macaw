@@ -64,12 +64,44 @@ argument is a context: `now:` for relative `window`s, `schema:` for `window`'s `
 | `filter` | keeps rows passing a test | `field`, `test` (`:eq`, `:ne`, `:lt`, `:lte`, `:gt`, `:gte`, `:present`, `:absent`), `value` |
 | `take` | the last (or first) `n` rows | `n`, `side` |
 | `window` | rows in a relative time window | `field`, `from`, `to` (`[n, :hour]`), `latest` |
-| `sort` | a stable sort | `field`, `order` |
+| `sort` | a stable sort, `nil` last in either direction | `field`, `order` |
 | `aggregate`, `sum` | one row per group | `field`, `fn`, `by`, `as` |
 | `bin` | a histogram | `field`, `thresholds`, `fn`, `as` |
 | `fold` | wide columns to long rows | `fields`, `as` |
 | `stack` | stacked series, d3's offsets and orders | `fields`, `order`, `offset` |
 | `lttb`, `m4` | downsampling that keeps a line's shape or its extremes | `fields`, `n` / `width` |
+
+`sort` orders a column by its type: a time by its instant, a number by value, text and
+categories by spelling. A missing reading sorts last whichever way you sort:
+
+```elixir
+{:ok, sorted} = Operations.apply(registry, [%{op: "sort", field: "ms", order: :descending}], rows)
+Table.column(sorted, "ms")
+#=> [90, 60, 40, nil]
+```
+
+The two reducers keep a line's look at a fraction of its rows, the same whatever the
+table's chunking:
+
+- **`lttb`** keeps at most `n` rows, the first and last among them, by MinMaxLTTB: each
+  chunk's buckets contribute their least and greatest points, and
+  Largest-Triangle-Three-Buckets picks `n` of those. Its error stays within a stated
+  tolerance of the exact algorithm, which `Macaw.Data.Reduce.lttb/3` still runs.
+- **`m4`** keeps each pixel column's first, last, least and greatest rows, at most four
+  a column, over columns whose edges move to a bucket edge at most a quarter of a pixel
+  away.
+- A time `x` reduces on a `:time` scale, in microseconds; give the context `scale:
+  :linear` for seconds.
+
+```elixir
+line = for i <- 0..999, do: %{"x" => i, "y" => :math.sin(i / 20)}
+
+{:ok, kept} = Operations.apply(registry, [%{op: "lttb", fields: ["x", "y"], n: 20}], line)
+{:ok, columns} = Operations.apply(registry, [%{op: "m4", fields: ["x", "y"], width: 10}], line)
+
+{Table.size(kept), List.first(Table.column(kept, "x")), List.last(Table.column(kept, "x")), Table.size(columns) <= 40}
+#=> {20, 0, 999, true}
+```
 | `spectrum` | an FFT amplitude spectrum | `field`, `time`, `every`, `samples`, `window` |
 
 **Every node is checked before any runs,** and every fault answered at once, at
@@ -112,6 +144,15 @@ zero.
 #=> {{:ok, 2.5}, {:ok, 2.5}}
 ```
 
+**`sum` and `mean` are exact.** Integers sum to an integer. With a float among the
+readings, the exact sum is rounded once, so any order of the readings gives the same
+bits, where a sequential float sum can lose a reading:
+
+```elixir
+{Operations.aggregate(registry, "sum", [1, 2, nil], %{}), Operations.aggregate(registry, "sum", [1.0e16, 1.0, -1.0e16], %{}), Enum.sum([1.0e16, 1.0, -1.0e16])}
+#=> {{:ok, 3}, {:ok, 1.0}, 0.0}
+```
+
 ### Your own operations
 
 An operation is a module implementing `Macaw.Data.Transform` (or `Macaw.Data.Aggregate`
@@ -124,7 +165,7 @@ defmodule MyApp.Ops.Ratio do
   @moduledoc "Adds a column: one field divided by another."
   @behaviour Macaw.Data.Transform
 
-  alias Macaw.Data.{Operations, Table}
+  alias Macaw.Data.Table
   alias Macaw.Data.Operations.Option
 
   @impl true
@@ -146,15 +187,14 @@ defmodule MyApp.Ops.Ratio do
   def outputs(%{"as" => as}, columns), do: columns ++ [{to_string(as), :number}]
 
   @impl true
-  def run(%{"of" => of, "per" => per, "as" => as} = node, table, _context) do
-    rows =
-      for row <- Table.rows(table) do
-        {a, b} = {Table.get(row, of), Table.get(row, per)}
-        Map.put(row, to_string(as), if(is_number(a) and is_number(b) and b != 0, do: a / b))
-      end
-
-    Operations.table(rows, outputs(node, Operations.columns(table)))
+  def run(%{"of" => of, "per" => per, "as" => as}, table, _context) do
+    ratios = Enum.zip_with(Table.column(table, of), Table.column(table, per), &ratio/2)
+    kept = for name <- Table.names(table), do: {name, Table.column_type(table, name), Table.column(table, name)}
+    Table.new!(kept ++ [{to_string(as), :number, ratios}])
   end
+
+  defp ratio(a, b) when is_number(a) and is_number(b) and b != 0, do: a / b
+  defp ratio(_a, _b), do: nil
 end
 
 defmodule MyApp.Ops do
@@ -163,9 +203,13 @@ defmodule MyApp.Ops do
 end
 ```
 
-`run/3` gets the node checked, with string keys and defaults filled in. `outputs/2` names
-the columns it answers, so a pipeline's columns are known without data, and
-`Operations.table/2` builds the answer from rows. Enable the package explicitly:
+`run/3` gets the node checked, with string keys and defaults filled in, and answers a
+table. It reads its input by column (`Table.column/2`), never row by row, and builds
+its answer with `Table.new!/1`. `outputs/2` names the columns it answers, so a
+pipeline's columns are known without data. An operation that should run a chunk at a
+time, and let a caller cache its work per chunk, declares itself a column-native step
+instead (`class/1`, `chunk/3` and the rest of `Macaw.Data.Transform`'s optional
+callbacks), as every built-in operation does. Enable the package explicitly:
 
 ```elixir
 with_ratio = Operations.registry([MyApp.Ops])

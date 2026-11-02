@@ -159,6 +159,20 @@ raises `ArgumentError` naming it, as does an empty `series`. `Theme.check/1` and
 #=> {:ok, []}
 ```
 
+**A theme refuses unsafe text.** Its stylesheet writes a font family into CSS, and an
+adopter writes a palette entry's `class` into markup, so a `font_family` (or an entry's
+`font.family`) may not hold `<`, `>`, `/`, `;`, `{`, `}`, `\`, a control character or an
+open quote, and a `class` must be CSS class names. `Theme.new/1` and `merge/2` raise
+`ArgumentError` for such text, and a theme document answers `{:unsafe, kind}` at its
+path (below). `Macaw.Layers.Untrusted` holds the checks, for your own text:
+
+```elixir
+alias Macaw.Layers.Untrusted
+
+{Untrusted.font_family?("Inter, sans-serif"), Untrusted.font_family?("Inter;}body{color:red"), Untrusted.class?("wide tall")}
+#=> {true, false, true}
+```
+
 ## One stylesheet for every theme
 
 `Macaw.Layers.Theme.Sheet` compiles themes to custom properties scoped by a class,
@@ -287,6 +301,9 @@ Document.from_map(%{theme: "dark"}) == {:ok, Theme.dark()}
 
 Document.from_json(~s({"$version":2,"theme":{"name":"x","axis":3}}))
 #=> {:error, [{[:theme, :axis], {:type, :color}}]}
+
+Document.from_json(~s({"$version":2,"theme":{"name":"x","font_family":"Inter;}body{color:red"}}))
+#=> {:error, [{[:theme, :font_family], {:unsafe, :font_family}}]}
 ```
 
 `from_map/2` judges a value with no form written or read, so it takes no `limits:`;

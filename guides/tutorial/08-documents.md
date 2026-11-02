@@ -174,7 +174,10 @@ Surface.to_json(odd)
 The adapter is `Macaw.Layers.Form`, the JSON adapter of every Macaw document type.
 `Form.read(json, type, opts)` runs the gates below and then reads and judges the value;
 `Form.to_json(fragment, type)` writes. `Surface.from_json/2` is `Form.read/3` and then
-`new/1`, and `to_json/1` is `Form.to_json/2` of the surface's fragment:
+`new/1`, and `to_json/1` is `Form.to_json/2` of the surface's fragment. `Form.read/3`
+also takes `urls:`, the host's `Macaw.Layers.Url.Policy`, and without one refuses every
+URL a document holds as `{path, {:url, reason}}`; `Surface.from_json/2` passes none, so a
+surface document holding a URL is refused:
 
 ```elixir
 alias Macaw.Layers.Form

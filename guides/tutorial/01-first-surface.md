@@ -25,7 +25,7 @@ you don't list them yourself. Run `mix deps.get`, and you're ready. Macaw needs 
 or later.
 
 Macaw is a very early release: every 0.x version may change its API. This tutorial
-describes `macaw` 0.3.0 on `macaw_layers` 0.3, `macaw_data` 0.7 and `macaw_component` 0.2.
+describes `macaw` 0.3.0 on `macaw_layers` 0.4, `macaw_data` 0.9 and `macaw_component` 0.3.
 
 ## The plan
 

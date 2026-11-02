@@ -56,7 +56,7 @@ defmodule MyApp.Components.StatTest do
 end
 ```
 
-`mix test` then runs thirteen tests for the component, `Macaw.Component.Conformance.checks/0`:
+`mix test` then runs fourteen tests for the component, `Macaw.Component.Conformance.checks/0`:
 
 | Check | Holds |
 |---|---|
@@ -71,6 +71,7 @@ end
 | `:ids` | ids unique, stable across renders, prefixed by the instance |
 | `:drawn` | every drawn state renders readable text in every mode |
 | `:budget` | `budget/3` answers well for every slot at three sizes |
+| `:order` | `order/2`, where declared, answers a row order of the right shape for every slot |
 | `:contained` | a contained component's transitions answer values that render, purely |
 | `:bindings` | the render follows the fields bound in the context: renamed to fresh names, they draw the same |
 
@@ -171,7 +172,7 @@ defmodule MyApp.Components.FindingsTest do
   end
 
   test "the checks and the check sets" do
-    assert length(Conformance.checks()) == 13
+    assert length(Conformance.checks()) == 14
     assert Conformance.check_sets() == [:visual]
   end
 end
@@ -192,7 +193,7 @@ live mode. Add it with `check_sets: [:visual]`.
 | `:describe` | the description and schema are valid, measures known, capabilities backed by the schema, describe stable |
 | `:deliveries` | every delivery is well formed: fields described, identity present, rows within the served window, honest `capped` and `reduced_by` |
 | `:supports` | each declared capability is really honored |
-| `:push` | a pushing source sends its schema first and well-formed increments |
+| `:push` | a pushing source sends its schema first, and increments numbered from 1 and well formed |
 | `:errors` | unreadable requests answer values, never crash; undeclared params never reach the source |
 | `:unsubscribe` | after unsubscribing, nothing more arrives |
 | `:determinism` | one request at one `now` gives one answer |
@@ -364,7 +365,7 @@ renders the same markup every time.
 
 ## Recap
 
-- `use Macaw.Component.Conformance, component:, fixtures:` writes thirteen tests: the
+- `use Macaw.Component.Conformance, component:, fixtures:` writes fourteen tests: the
   contract's rules, checked on real renders.
 - `use Macaw.Data.Source.Conformance, source:, requests:` writes eight: well-formed,
   honest, deterministic answers.

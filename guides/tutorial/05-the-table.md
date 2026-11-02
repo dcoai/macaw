@@ -213,7 +213,7 @@ IO.puts(chosen |> Macaw.Surface.render(sources: sources, now: now, ceiling: 1_00
 
 The binding is checked against the source's schema at validation, like any role's
 (chapter 6): a field the schema doesn't have is a fault at the binding's `fields`, and
-so is a single name where the role takes a list:
+so is a single name where the role takes a list, and a field listed twice:
 
 ```elixir
 {:ok, typo} =
@@ -221,6 +221,12 @@ so is a single name where the role takes a list:
 
 Macaw.Surface.validate(typo, registry, sources)
 #=> {:error, [{[:cells, "incidents", :fields, "columns"], {:missing, "owner"}}]}
+
+{:ok, twice} =
+  Macaw.Surface.build("ops", cells: [{"macaw.table", name: "incidents", source: "incidents", fields: %{"columns" => ["minutes", "minutes"]}}])
+
+Macaw.Surface.validate(twice, registry, sources)
+#=> {:error, [{[:cells, "incidents", :fields, "columns"], {:duplicate, "minutes"}}]}
 ```
 
 (That cell uses the `source:` shorthand, chapter 4, so its faults are at the cell's own
@@ -305,8 +311,10 @@ serves them from Phoenix).
   schema has no `label`; give the field one.
 - **A low ceiling with a sorted table:** reduction happens before sorting, so a
   "slowest first" table under a tight budget shows a sample of rows sorted, not the top
-  rows. If you need the top rows, have the source sort and limit, and declare `:budget`
-  in its `supports`.
+  rows. A request's `order` (chapter 2) is how a reader asks for the first rows in an
+  order, but the table declares no `order/2`, and a surface fetched by `macaw` 0.3.0
+  sends none. If you need the top rows today, have the source sort and limit, and
+  declare `:budget` in its `supports`.
 
 ## Recap
 

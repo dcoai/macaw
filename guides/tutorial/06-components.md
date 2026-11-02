@@ -353,6 +353,16 @@ Slot.requirement_keys()
 #=> [:type, :window, :identity, :quantity, :many, :optional, :doc]
 ```
 
+A `many` role takes a list of fields, each once: a field listed twice is
+`{:duplicate, field}` at the role, since a chart would draw that series twice:
+
+```elixir
+{:ok, series} = Slot.new(%{requires: %{"t" => %{type: :time, window: true}, "ys" => %{type: :number, many: true}}})
+
+Slot.check(series, schema, %{"ys" => ["ms", "errors", "ms"]})
+#=> {:error, [{["ys"], {:duplicate, "ms"}}]}
+```
+
 A `window` role left unbound reads the schema's window field, so `%{"y" => "ms"}` is
 enough. `Slot.resolve/3` gives the binding it passes **resolved**: every role mapped to
 its field, the window role filled in:
@@ -426,6 +436,27 @@ alias MyApp.Components.Readings
 
 An answer that isn't a positive integer or `nil` is `{:error, {:bad_budget, answer}}`,
 and the surface draws that cell `invalid` without fetching.
+
+### Row order
+
+A budget alone gets a sample of the rows. A slot that shows rows in an order (a table
+sorted by a column) wants the **first** rows in it instead, and asks with the optional
+`order(slot, settings)` callback: `[{field, :asc | :desc}, …]`, each field once, the
+first key deciding first, read from its settings. It becomes the request's `order`
+(chapter 2). `Macaw.Component.order/3` calls it and checks the answer:
+
+```elixir
+Macaw.Component.order(Readings, "series", %{})
+#=> {:ok, []}
+```
+
+- **No callback, no order:** `{:ok, []}`, as for `my_app.readings` and the built-in
+  table, which sorts the rows it's given.
+- **A malformed answer** (a field twice, a bad direction, not a list) is
+  `{:error, {:bad_order, answer}}`, and the component kit's `:order` check reports it
+  (chapter 7).
+- **`macaw` 0.3.0 doesn't ask it yet.** A surface's fetch puts no order in its requests,
+  so today `order/2` is read only by the kit and by your own code.
 
 ## Rendering
 

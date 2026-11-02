@@ -204,21 +204,26 @@ Schema.compatibility(schema, history)
 (`"%"` and `"1"` are both dimensionless, so `cpu` converts and passes.)
 
 The JSON form is an adapter at the edge, for storing or sending a schema: the schema
-itself is the term. A value entry's color is written in the colors' tagged form, and
-reading it back makes no atoms and gives the same schema:
+itself is the term. The document is an object, its form's version stamped beside the
+fields, so a later form can tell an old document from a new one. A value entry's color
+is written in the colors' tagged form, and reading it back makes no atoms and gives the
+same schema:
 
 ```elixir
 json = Schema.to_json(schema)
-json =~ ~s({"$rgb":"#c23238"})
-#=> true
+{String.starts_with?(json, ~s({"$version":1,"fields":[)), json =~ ~s({"$rgb":"#c23238"})}
+#=> {true, true}
 
 {:ok, back} = Schema.from_json(json)
 back == schema
 #=> true
 ```
 
-`to_map/1` and `from_map/1` are the same form before encoding. `from_json/2` takes
-`limits:` to tighten the document limits (chapter 8).
+`from_json/2` reads through the document kernel's gates (chapter 8): it takes `limits:`
+to tighten the document limits, refuses a newer stamp by name before reading anything
+(`{[], {:newer_schema, needs, 1}}`), and still reads a document written before the
+stamp, whose root was the bare list of fields. `to_map/1` and `from_map/1` are the bare
+pairs, unstamped, for a document that embeds a schema (a derived source's, chapter 11).
 
 ## Units and quantities
 
@@ -309,10 +314,11 @@ hold one of these.
 ## Tables
 
 `Macaw.Data.Table` is columnar typed data: named columns of declared types, all one
-length. Number and time columns are packed into reference-counted binaries off the
-process heap, so a big table costs its process little and garbage collection doesn't
-copy it. `new/1` builds one from
-`{name, type, values}` columns:
+length. A table is a list of immutable **chunks** of up to `Table.chunk_rows/0` (8,192)
+rows, each column packed per chunk. Number and time columns are packed into
+reference-counted binaries off the process heap, so a big table costs its process little
+and garbage collection doesn't copy it. `new/1` builds one from `{name, type, values}`
+columns:
 
 ```elixir
 alias Macaw.Data.Table
@@ -336,7 +342,7 @@ changes a value,** with one exception: a category's atom reads back as the strin
 spells it (`:b` above reads `"b"`), so compare category values as strings, or with
 `Macaw.Data.Operations.same?/2`. A time keeps its zone and precision, and a number its
 integer or float. `rows/1` is every row as a map, `row/2` one row (`nil` past
-the end), and `slice/3` a run of rows sharing the parent's binaries:
+the end), and `slice/3` a run of rows that keeps the parent's chunks, copying nothing:
 
 ```elixir
 table |> Table.slice(1, 2) |> Table.rows() |> length()
@@ -346,11 +352,35 @@ Table.types()
 #=> [:number, :time, :category, :text, :color, :point, :term]
 ```
 
+**A table is opaque, and equal by its contents.** `Table.t()` is an opaque type: read a
+table through its functions (`names/1`, `size/1`, `column/2`, `row/2`, `rows/1`,
+`chunks/1`), never its struct's fields. The same rows chunked two ways are one value but
+two terms, so compare tables with `Table.equal?/2`, never `==`. `digest/1` is the content
+digest, and `compact/1` rewrites a table into canonical chunks:
+
+```elixir
+{:ok, first} = Table.new([{"ms", :number, [1, 2]}])
+{:ok, second} = Table.new([{"ms", :number, [3, 4]}])
+{:ok, joined} = Table.append(first, second)
+{:ok, whole} = Table.new([{"ms", :number, [1, 2, 3, 4]}])
+
+{Table.equal?(joined, whole), joined == whole, length(Table.chunks(joined)), Table.digest(joined) == Table.digest(whole)}
+#=> {true, false, 2, true}
+```
+
 `new/1` reports every fault at once:
 
 ```elixir
 Table.new([{"a", :number, [1, "x"]}, {"a", :text, ["q", "r"]}])
 #=> {:error, [{["a"], :duplicate}, {["a", 1], {:type, :number}}]}
+```
+
+A table holds data only. A function, a PID, a reference or a port has no digest, so even a
+`:term` column refuses one, as `{[name, i], :not_data}`:
+
+```elixir
+Table.new([{"owner", :term, [self()]}])
+#=> {:error, [{["owner", 0], :not_data}]}
 ```
 
 `from/2` reads the shapes data arrives in (a list of row maps, a map or keyword list of
@@ -405,8 +435,11 @@ The `served` facts are what a reader needs to draw honestly:
 | `resolution` | the spacing of the rows (seconds, or a name like `:minute`) | `nil` |
 | `capped` | the source stopped short of the window asked | `false` |
 | `reduced_by` | who brought the rows within budget: `:source`, `:runtime` or `nil` | `nil` |
+| `ordered` | who put the rows in the request's order: `:source`, `:runtime` or `:sample` (chapter 2) | `nil` |
 | `params` | the parameters it answered for | `%{}` |
 | `note` | a line for a person (`"coarsened from raw"`) | `nil` |
+| `position` | for a push snapshot, the number of the last increment it reflects (chapter 2) | `nil` |
+| `complete_until` | the source's watermark: a window value below which it expects no further change | `nil` |
 
 A source sets `reduced_by: :source` when it honored a budget itself; `:runtime` is
 Macaw's own mark. A delivery of tuple rows needs `names:` so it can be read by name:
@@ -465,6 +498,8 @@ rows that don't pack.
   it comes in.
 - **Matching a packed category on an atom.** A table reads `:ok` back as `"ok"`;
   compare with the string.
+- **Comparing tables with `==`.** Two tables of the same rows may be chunked
+  differently; `Table.equal?/2` compares what they hold.
 
 ## Recap
 
@@ -472,8 +507,9 @@ rows that don't pack.
   values, checked when it's built, with every fault at once. Its names are strings, its
   data colors color terms, and its version a digest of the term; JSON is its adapter.
 - Units are UCUM codes; quantities say what they measure.
-- A table is columnar typed data with gaps kept as `nil`, reading back what it was given
-  (a category's atom as its string).
+- A table is columnar typed data in chunks, with gaps kept as `nil`, reading back what
+  it was given (a category's atom as its string). It is opaque: read it through its
+  functions and compare with `Table.equal?/2`.
 - A delivery carries rows as given, plus the `served` facts and `origin`.
 
 **Further reading:** [the schema](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-schema), [the table](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-table) and [deliveries](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-delivery) in `macaw_data`'s spec/01, and [units](https://github.com/dcoai/macaw_data/blob/main/spec/03-units.md#units-codes) in its spec/03.
