@@ -232,10 +232,17 @@ defmodule Macaw.Surface do
 
   # `<component's last word>_<source>` (`table_services`), the last word alone with no
   # source, numbered `_2`, `_3`, … past every name taken: the explicit names, then the
-  # names derived before it in list order.
+  # names derived before it in list order. A source that is no name adds nothing: its own
+  # fault is the cell's.
   defp derive(attrs, explicit, earlier) do
     word = attrs |> Map.get(:component) |> Names.name() |> last_word()
-    base = if source = source_of(attrs), do: "#{word}_#{source}", else: word
+
+    base =
+      case source_of(attrs) do
+        source when is_binary(word) and is_binary(source) -> "#{word}_#{source}"
+        _none -> word
+      end
+
     taken = MapSet.new(explicit ++ earlier)
 
     if is_binary(base) and Regex.match?(@name, base),
@@ -380,9 +387,15 @@ defmodule Macaw.Surface do
   - `registry:`, `Macaw.Registry.default/0` unless given;
   - `now:`, one clock read here, in this host-side call, unless given (never in a source
     or a component);
-  - `ceiling:`, `config :macaw, :ceiling` unless given; neither raises `ArgumentError`;
+  - `ceiling:`, `config :macaw, :ceiling` unless given;
   - `mode:`, `:socketless` unless given, or, given a LiveView `socket:`, `:live` once it is
     connected and `:socketless` before, as `Phoenix.LiveView.connected?/1` reads it.
+
+  A surface that isn't one answers its own faults. An env that can't show it answers every
+  fault of the env, by its key: `{[:sources], :required}` (or `{:type, :map}`),
+  `{[:registry], {:type, :registry}}`, and `{[:ceiling], :required}` when neither the env
+  nor the config gives a ceiling. A configured registry that can't be built answers
+  `Macaw.Registry.default/0`'s faults under `[:registry]`. Then validation's faults.
   """
   @spec show(t() | {:ok, t()} | keyword() | map(), keyword()) ::
           {:ok, Phoenix.HTML.safe()} | {:error, [Fault.t(), ...]}
@@ -390,26 +403,53 @@ defmodule Macaw.Surface do
   def show({:error, faults}, _env) when is_list(faults), do: {:error, faults}
 
   def show(%__MODULE__{} = surface, env) when is_list(env) do
-    sources = Keyword.fetch!(env, :sources)
-    registry = Keyword.get_lazy(env, :registry, &Macaw.Registry.default/0)
-
-    with {:ok, validated} <- validate(surface, registry, sources),
-         do: {:ok, render(validated, shown(env))}
+    with {:ok, env} <- shown(env),
+         {:ok, validated} <- validate(surface, env[:registry], env[:sources]),
+         do: {:ok, render(validated, env)}
   end
 
-  def show(attrs, env) when is_list(attrs) or is_map(attrs) do
+  def show(attrs, env) do
     with {:ok, surface} <- new(attrs), do: show(surface, env)
   end
 
-  # The env with the host's defaults filled in: now, the ceiling and the mode.
+  # The env with the host's defaults filled in (the registry, now, the ceiling and the
+  # mode), or every fault of it by key.
   defp shown(env) do
-    env
-    |> Keyword.put_new_lazy(:now, &DateTime.utc_now/0)
-    |> Keyword.put_new_lazy(:ceiling, fn ->
-      Application.get_env(:macaw, :ceiling) ||
-        raise ArgumentError, "show/2 needs ceiling: or config :macaw, :ceiling"
-    end)
-    |> Keyword.put_new_lazy(:mode, fn -> mode(Keyword.get(env, :socket)) end)
+    {registry, r} = shown_registry(Keyword.fetch(env, :registry))
+
+    s =
+      case Keyword.fetch(env, :sources) do
+        {:ok, %{} = sources} when not is_struct(sources) -> []
+        {:ok, _other} -> [{[:sources], {:type, :map}}]
+        :error -> [{[:sources], :required}]
+      end
+
+    ceiling = Keyword.get_lazy(env, :ceiling, fn -> Application.get_env(:macaw, :ceiling) end)
+    c = if ceiling == nil, do: [{[:ceiling], :required}], else: []
+
+    case Fault.sort(s ++ r ++ c) do
+      [] ->
+        {:ok,
+         env
+         |> Keyword.merge(registry: registry, ceiling: ceiling)
+         |> Keyword.put_new_lazy(:now, &DateTime.utc_now/0)
+         |> Keyword.put_new_lazy(:mode, fn -> mode(Keyword.get(env, :socket)) end)}
+
+      faults ->
+        {:error, faults}
+    end
+  end
+
+  # The registry given, else the configured one; a configuration that can't build one
+  # answers its faults under `:registry`.
+  defp shown_registry({:ok, %Macaw.Registry{} = registry}), do: {registry, []}
+  defp shown_registry({:ok, _other}), do: {nil, [{[:registry], {:type, :registry}}]}
+
+  defp shown_registry(:error) do
+    case Macaw.Registry.default() do
+      {:ok, registry} -> {registry, []}
+      {:error, faults} -> {nil, for({path, reason} <- faults, do: {[:registry | path], reason})}
+    end
   end
 
   # A LiveView socket is connected once it has a transport process (connected?/1's rule).

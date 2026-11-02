@@ -37,27 +37,38 @@ defmodule Macaw.ShowTest do
 
   @tag verifies: "registry-default"
   test "the default registry is the configured packages and layouts, Builtin always among them" do
-    registry = Registry.from_config(packages: [Macaw.Test.Package])
+    {:ok, registry} = Registry.from_config(packages: [Macaw.Test.Package])
     assert Registry.packages(registry) == [Macaw.Builtin, Macaw.Test.Package]
     assert {:ok, Macaw.Builtin.Table} = Registry.component(registry, "macaw.table")
     assert {:ok, Macaw.Test.Note} = Registry.component(registry, "test.note")
-    assert Registry.packages(Registry.from_config([])) == [Macaw.Builtin]
+    assert Registry.packages(Registry.from_config!([])) == [Macaw.Builtin]
+
+    # A bad configuration is a value, and its `!` twin raises exactly there.
+    assert Registry.from_config(packages: [String], layouts: "x") ==
+             {:error, [{[String], :not_a_package}, {[:layouts], {:not_a_list, "x"}}]}
 
     assert_raise ArgumentError, ~r/the registry can't be built/, fn ->
-      Registry.from_config(packages: [String])
+      Registry.from_config!(packages: [String])
     end
 
     Application.put_env(:macaw, :packages, [Macaw.Test.Package])
     Application.delete_env(:macaw, :layouts)
     assert Registry.default() == Registry.from_config(packages: [Macaw.Test.Package])
+    assert Registry.default!() == registry
 
     # A changed configuration is read, never a stale registry.
     Application.put_env(:macaw, :packages, [ModePackage])
-    assert {:ok, Mode} = Registry.component(Registry.default(), "test.mode")
-    assert Registry.component(Registry.default(), "test.note") == :error
+    assert {:ok, Mode} = Registry.component(Registry.default!(), "test.mode")
+    assert Registry.component(Registry.default!(), "test.note") == :error
 
+    # A configuration that fails is answered on every call, never kept.
     Application.put_env(:macaw, :packages, [String])
-    assert_raise ArgumentError, fn -> Registry.default() end
+    assert Registry.default() == {:error, [{[String], :not_a_package}]}
+    assert Registry.default() == {:error, [{[String], :not_a_package}]}
+    assert_raise ArgumentError, ~r/can't be built/, fn -> Registry.default!() end
+
+    Application.put_env(:macaw, :packages, [ModePackage])
+    assert {:ok, Mode} = Registry.component(Registry.default!(), "test.mode")
   end
 
   @tag verifies: "surface-show"
@@ -67,28 +78,43 @@ defmodule Macaw.ShowTest do
     attrs = [name: "ops", cells: [%{component: "macaw.table", source: "lat"}]]
 
     {:ok, s} = Surface.new(attrs)
-    {:ok, v} = Surface.validate(s, Registry.default(), @sources)
+    {:ok, v} = Surface.validate(s, Registry.default!(), @sources)
     expected = Surface.render(v, sources: @sources, now: @now, ceiling: 1_000)
 
     env = [sources: @sources, now: @now, ceiling: 1_000]
     assert Surface.show(s, env) == {:ok, expected}
     assert Surface.show({:ok, s}, env) == {:ok, expected}
     assert Surface.show(attrs, env) == {:ok, expected}
-    assert Surface.show(s, [{:registry, Registry.from_config([])} | env]) == {:ok, expected}
+    assert Surface.show(s, [{:registry, Registry.from_config!([])} | env]) == {:ok, expected}
 
     # Validation's faults, and new/1's, as they are.
     {:ok, bad} = Surface.new(name: "ops", cells: [%{name: "x", component: "nobody.here"}])
-    assert Surface.show(bad, env) == Surface.validate(bad, Registry.default(), @sources)
+    assert Surface.show(bad, env) == Surface.validate(bad, Registry.default!(), @sources)
     assert Surface.show([name: "ops", cells: []], env) == {:error, [{[:cells], :empty}]}
 
-    # The ceiling from the host's configuration, and loudly when there is none.
+    # The ceiling from the host's configuration, and a fault when there is none.
     Application.put_env(:macaw, :ceiling, 1_000)
     assert Surface.show(s, sources: @sources, now: @now) == {:ok, expected}
     Application.delete_env(:macaw, :ceiling)
+    assert Surface.show(s, sources: @sources, now: @now) == {:error, [{[:ceiling], :required}]}
 
-    assert_raise ArgumentError, ~r/ceiling/, fn ->
-      Surface.show(s, sources: @sources, now: @now)
-    end
+    # Every fault of the env at once, by key, and a configured registry's under :registry.
+    assert Surface.show(s, now: @now, registry: :nope) ==
+             {:error,
+              [
+                {[:ceiling], :required},
+                {[:registry], {:type, :registry}},
+                {[:sources], :required}
+              ]}
+
+    assert Surface.show(s, sources: [], ceiling: 1) == {:error, [{[:sources], {:type, :map}}]}
+    Application.put_env(:macaw, :packages, [String])
+
+    assert Surface.show(s, env) == {:error, [{[:registry, String], :not_a_package}]}
+    Application.put_env(:macaw, :packages, [Macaw.Test.Package])
+
+    # A surface that isn't one answers its own faults, as new/1 does.
+    assert Surface.show(nil, env) == {:error, [{[], {:type, :map}}]}
 
     # With no now, the call reads the clock once itself.
     assert {:ok, {:safe, _html}} = Surface.show(s, sources: @sources, ceiling: 1_000)

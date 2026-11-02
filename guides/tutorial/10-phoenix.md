@@ -31,14 +31,15 @@ config :macaw,
   ceiling: 1_000
 ```
 
-`Macaw.Registry.default/0` builds the registry from it on its first call and keeps it.
-Call it once from your application's `start/2`, before the endpoint starts, so a
+`Macaw.Registry.default/0` builds the registry from it on its first call and keeps it,
+answering `{:ok, registry}` or the configuration's faults. Call its `!` twin,
+`default!/0`, once from your application's `start/2`, before the endpoint starts, so a
 misconfigured package fails the boot rather than the first request:
 
 ```elixir
 defmodule MyApp.Boot do
   @moduledoc "What `MyApp.Application.start/2` runs before its children."
-  def macaw!, do: Macaw.Registry.default()
+  def macaw!, do: Macaw.Registry.default!()
 end
 ```
 
@@ -232,7 +233,7 @@ defmodule MyApp.Styles do
   alias Macaw.Layers.Theme
 
   def all do
-    {:ok, status} = Macaw.Surface.validate(MyApp.Dashboards.status(), Macaw.Registry.default(), MyApp.Dashboards.sources())
+    {:ok, status} = Macaw.Surface.validate(MyApp.Dashboards.status(), Macaw.Registry.default!(), MyApp.Dashboards.sources())
     Enum.uniq([Macaw.Surface.stylesheet(status), table(), themes()])
   end
 
@@ -299,8 +300,9 @@ library, sets security headers; it isn't required.)
 
 - **Building a registry per request.** `Macaw.Registry.default/0` builds it once, from
   the configuration, and keeps it; call it at boot so a bad package fails there.
-- **No ceiling.** `show/2` raises without `ceiling:` or `config :macaw, :ceiling`: choose
-  the most rows a slot may receive, once, in the configuration.
+- **No ceiling.** `show/2` answers `{:error, [{[:ceiling], :required}]}` without
+  `ceiling:` or `config :macaw, :ceiling`: choose the most rows a slot may receive, once,
+  in the configuration.
 - **Credentials in documents.** Documents name sources; `sources/0` is where names become
   configured structs. Keep secrets in your app's configuration.
 - **Validating with a viewer.** Validation never sees one; pass `viewer:` to `show/2`

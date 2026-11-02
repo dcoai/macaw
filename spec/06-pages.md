@@ -321,13 +321,13 @@ each cell renders with its context: its instance, declared size, heading level b
 - `sources:`, given once, required;
 - `registry:`, `Macaw.Registry.default/0` ([12 §1.1](12-registry.md#registry-host)) unless given;
 - `now:`, **one clock read in this call**, a host-side call, unless given; never in a source or a component, and never in a test, which gives its own;
-- `ceiling:`, `config :macaw, :ceiling` unless given; with neither it raises `ArgumentError`, a host's configuration mistake;
+- `ceiling:`, `config :macaw, :ceiling` unless given; with neither it answers `{[:ceiling], :required}`, a host's configuration mistake, as a value ([00 §4.3](00-overview.md#core-errors));
 - `mode:`, `:socketless` unless given; given a LiveView `socket:`, `:live` once it is connected and `:socketless` before, as `Phoenix.LiveView.connected?/1` reads it (a socket with a transport process is connected), so `macaw` needs no LiveView.
 
-It renders exactly what `validate/3` then `render/2` render, given the same `now`.
+It renders exactly what `validate/3` then `render/2` render, given the same `now`. **Its faults,** in order: a first argument that isn't a surface answers `new/1`'s; an `env` that can't show it answers every fault of the `env`, by its key: `{[:sources], :required}` or `{:type, :map}`, `{[:registry], {:type, :registry}}`, a configured registry's faults from `Registry.default/0` under `[:registry]`, and `{[:ceiling], :required}`; then validation's.
 
 ```test:surface-show
-show/2 renders what validate/3 then render/2 render given the same now, from a surface, {:ok, surface} or attrs, with the default registry or a given one; it answers validation's and new/1's faults unchanged; the ceiling comes from the host's config, and its absence raises; with no now it reads the clock once itself; its mode is socketless unless given and follows a LiveView socket's connection
+show/2 renders what validate/3 then render/2 render given the same now, from a surface, {:ok, surface} or attrs, with the default registry or a given one; it answers validation's and new/1's faults unchanged; the ceiling comes from the host's config, and its absence is a fault; a missing or wrong sources, a registry that isn't one and a configured registry that can't be built are faults by key, all at once; a first argument that isn't a surface answers new/1's faults; with no now it reads the clock once itself; its mode is socketless unless given and follows a LiveView socket's connection
 ```
 
 ### 3.8 The short code form {#pages-surface-build}

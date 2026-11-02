@@ -199,7 +199,7 @@ built-in components (today, one: the table) are the package `Macaw.Builtin`, whi
 host's default registry always holds, whatever the configuration lists:
 
 ```elixir
-registry = Macaw.Registry.default()
+registry = Macaw.Registry.default!()
 
 Macaw.Registry.components(registry)
 #=> [{"macaw.table", Macaw.Builtin.Table}]
@@ -209,8 +209,10 @@ Macaw.Registry.layouts(registry) |> Enum.map(fn {name, _module} -> name end)
 ```
 
 `Macaw.Registry.default/0` builds the registry from `config :macaw, packages: [...]` on
-its first call and keeps it, so a host calls it as it boots: a misconfigured package
-fails the boot. `show/2` uses it unless you pass `registry:`. To build one yourself,
+its first call and keeps it, answering `{:ok, registry}` or the configuration's faults;
+`default!/0` answers the registry or raises, so a host calls it as it boots and a
+misconfigured package fails the boot. `show/2` uses the default unless you pass
+`registry:`, and answers a bad configuration's faults. To build one yourself,
 `Macaw.Registry.new!([Macaw.Builtin])` lists the packages explicitly (chapter 4).
 
 ### The surface

@@ -98,47 +98,66 @@ defmodule Macaw.Registry do
   @spec new!([module()], keyword()) :: t()
   def new!(packages, opts \\ []) do
     case new(packages, opts) do
-      {:ok, registry} ->
-        registry
-
-      {:error, faults} ->
-        raise ArgumentError,
-              "the registry can't be built:\n" <>
-                Enum.map_join(faults, "\n", &("  " <> Fault.format(&1)))
+      {:ok, registry} -> registry
+      {:error, faults} -> raise ArgumentError, unbuilt(faults)
     end
   end
 
+  defp unbuilt(faults),
+    do:
+      "the registry can't be built:\n" <> Enum.map_join(faults, "\n", &("  " <> Fault.format(&1)))
+
   @doc """
   The host's registry from its configuration (spec/12 §1.1): `config :macaw, packages:
-  [...], layouts: [...]`, `Macaw.Builtin` always among the packages. Built on its first call
-  and kept in `:persistent_term`, rebuilt only when the configuration changes; a host calls
-  it as it boots, so a misconfigured package fails the boot as `new!/2` does. A registry
-  passed explicitly overrides it wherever one is taken.
+  [...], layouts: [...]`, `Macaw.Builtin` always among the packages, as `from_config/1`
+  answers it: `{:ok, registry}` or every fault of the configuration. A registry is built on
+  the first call and kept in `:persistent_term`, rebuilt only when the configuration
+  changes; a configuration that fails is never kept, so each call answers its faults. A
+  registry passed explicitly overrides it wherever one is taken.
   """
-  @spec default() :: t()
+  @spec default() :: {:ok, t()} | {:error, [Fault.t(), ...]}
   def default do
     config =
       {Application.get_env(:macaw, :packages, []), Application.get_env(:macaw, :layouts, [])}
 
     case :persistent_term.get({__MODULE__, :default}, nil) do
       {^config, registry} ->
-        registry
+        {:ok, registry}
 
       _none_or_stale ->
-        registry = from_config(packages: elem(config, 0), layouts: elem(config, 1))
-        :persistent_term.put({__MODULE__, :default}, {config, registry})
-        registry
+        with {:ok, registry} <- from_config(packages: elem(config, 0), layouts: elem(config, 1)) do
+          :persistent_term.put({__MODULE__, :default}, {config, registry})
+          {:ok, registry}
+        end
+    end
+  end
+
+  @doc "`default/0`, or an `ArgumentError` with every fault: a host's boot."
+  @spec default!() :: t()
+  def default! do
+    case default() do
+      {:ok, registry} -> registry
+      {:error, faults} -> raise ArgumentError, unbuilt(faults)
     end
   end
 
   @doc """
   The registry a configuration names: `packages:`, `Macaw.Builtin` first and always, and
-  `layouts:`; an `ArgumentError` with every fault for a bad one, as `new!/2`.
+  `layouts:`: `{:ok, registry}` or every fault, as `new/2` gives them.
   """
-  @spec from_config(keyword()) :: t()
+  @spec from_config(keyword()) :: {:ok, t()} | {:error, [Fault.t(), ...]}
   def from_config(config) when is_list(config) do
     packages = [Macaw.Builtin | List.wrap(Keyword.get(config, :packages, []))]
-    new!(packages, layouts: Keyword.get(config, :layouts, []))
+    new(packages, layouts: Keyword.get(config, :layouts, []))
+  end
+
+  @doc "`from_config/1`, or an `ArgumentError` with every fault."
+  @spec from_config!(keyword()) :: t()
+  def from_config!(config) do
+    case from_config(config) do
+      {:ok, registry} -> registry
+      {:error, faults} -> raise ArgumentError, unbuilt(faults)
+    end
   end
 
   @doc "A component by name, a string or an atom read as its spelling: `{:ok, module}` or `:error`."

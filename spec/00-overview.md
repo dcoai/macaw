@@ -133,6 +133,20 @@ The rest of each repository follows the family's conventions: private on GitLab,
 - **Each value has one form.** Names are strings, normalized once, at construction; a name is never rewritten to fit an encoding.
 - **JSON is an adapter at the edge.** A surface's JSON form is written and read through macaw_layers' JSON adapter, which alone refuses a value it can't hold, naming its path ([06 §3.1](06-pages.md#pages-surface-document)).
 
+### 4.3 Errors are values {#core-errors}
+
+**A failure is answered as a value, and a raise is asked for by name** (#243, from v0.3.0), as in every Macaw library:
+- **Every public function that can fail on its input** (a document, attrs, a setting, a request, a host's configuration, a source's answer) answers `{:ok, value}` or `{:error, faults}`, every fault by path, or `:ok`. A host decides what a failure means; a wrong document never crashes it.
+- **A function raises only as the `!` twin** of a value-answering function of the same name and arity (`Registry.new!/2` beside `new/2`, `default!/0` beside `default/0`, `Surface.build!/2` beside `build/2`), so a caller who wants the raise, a host at boot or a surface written in code, asks for it by name.
+- **Nothing raises, throws or exits on input a document, a viewer or a source controls,** implicit raises included: a `Map.fetch!/2`, `hd/1` or failed match that such input could reach is a value instead, or is unreachable because the value was validated first (a `%Macaw.Surface.Validated{}` holds only what validation proved).
+- **A host's configuration is input:** a configured registry that can't be built, or a missing ceiling, answers faults from the call that reads it (`Registry.default/0`, `Surface.show/2`), with the `!` twin for a boot. A call that breaks a function's own argument contract (a required `env` key of `fetch/2` or `render/3` left out, a value of the documented struct that isn't one) is a mistake in the calling code, not input, and fails as any wrong call does.
+- **A callback a component, source or layout supplies may raise;** the core answers that as a value where its contract says so (a fetch runs in `Macaw.Data.Bounded`'s process), isolating by process and never catching with `try/rescue`.
+- **Enforced in CI:** `ci/raises.exs`, the family's copy, finds every explicit `raise`, `throw` and `exit` in `lib/` and fails on one outside `ci/raises_allowlist.exs`, which names each by function with its class (`:bang`, `:compile`, `:mix_task`, `:invariant`) and reason, defaults to `[]`, and fails on a stale entry. Implicit raises are guarded by property tests: over generated malformed attrs and documents, `Surface.new/1`, `from_map/1`, `from_json/2`, `validate/3` and `show/2` answer a value.
+
+```test:errors-values
+over generated malformed attrs, documents and text, Surface.new/1, validate/3, show/2, from_map/1 and from_json/2 answer {:ok, _} or {:error, faults}, never a raise
+```
+
 ## 5. Order of work {#overview-order}
 
 

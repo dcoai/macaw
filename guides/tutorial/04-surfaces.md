@@ -476,11 +476,16 @@ Surface.validate(wall, registry, sources)
 `config :macaw, packages: [...], layouts: [...]`. `Registry.default/0` builds it on its
 first call, `Macaw.Builtin` always among the packages, and keeps it, rebuilding it only
 when the configuration changes; `Registry.from_config/1` builds one from a keyword list
-of the same keys. `Macaw.Surface.show/2` uses the default unless it's given `registry:`.
+of the same keys. Both answer `{:ok, registry}` or every fault of the configuration, and
+each has a `!` twin that raises instead, for a host's boot. `Macaw.Surface.show/2` uses
+the default unless it's given `registry:`.
 
 ```elixir
-Registry.from_config(packages: []) == registry
+Registry.from_config(packages: []) == {:ok, registry}
 #=> true
+
+Registry.from_config(packages: [String])
+#=> {:error, [{[String], :not_a_package}]}
 ```
 
 ## Validation
@@ -906,11 +911,11 @@ on top of fetching's:
 | `now:` | the instant components see | required |
 
 `Macaw.Surface.show(surface, env)` validates, fetches and renders in one call, answering
-`{:ok, html}` or validation's faults. It takes the same options, with defaults a host
-would otherwise restate: `registry:` (`Macaw.Registry.default/0`), `now:` (one clock read,
-in that call), `ceiling:` (`config :macaw, :ceiling`, raising with neither) and `mode:`
-(`:socketless`, or from a LiveView's `socket:`, chapter 10). Only `sources:` is
-required. It renders exactly what `validate/3` then `render/2` render, given the same
+`{:ok, html}` or the faults: the surface's, the options', by key, then validation's. It
+takes the same options, with defaults a host would otherwise restate: `registry:`
+(`Macaw.Registry.default/0`), `now:` (one clock read, in that call), `ceiling:`
+(`config :macaw, :ceiling`, a fault with neither) and `mode:` (`:socketless`, or from a
+LiveView's `socket:`, chapter 10). Only `sources:` is required. It renders exactly what `validate/3` then `render/2` render, given the same
 `now`.
 
 Splitting fetch from render lets you fetch once and render twice: say, a page and its
