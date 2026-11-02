@@ -25,7 +25,7 @@ you don't list them yourself. Run `mix deps.get`, and you're ready. Macaw needs 
 or later.
 
 Macaw is a very early release: every 0.x version may change its API. This tutorial
-describes `macaw` 0.3.0 on `macaw_layers` 0.4, `macaw_data` 0.9 and `macaw_component` 0.3.
+describes `macaw` 0.3.0 on `macaw_layers` 0.4, `macaw_data` 0.10 and `macaw_component` 0.4.
 
 ## The plan
 
@@ -91,7 +91,7 @@ defmodule MyApp.Services do
 
   @impl true
   def fetch(%__MODULE__{}, _request),
-    do: {:ok, Delivery.new(@rows, schema: Schema.version(@schema))}
+    do: Delivery.new(@rows, schema: Schema.version(@schema))
 end
 ```
 
@@ -105,7 +105,8 @@ A few things to notice:
   the source (a connection name, a tenant); it's `nil` here. What a source *is* never
   depends on who is looking.
 - **Errors are values.** Both callbacks answer `{:ok, …}` or `{:error, reason}`; a source
-  never raises.
+  never raises. `Delivery.new/2` already answers `{:ok, delivery}` or `{:error, faults}`,
+  so `fetch/2` answers it as it is (chapter 2).
 - **The delivery names the schema's version,** a hash of the schema's content, so a
   reader always knows which schema its rows were produced under.
 

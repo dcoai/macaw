@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Breaking:** on `macaw_data ~> 0.10.0` and `macaw_component ~> 0.4.0` (were `~> 0.9.0` and `~> 0.3.0`) (#246, #245). macaw_data 0.10 answers errors as values; the fetch matches `Finish.ceiling/2`, `finish/4` and `reduce/5`'s answers, and a step that refuses draws its cell `invalid` rather than crashing the render. An application on macaw_data 0.9 follows its "Upgrading from 0.9.x".
 - The built-in table asks its source for its sort order, so a table capped at its budget holds the first rows in it, not a sorted sample; a surface's fetch puts each slot's `Component.order/3` in its request, pools slots only on equal orders, and draws `invalid` a cell whose order its schema can't answer (#221, #196, #241).
 - **Breaking:** on `macaw_layers ~> 0.4.0`, `macaw_data ~> 0.9.0` and `macaw_component ~> 0.3.0` (were `~> 0.3.1`, `~> 0.7.0` and `~> 0.2.2`) (#242, #241). An application on the older versions moves with them and follows their upgrade notes: macaw_data 0.8's tables are chunked and opaque and its pushes numbered, 0.9's requests carry an order; macaw_layers 0.4's `Form.read/3` refuses every URL without `urls:` and a theme refuses untrusted text; macaw_component 0.3 adds a component's `order/2`. The core's own API is unchanged.
 - Needs macaw_component `~> 0.2.2`: a column the table's `columns` role lists twice is `{:duplicate, field}` at its path, never shown twice (#240, #237).

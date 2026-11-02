@@ -19,12 +19,17 @@ other sources, which a surface reads like any other.
 
 `Macaw.Data.Operations` runs a pipeline of **nodes** over a table: each node a map naming
 its `op` and options, each step's output the next one's input. The registry of
-operations is explicit and closed; `macaw_data`'s own package is always in it:
+operations is explicit and closed; `macaw_data`'s own package is always in it.
+`registry/1` answers `{:ok, registry}` or every fault in the packages it's given, and
+`registry!/1` the registry alone:
 
 ```elixir
 alias Macaw.Data.{Operations, Table}
 
-registry = Operations.registry([])
+Operations.registry([Enum])
+#=> {:error, [{[Enum], :not_a_package}]}
+
+registry = Operations.registry!([])
 
 {Operations.transforms(registry), Operations.aggregates(registry)}
 #=> {["aggregate", "bin", "filter", "fold", "lttb", "m4", "sort", "spectrum", "stack", "sum", "take", "window"],
@@ -153,6 +158,17 @@ bits, where a sequential float sum can lose a reading:
 #=> {{:ok, 3}, {:ok, 1.0}, 0.0}
 ```
 
+A sum beyond a float's range is the fault `:overflow`, never an `ArithmeticError`: alone
+under `"values"`, in a node at the node's index:
+
+```elixir
+{Operations.aggregate(registry, "sum", [1.0e308, 1.0e308], %{}), Operations.apply(registry, [%{op: "aggregate", field: "ms", fn: "sum"}], [%{"ms" => 1.0e308}, %{"ms" => 1.0e308}])}
+#=> {{:error, [{["values"], :overflow}]}, {:error, [{[0, "field"], :overflow}]}}
+```
+
+So an aggregate of your own may answer `{:error, :overflow}` from `reduce/2` and
+`finish/2`, as `sum` and `mean` do.
+
 ### Your own operations
 
 An operation is a module implementing `Macaw.Data.Transform` (or `Macaw.Data.Aggregate`
@@ -204,15 +220,17 @@ end
 ```
 
 `run/3` gets the node checked, with string keys and defaults filled in, and answers a
-table. It reads its input by column (`Table.column/2`), never row by row, and builds
-its answer with `Table.new!/1`. `outputs/2` names the columns it answers, so a
-pipeline's columns are known without data. An operation that should run a chunk at a
-time, and let a caller cache its work per chunk, declares itself a column-native step
-instead (`class/1`, `chunk/3` and the rest of `Macaw.Data.Transform`'s optional
-callbacks), as every built-in operation does. Enable the package explicitly:
+table, or `{:error, {key, reason}}` for input it refuses at run time, which `apply/4`
+answers as a fault at the node's index. It reads its input by column (`Table.column/2`),
+never row by row, and builds its answer with `Table.new!/1`. `outputs/2` names the
+columns it answers, so a pipeline's columns are known without data. An operation
+that should run a chunk at a time, and let a caller cache its work per chunk, declares
+itself a column-native step instead (`class/1`, `chunk/3` and the rest of
+`Macaw.Data.Transform`'s optional callbacks), as every built-in operation does. Enable the
+package explicitly:
 
 ```elixir
-with_ratio = Operations.registry([MyApp.Ops])
+with_ratio = Operations.registry!([MyApp.Ops])
 
 {:ok, ratios} = Operations.apply(with_ratio, [%{op: "ratio", of: "errors", per: "requests"}], [%{"errors" => 3, "requests" => 300}, %{"errors" => 1, "requests" => 0}])
 Table.column(ratios, "ratio")
@@ -222,7 +240,8 @@ Operations.apply(registry, [%{op: "ratio", of: "errors", per: "requests"}], [])
 #=> {:error, [{[0, "op"], {:unknown, :transform, "ratio"}}]}
 ```
 
-Two members with one name fail when the registry is built, naming both.
+Two members with one name are a fault when the registry is built,
+`{[kind, name], {:named_twice, module, other}}`, naming both.
 
 ## Derived sources
 
@@ -248,15 +267,20 @@ defmodule MyApp.Derivations do
 end
 ```
 
-A host function gets its inputs keyed by name, each a list of rows as the source gave
-them, and answers a list of rows. `defsource name(inputs, context)` takes a context too:
-each input's schema and served facts. Register the modules explicitly:
+A host function gets its inputs keyed by name, each a list of rows (as the source gave
+them, or a table input's rows), and answers a list of rows. `defsource name(inputs,
+context)` takes a context too: each input's schema and served facts. Register the
+modules explicitly. `Functions.registry/1` answers `{:ok, functions}` or every fault, and
+`registry!/1` the map alone:
 
 ```elixir
 alias Macaw.Data.Derived
 alias Macaw.Data.Derived.{Engine, Functions, Sandbox}
 
-functions = Functions.registry([MyApp.Derivations])
+Functions.registry([Enum])
+#=> {:error, [{[Enum], :not_a_function_module}]}
+
+functions = Functions.registry!([MyApp.Derivations])
 #=> %{"slowest" => {MyApp.Derivations, 1}}
 
 {:ok, worst} =
@@ -283,9 +307,10 @@ An input is `{name, window}`. The window says how much history the function need
 
 `Derived.new/1` takes the value only: a keyword list or a map of terms. A stored derived
 source's forms are the adapter, written and read by `Macaw.Layers.Form`, the JSON adapter
-surfaces use (chapter 8). `to_map/1` and `to_json/1` answer `{:ok, form}`, or faults for
-a value with no form; `from_map/2` and `from_json/2` read through the gates and then judge
-the value with `new/1`. A map form goes to `from_map/2`, never to `new/1`:
+surfaces use (chapter 8). `to_map/1` and `to_json/1` answer `{:ok, form}`, stamped
+version 2, or faults for a value with no form; `from_map/2` and `from_json/2` read
+through the gates and then judge the value with `new/1`. A map form goes to
+`from_map/2`, never to `new/1`:
 
 ```elixir
 {:ok, worst_json} = Derived.to_json(worst)
@@ -330,11 +355,13 @@ Enum.map(faults, &Sandbox.format_error/1)
 A stored function reaches the operations through one module, `Macaw.Data.Ops`, by
 literal name: `Macaw.Data.Ops.aggregate(values, "median")` or
 `Macaw.Data.Ops.transform(rows, "sort", %{field: :ms})`. The checker holds each name to the
-registry before the function runs. The same calls work in your own code:
+registry before the function runs. Each answers `{:ok, value}` or `{:error, faults}`, and
+`Macaw.Data.Ops.aggregate!/2` and `transform!/3` the bare value; the sandbox allows all of
+them. The same calls work in your own code:
 
 ```elixir
-Macaw.Data.Ops.aggregate([3, nil, 1, 2], "median")
-#=> 2
+{Macaw.Data.Ops.aggregate([3, nil, 1, 2], "median"), Macaw.Data.Ops.aggregate([3, nil, 1, 2], "mode")}
+#=> {{:ok, 2}, {:error, [{[], {:unknown, :aggregate, "mode"}}]}}
 ```
 
 Even `length/1` and `inspect/1` are refused: the allowlist is small on purpose. Every
@@ -374,6 +401,9 @@ engine |> Engine.outputs() |> Map.new(fn {path, d} -> {path, Macaw.Data.Delivery
 #    }
 ```
 
+- An output is a `Macaw.Data.Table`, packed once under the output schema, so
+  `Delivery.rows/1` reads it as any table's rows: every field present, keys as strings,
+  `nil` where the function left a field out, and a category's atom as its string.
 - `push/4` takes the latest deliveries and schemas by source name and the owner's
   monotonic milliseconds; a changed input marks the sources that read it, and the next
   pulse is due `debounce:` milliseconds later (`due/1`).
@@ -386,11 +416,16 @@ engine |> Engine.outputs() |> Map.new(fn {path, d} -> {path, Macaw.Data.Delivery
 
 ### On a surface
 
-`Engine.source(engine, path)` is a `Macaw.Data.Derived.Output`, a source over the
-engine's last good output. Put it in your sources map, and cells read it like any other:
+`Engine.source(engine, path)` answers `{:ok, output}`, a `Macaw.Data.Derived.Output`, a
+source over the engine's last good output, or `{:error, [{[:path], :unknown_path}]}` for
+a path the engine doesn't define. Put it in your sources map, and cells read it like any
+other:
 
 ```elixir
-sources = %{"worst" => {Engine.source(engine, ["worst"]), nil}}
+Engine.source(engine, ["best"])
+#=> {:error, [{[:path], :unknown_path}]}
+
+sources = %{"worst" => {Engine.source!(engine, ["worst"]), nil}}
 registry = Macaw.Registry.new!([Macaw.Builtin])
 
 {:ok, surface} =
@@ -439,8 +474,8 @@ surface draws as "Source unavailable". Re-render after each pulse to show new re
 - Thirteen statistics drop gaps and work alone or in nodes.
 - A derived source is data: inputs, a schema, and a host function or a sandboxed stored
   function.
-- The engine runs derived sources in pulses; `Engine.source/2` makes one a source a
-  surface can bind.
+- The engine runs derived sources in pulses, and its outputs are tables;
+  `Engine.source/2` makes one a source a surface can bind.
 
 **Further reading:** [running operations](https://github.com/dcoai/macaw_data/blob/main/spec/04-operations.md#operations-run), [the table operations](https://github.com/dcoai/macaw_data/blob/main/spec/04-operations.md#operations-table) and [statistics](https://github.com/dcoai/macaw_data/blob/main/spec/04-operations.md#operations-statistics) in `macaw_data`'s spec/04; [derived sources](https://github.com/dcoai/macaw_data/blob/main/spec/02-derived.md#derived-model), [host functions](https://github.com/dcoai/macaw_data/blob/main/spec/02-derived.md#derived-functions), [the sandbox](https://github.com/dcoai/macaw_data/blob/main/spec/02-derived.md#derived-sandbox), [the engine](https://github.com/dcoai/macaw_data/blob/main/spec/02-derived.md#derived-engine) and [a derived source as a source](https://github.com/dcoai/macaw_data/blob/main/spec/02-derived.md#derived-as-source) in its spec/02.
 

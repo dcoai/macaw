@@ -66,8 +66,10 @@ defmodule Macaw.Surface.Fetch do
       size = layout.size(place, options, env[:width], env[:row_height])
 
       {budget, clamped} =
-        case Component.budget(cell.module, slot, cell.settings, size) do
-          {:ok, rows} -> Finish.ceiling(rows, host: ceiling)
+        with {:ok, rows} <- Component.budget(cell.module, slot, cell.settings, size),
+             {:ok, clamped} <- Finish.ceiling(rows, host: ceiling) do
+          clamped
+        else
           {:error, _bad} -> {:invalid, false}
         end
 
@@ -103,12 +105,22 @@ defmodule Macaw.Surface.Fetch do
     description = hd(group).description
     budget = Finish.pooled(Enum.map(group, & &1.budget))
 
-    {:ok, request} =
-      Request.new(params: params, order: order, budget: budget, viewer: env[:viewer], now: now)
+    case Request.new(params: params, order: order, budget: budget, viewer: env[:viewer], now: now) do
+      {:ok, request} -> fetched(struct, description, request, env)
+      # A request the slots' params, order and budget can't make: their cells are invalid.
+      {:error, _faults} -> {:drawn, :invalid}
+    end
+  end
 
+  # A fetch's outcome: the delivery finished against the description, or the drawn state
+  # of a source that failed, crashed or hung. A delivery finishing refuses is `invalid`.
+  defp fetched(struct, description, request, env) do
     case Bounded.run(fn -> Source.fetch(struct, description, request) end, timeout: env[:timeout]) do
       {:ok, {:ok, %Delivery{} = delivery}, _spent} ->
-        {:ok, Finish.finish(delivery, description, request)}
+        case Finish.finish(delivery, description, request) do
+          {:ok, finished} -> {:ok, finished}
+          {:error, _faults} -> {:drawn, :invalid}
+        end
 
       {:ok, _error, _spent} ->
         {:drawn, :down}
@@ -126,8 +138,10 @@ defmodule Macaw.Surface.Fetch do
   defp slot_outcome(reader, outcomes) do
     case Map.fetch!(outcomes, {reader.source, reader.params, reader.order}) do
       {:ok, delivery} ->
-        reduced = Finish.reduce(delivery, reader.description.schema, reader.budget)
-        {:ok, if(reader.clamped, do: runtime(reduced), else: reduced)}
+        case Finish.reduce(delivery, reader.description.schema, reader.budget) do
+          {:ok, reduced} -> {:ok, if(reader.clamped, do: runtime(reduced), else: reduced)}
+          {:error, _faults} -> {:drawn, :invalid}
+        end
 
       drawn ->
         drawn

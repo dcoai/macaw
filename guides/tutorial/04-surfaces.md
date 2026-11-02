@@ -761,7 +761,7 @@ defmodule MyApp.TeamServices do
 
   @impl true
   def fetch(%__MODULE__{}, %{viewer: %{team: team}}),
-    do: {:ok, Delivery.new(Enum.filter(@rows, &(&1["team"] == team)), schema: Schema.version(@schema))}
+    do: Delivery.new(Enum.filter(@rows, &(&1["team"] == team)), schema: Schema.version(@schema))
 
   def fetch(%__MODULE__{}, %{viewer: nil}), do: {:error, :sign_in_required}
 end
@@ -832,7 +832,7 @@ defmodule MyApp.Slow do
   @impl true
   def fetch(%__MODULE__{delay: delay}, _request) do
     Process.sleep(delay)
-    {:ok, Delivery.new([%{"n" => 1}], schema: Schema.version(@schema))}
+    Delivery.new([%{"n" => 1}], schema: Schema.version(@schema))
   end
 end
 ```

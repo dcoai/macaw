@@ -230,7 +230,8 @@ pairs, unstamped, for a document that embeds a schema (a derived source's, chapt
 Units are named by their [UCUM](https://ucum.org/ucum) codes, the case-sensitive codes
 OpenTelemetry uses: `s`, `ms`, `By`, `kBy`, `%`, `Cel`, `kW.h`, `{request}/s`. One code
 per unit means two sources can't label the same thing two ways. `Macaw.Data.Unit` reads
-and converts them:
+and converts them. Each lookup answers `{:ok, value}` or `{:error, reason}`, and its `!`
+twin (`Unit.convert!/3`, `Unit.symbol!/2`, …) the bare value:
 
 ```elixir
 alias Macaw.Data.{Quantity, Unit}
@@ -238,11 +239,11 @@ alias Macaw.Data.{Quantity, Unit}
 {Unit.valid?("kW.h"), Unit.parse("sec")}
 #=> {true, {:error, {:unknown_atom, "sec"}}}
 
-{Unit.convert(1500, "ms", "s"), Unit.convert(100, "Cel", "[degF]")}
-#=> {1.5, 212.0}
+{Unit.convert(1500, "ms", "s"), Unit.convert(100, "Cel", "[degF]"), Unit.convert(1, "ms", "By")}
+#=> {{:ok, 1.5}, {:ok, 212.0}, {:error, {:dimension, "ms", "By"}}}
 
-Unit.symbol("kBy/s")
-#=> "kB/s"
+{Unit.symbol("kBy/s"), Unit.convert!(1500, "ms", "s")}
+#=> {{:ok, "kB/s"}, 1.5}
 ```
 
 People type symbols, not codes. `parse_alias/1` reads a symbol, and refuses an
@@ -259,17 +260,14 @@ Unit.parse_alias("KB")
 `Unit.conversion/2` gives the exact scale and offset between two codes, and
 `Unit.dimension/1` a code's dimension. A **quantity** says what a unit measures, from a
 fixed list (`Quantity.all/0`). A schema checks that a field's unit measures its quantity,
-as the fault above showed:
+as the fault above showed. A quantity's facts answer the same way, with `!` twins:
 
 ```elixir
-{Quantity.of_unit("ms"), Quantity.of_unit("kW.h"), Quantity.base_unit(:information)}
-#=> {:duration, :energy, "By"}
+{Quantity.of_unit("ms"), Quantity.base_unit(:information), Quantity.base_unit(:mood)}
+#=> {{:ok, :duration}, {:ok, "By"}, {:error, {:unknown_quantity, :mood}}}
 
-Quantity.label(%{unit: "ms"})
-#=> "ms"
-
-Quantity.bounds(:ratio, "%")
-#=> {0.0, 100.0}
+{Quantity.of_unit!("kW.h"), Quantity.label!(%{unit: "ms"}), Quantity.bounds!(:ratio, "%")}
+#=> {:energy, "ms", {0.0, 100.0}}
 ```
 
 Two edges come up often. `:telemetry` measurements name their time units as atoms, which
@@ -280,7 +278,7 @@ first). Money is a currency code, which never converts, since an exchange rate i
 {Unit.from_telemetry(:millisecond), Unit.from_telemetry({:native, :microsecond}), Unit.from_telemetry(:native)}
 #=> {{:ok, "ms"}, {:ok, "us"}, {:error, :native}}
 
-{Unit.currency("{iso4217:EUR}"), Quantity.of_unit("{iso4217:EUR}")}
+{Unit.currency("{iso4217:EUR}"), Quantity.of_unit!("{iso4217:EUR}")}
 #=> {"EUR", :currency}
 ```
 
@@ -417,7 +415,7 @@ Table.get(%{ms: 3}, "ms")
 A `Macaw.Data.Delivery` is one answer of a source: its rows **as the source gave them**,
 plus a handful of facts. Nothing is copied or packed when a delivery is made, which
 matters on a busy page; a reader that wants columns packs them on demand. `new/2` takes
-the rows and these options:
+the rows and these options, and answers `{:ok, delivery}` or `{:error, faults}`:
 
 | Option | Meaning |
 |---|---|
@@ -442,13 +440,23 @@ The `served` facts are what a reader needs to draw honestly:
 | `complete_until` | the source's watermark: a window value below which it expects no further change | `nil` |
 
 A source sets `reduced_by: :source` when it honored a budget itself; `:runtime` is
-Macaw's own mark. A delivery of tuple rows needs `names:` so it can be read by name:
+Macaw's own mark. Every bad option is a fault, all of them at once, in the order of the
+fields, and `Delivery.format_error/1` words them:
 
 ```elixir
 alias Macaw.Data.Delivery
 
+Delivery.new([%{"a" => 1}], served: [capped: 3], zone: 1)
+#=> {:error, [{[:zone], :unknown_key}, {[:served, :capped], {:type, :boolean}}]}
+```
+
+A source answers that value from `fetch/2` as it is (chapter 2). Code over rows it knows
+are good calls `new!/2`, which answers the delivery and raises `ArgumentError` on a
+fault. A delivery of tuple rows needs `names:` so it can be read by name:
+
+```elixir
 delivery =
-  Delivery.new([{"web-1", 42}, {"web-2", nil}],
+  Delivery.new!([{"web-1", 42}, {"web-2", nil}],
     names: ["host", "ms"],
     served: [capped: true, note: "first two only", resolution: :minute]
   )
@@ -457,15 +465,19 @@ Delivery.rows(delivery)
 #=> [{"web-1", 42}, {"web-2", nil}]
 
 Delivery.named_rows(delivery)
-#=> [%{"host" => "web-1", "ms" => 42}, %{"host" => "web-2", "ms" => nil}]
+#=> {:ok, [%{"host" => "web-1", "ms" => 42}, %{"host" => "web-2", "ms" => nil}]}
+
+Delivery.named_rows(Delivery.new!([{"web-1", 42}]))
+#=> {:error, [{[:names], :required}]}
 
 {delivery.served.capped, delivery.served.note, Delivery.empty?(delivery)}
 #=> {true, "first two only", false}
 ```
 
 - `rows/1` reads the rows as given, a list uncopied;
-- `named_rows/1` reads them as maps, by `names` for tuples (tuple rows without names
-  raise: they can't be read by name);
+- `named_rows/1` reads them as maps, by `names` for tuples, `{:ok, rows}` or
+  `{:error, faults}` (tuple rows without names can't be read by name), and
+  `named_rows!/1` answers the maps;
 - `table/2` packs them into a `Macaw.Data.Table`, `{:ok, table}` or `{:error, faults}`,
   and `table!/2` raises;
 - `empty?/1` says whether there are no rows.
@@ -474,7 +486,7 @@ Packing is where values are checked against their types, so a value of the wrong
 `table/2`'s fault, not `new/2`'s:
 
 ```elixir
-Delivery.table(Delivery.new([%{"a" => 1}, %{"a" => "x"}], types: %{"a" => :number}))
+Delivery.table(Delivery.new!([%{"a" => 1}, %{"a" => "x"}], types: %{"a" => :number}))
 #=> {:error, [{["a", 1], {:type, :number}}]}
 ```
 
@@ -492,7 +504,8 @@ rows that don't pack.
 - **Two time fields.** A schema with two `:time` fields needs `window: true` on one,
   or requests to it can carry no window.
 - **Filling gaps with zero.** A missing reading is `nil`. A zero draws a false dip.
-- **Tuple rows without `names:`.** Reading them by name raises; give the names.
+- **Tuple rows without `names:`.** Reading them by name is the fault
+  `{[:names], :required}`; give the names.
 - **A color written as text.** `"#c23238"` is a string, and a string is never a color:
   write `~RGB"#c23238"` in code, and read text with `Macaw.Layers.Color.parse!/1` where
   it comes in.

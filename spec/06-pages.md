@@ -274,7 +274,7 @@ one cell failing its kind, settings, a source and a binding's params reports eve
 - **Budgets:** each slot's budget is `Macaw.Component.budget/4` at the cell's declared size, its layout's `size/4` (§3.3) (a component's bad budget draws its cell `invalid` and fetches nothing for that slot), clamped by `Macaw.Data.Source.Finish.ceiling/2` ([macaw_data 01 §6.1](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-budgets)); a clamped slot's delivery says `reduced_by: :runtime`.
 - **Orders:** each slot's request carries the order its component asks for (its optional `order/2`, through macaw_component), so a delivery capped at its budget holds the first rows in it ([macaw_data 01 §2.3](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-request)): a source supporting `:order` serves them, else finishing orders what was served (`served.ordered`). An order of no shape, or naming a field the slot's schema lacks, draws the cell `invalid` and nothing is fetched for that slot.
 - **Pooling within the surface:** slots bound to one source with equal params and equal orders cost one fetch, at the largest of their budgets (`Finish.pooled/1`), and each slot is reduced to its own (`Finish.reduce`). Pooling across pages is #108's.
-- **Fetching never blocks or crashes the caller:** each fetch runs in a process of its own (`Macaw.Data.Bounded`), the fetches concurrently, each bounded by `timeout:`; the delivery is finished by `Macaw.Data.Source.Finish.finish/4` against the description.
+- **Fetching never blocks or crashes the caller:** each fetch runs in a process of its own (`Macaw.Data.Bounded`), the fetches concurrently, each bounded by `timeout:`; the delivery is finished by `Macaw.Data.Source.Finish.finish/4` against the description and reduced to each slot's budget. Every step answers a value (macaw_data 0.10): a ceiling, a request, a finishing or a reduction that refuses draws the slot's cell `invalid`, never a crash.
 - **Drawn states** ([macaw_component 02 §6](https://github.com/dcoai/macaw_component/blob/main/spec/02-rendering.md#components-states)), the highest of its slots': a fetch that answers an error or whose process exits is `down`; one that hasn't answered within `timeout:` is `loading`; a delivery `capped` or `reduced_by` anything is `capped`; one with no rows is `no_data`; otherwise `live`. A cell with no slots is `live`.
 
 ```test:fetch-budgets
@@ -282,7 +282,7 @@ each slot is fetched at its budget at its cell's size, under every built-in layo
 ```
 
 ```test:fetch-drawn
-a source error, a crashed fetch, a hung fetch, a capped or reduced delivery and an empty one draw down, down, loading, capped and no_data; a cell's state is its slots' highest; a cell without slots is live
+a source error, a crashed fetch, a hung fetch, a capped or reduced delivery and an empty one draw down, down, loading, capped and no_data, and a delivery finishing refuses draws invalid; a cell's state is its slots' highest; a cell without slots is live
 ```
 
 ### 3.6 Rendering a surface {#pages-surface-render}

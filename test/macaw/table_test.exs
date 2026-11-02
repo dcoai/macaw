@@ -13,7 +13,7 @@ defmodule Macaw.TableTest do
     %{"host" => "a", "ms" => nil, "seen" => ~U[2026-10-28 11:00:00Z]},
     %{"host" => "c", "ms" => 10, "seen" => nil}
   ]
-  @delivery Delivery.new(@rows, types: %{"host" => :category, "ms" => :number, "seen" => :time})
+  @delivery Delivery.new!(@rows, types: %{"host" => :category, "ms" => :number, "seen" => :time})
 
   use Macaw.Component.Conformance,
     component: Macaw.Builtin.Table,
@@ -22,7 +22,7 @@ defmodule Macaw.TableTest do
       %{
         deliveries: %{
           "rows" =>
-            Delivery.new([%{"host" => "a", "ms" => 1}],
+            Delivery.new!([%{"host" => "a", "ms" => 1}],
               types: %{"host" => :category, "ms" => :number}
             )
         }
@@ -31,7 +31,7 @@ defmodule Macaw.TableTest do
         settings: %{"identity" => "host", "sort" => "ms", "caption" => "Hosts"},
         deliveries: %{
           "rows" =>
-            Delivery.new([%{"host" => "a b", "ms" => 2}, %{"host" => "c", "ms" => 1}],
+            Delivery.new!([%{"host" => "a b", "ms" => 2}, %{"host" => "c", "ms" => 1}],
               types: %{"host" => :category, "ms" => :number}
             )
         },

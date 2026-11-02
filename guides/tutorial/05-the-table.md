@@ -88,7 +88,7 @@ defmodule MyApp.Incidents do
 
   @impl true
   def fetch(%__MODULE__{}, _request),
-    do: {:ok, Delivery.new(@rows, schema: Schema.version(@schema))}
+    do: Delivery.new(@rows, schema: Schema.version(@schema))
 end
 ```
 

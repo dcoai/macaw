@@ -54,7 +54,7 @@ defmodule MyApp.Latency do
   def fetch(%__MODULE__{} = source, request) do
     # A window of something other than times is the caller's mistake: answer it as a value.
     case Macaw.Data.Window.check(request, @schema) do
-      :ok -> {:ok, delivery(source, request)}
+      :ok -> delivery(source, request)
       {:error, faults} -> {:error, {:request, faults}}
     end
   end
@@ -89,6 +89,17 @@ end
 The source is a struct, and its fields are its configuration: which hosts, how much
 history. That's the usual shape. A database-backed source would hold a repo or a table
 name; the struct is what you put in the `sources` map you give a surface.
+
+`delivery/2` ends in `Delivery.new/2`, and `fetch/2` answers its value as it is. That's
+the library's rule for errors, and the rest of the tutorial follows it:
+
+- **A function answers `{:ok, value}` or `{:error, reason}`.** `Delivery.new/2` answers
+  `{:ok, delivery}`, or `{:error, faults}` naming every bad option at once, which is
+  already a fetch's answer.
+- **Its `!` twin answers the bare value** and raises `ArgumentError` on a fault:
+  `Delivery.new!/2`, `Finish.finish!/4`, `Order.sort!/3`, `Push.new!/3` and the others.
+- **A source answers the value form;** code and tests over data known to be good call the
+  twin, which reads most simply.
 
 ## The behavior
 
@@ -325,7 +336,8 @@ A source that doesn't declare a capability still gets requests that use it.
 `Macaw.Data.Source.Finish.finish/4` does the rest after the fetch, in a fixed order
 (window, box, region, latest, order, budget), only ever **removing** rows, and records what it
 did in the delivery's `served` facts. A surface finishes every delivery this way; you
-call it yourself only when you fetch outside a surface.
+call it yourself only when you fetch outside a surface. It answers `{:ok, delivery}` or
+`{:error, faults}`; the examples below call `finish!/4` on requests they know are good.
 
 Ask `MyApp.Latency` for each host's latest reading. It doesn't support `:latest`, so
 finishing picks the newest row per identity (`"host"`, declared in the schema):
@@ -335,7 +347,7 @@ alias Macaw.Data.Source.Finish
 
 latest = Request.new!(now: now, latest: true)
 {:ok, all} = Source.fetch(latency, description, latest)
-finished = Finish.finish(all, description, latest)
+finished = Finish.finish!(all, description, latest)
 
 Macaw.Data.Delivery.rows(finished)
 #=> [%{"host" => "web-1", "ms" => 20, "t" => ~U[2026-10-29 12:00:00Z]},
@@ -349,7 +361,7 @@ which keeps the shape of a line with far fewer points, and marks who did it:
 ```elixir
 budgeted = Request.new!(now: now, params: %{"host" => "web-1"}, budget: 10)
 {:ok, delivery} = Source.fetch(latency, description, budgeted)
-finished = Finish.finish(delivery, description, budgeted)
+finished = Finish.finish!(delivery, description, budgeted)
 
 {length(Macaw.Data.Delivery.rows(finished)), finished.served.reduced_by}
 #=> {10, :runtime}
@@ -362,7 +374,7 @@ A reduced line is a sample, which suits a chart. A reader that looks at rows in 
 ```elixir
 slowest = Request.new!(now: now, params: %{"host" => "web-1"}, order: [{"ms", :desc}, {"t", :desc}], budget: 3)
 {:ok, delivery} = Source.fetch(latency, description, slowest)
-finished = Finish.finish(delivery, description, slowest)
+finished = Finish.finish!(delivery, description, slowest)
 
 {Enum.map(Macaw.Data.Delivery.rows(finished), & &1["ms"]), finished.served.ordered}
 #=> {[49, 49, 48], :runtime}
@@ -384,12 +396,17 @@ finished = Finish.finish(delivery, description, slowest)
   an order the slot's schema can't answer draws the cell `invalid`, and nothing is fetched.
 
 `finish/4` takes `reduce: "m4"` to use the M4 reducer instead of LTTB. A request the
-schema can't answer, such as a `box` on a source with no `:point` field, raises
-`ArgumentError`: that's a bug in the caller, not a data problem.
-`Macaw.Data.Window.check/2` tells you beforehand:
+schema can't answer, such as a `box` on a source with no `:point` field, is a fault,
+answered before any step runs. It's a bug in the caller, not a data problem, and
+`Macaw.Data.Window.check/2` tells you the same beforehand:
 
 ```elixir
-Macaw.Data.Window.check(Request.new!(now: now, box: %{west: 0, south: 0, east: 1, north: 1}), description.schema)
+boxed = Request.new!(now: now, box: %{west: 0, south: 0, east: 1, north: 1})
+
+Finish.finish(all, description, boxed)
+#=> {:error, [{[:box], {:invalid_for, :time}}]}
+
+Macaw.Data.Window.check(boxed, description.schema)
 #=> {:error, [{[:box], {:invalid_for, :time}}]}
 ```
 
@@ -399,11 +416,12 @@ Two more rules from `Finish` decide how much a surface fetches. Both are applied
 by `Macaw.Surface.fetch/2`; knowing them explains what you see.
 
 - **The ceiling.** `ceiling/2` clamps a reader's budget to the host's ceiling, the
-  `ceiling:` you give a surface, and says whether it clamped. A reader that wants every
-  row (`nil`) reads at the ceiling:
+  `ceiling:` you give a surface, and says whether it clamped: `{:ok, {budget, clamped?}}`,
+  or `{:error, faults}` without `host:`. `ceiling!/2` answers the pair. A reader that
+  wants every row (`nil`) reads at the ceiling:
 
   ```elixir
-  {Finish.ceiling(5_000, host: 1_000), Finish.ceiling(50, host: 1_000), Finish.ceiling(nil, host: 1_000)}
+  {Finish.ceiling!(5_000, host: 1_000), Finish.ceiling!(50, host: 1_000), Finish.ceiling!(nil, host: 1_000)}
   #=> {{1_000, true}, {50, false}, {1_000, false}}
   ```
 
@@ -416,7 +434,7 @@ by `Macaw.Surface.fetch/2`; knowing them explains what you see.
   #=> {40, nil}
 
   {:ok, everything} = Source.fetch(latency, description, Request.new!(now: now))
-  reduced = Finish.reduce(everything, description.schema, 20)
+  reduced = Finish.reduce!(everything, description.schema, 20)
   {length(Macaw.Data.Delivery.rows(reduced)), reduced.served.reduced_by}
   #=> {20, :runtime}
   ```
@@ -457,7 +475,7 @@ defmodule MyApp.Ticker do
 
   @doc "Sends `rows` to every subscriber as its next numbered increment."
   def tick(%__MODULE__{subscribers: agent}, rows) do
-    delivery = Delivery.new(rows, schema: Schema.version(@schema))
+    delivery = Delivery.new!(rows, schema: Schema.version(@schema))
 
     numbered =
       Agent.get_and_update(agent, fn subscribers ->
@@ -472,7 +490,7 @@ defmodule MyApp.Ticker do
   def describe(%__MODULE__{}, _context), do: Description.new(schema: @schema, supports: [:push])
 
   @impl true
-  def fetch(%__MODULE__{}, _request), do: {:ok, Delivery.new([], schema: Schema.version(@schema))}
+  def fetch(%__MODULE__{}, _request), do: Delivery.new([], schema: Schema.version(@schema))
 
   @impl true
   def subscribe(%__MODULE__{subscribers: agent}, pid) do
@@ -501,7 +519,7 @@ alias Macaw.Data.Table
 
 ticker = MyApp.Ticker.new()
 {:ok, ref} = Source.subscribe(ticker, self())
-push = Push.new("ticker", ref)
+push = Push.new!("ticker", ref)
 
 :ok = MyApp.Ticker.tick(ticker, [%{"t" => ~U[2026-10-29 12:01:00Z], "value" => 2}])
 :ok = MyApp.Ticker.tick(ticker, [%{"t" => ~U[2026-10-29 12:00:00Z], "value" => 1}])
@@ -529,7 +547,7 @@ redelivery by the number instead, and `Push` drops an increment it has already a
 whole, counting it in `ignored`:
 
 ```elixir
-again = Macaw.Data.Delivery.new([%{"t" => ~U[2026-10-29 12:01:00Z], "value" => 2}])
+again = Macaw.Data.Delivery.new!([%{"t" => ~U[2026-10-29 12:01:00Z], "value" => 2}])
 {:ok, push} = Push.receive(push, Push.increment_message(ref, 1, again))
 push = Push.drain(push, describe)
 

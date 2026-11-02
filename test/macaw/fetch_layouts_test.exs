@@ -18,6 +18,35 @@ defmodule Macaw.FetchLayoutsTest do
   defp under(Macaw.Layout.Areas),
     do: {{:areas, template: [["t", "t", "side"]]}, %{place: %{area: "t"}}}
 
+  # A source answering tuple rows with no names, which finishing can't order by a field.
+  defmodule Nameless do
+    @behaviour Macaw.Data.Source
+    defstruct []
+    @impl true
+    def describe(_source, _context),
+      do: Macaw.Data.Source.Description.new(schema: Rows.default_schema())
+
+    @impl true
+    def fetch(_source, _request), do: Macaw.Data.Delivery.new([{1, 2.0, "a"}, {2, 1.0, "b"}])
+  end
+
+  @tag verifies: "fetch-drawn"
+  test "a delivery finishing refuses draws its cell invalid, never a crash" do
+    sources = %{"lat" => {%Nameless{}, nil}}
+
+    cell = %{
+      component: "macaw.table",
+      source: "lat",
+      settings: %{"sort" => "v", "order" => "desc"}
+    }
+
+    {:ok, s} = Surface.new(name: "ops", cells: [cell])
+    {:ok, v} = Surface.validate(s, @registry, sources)
+
+    assert %{"table_lat" => %{drawn: :invalid, deliveries: %{}}} =
+             Surface.fetch(v, sources: sources, now: @now, ceiling: 1_000)
+  end
+
   @tag verifies: "fetch-budgets"
   test "a bound cell under every built-in layout is fetched at its declared size and draws live" do
     rows = for i <- 1..50, do: %{"t" => @now, "v" => i * 1.0, "host" => "h#{i}"}

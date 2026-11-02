@@ -57,24 +57,24 @@ defmodule Macaw.Test.Rows do
       mode ->
         schema = source.schema || @default
         orders? = :order in source.supports
-        rows = if orders?, do: Order.sort(source.rows, request.order, schema), else: source.rows
+        rows = if orders?, do: Order.sort!(source.rows, request.order, schema), else: source.rows
 
         rows =
           if request.budget && :budget in source.supports,
             do: Enum.take(rows, request.budget),
             else: rows
 
-        {:ok,
-         Delivery.new(rows,
-           types: %{"t" => :time, "v" => :number, "host" => :category},
-           schema: Schema.version(source.schema || @default),
-           served: [
-             capped: mode == :capped,
-             reduced_by: if(length(rows) < length(source.rows), do: :source),
-             ordered: if(orders? and request.order != [], do: :source),
-             params: request.params
-           ]
-         )}
+        # Delivery.new/2 answers {:ok, delivery}, a source's answer.
+        Delivery.new(rows,
+          types: %{"t" => :time, "v" => :number, "host" => :category},
+          schema: Schema.version(source.schema || @default),
+          served: [
+            capped: mode == :capped,
+            reduced_by: if(length(rows) < length(source.rows), do: :source),
+            ordered: if(orders? and request.order != [], do: :source),
+            params: request.params
+          ]
+        )
     end
   end
 end

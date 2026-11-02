@@ -57,13 +57,18 @@ defmodule MyApp.Components.Stat do
   @impl true
   def render(:content, %{drawn: drawn, deliveries: %{"rows" => delivery}} = assigns)
       when drawn in [:live, :capped] do
-    field = Context.field(assigns.context, "rows", "value")
+    case Delivery.named_rows(delivery) do
+      {:ok, rows} -> stat(rows, drawn, assigns)
+      # Rows that can't be read by name draw as the built-in table draws rows that don't pack.
+      {:error, _faults} -> Drawn.render(:no_data, assigns.context)
+    end
+  end
 
-    values =
-      delivery
-      |> Delivery.named_rows()
-      |> Enum.map(&Table.get(&1, field))
-      |> Enum.reject(&is_nil/1)
+  def render(:content, assigns), do: Drawn.render(assigns.drawn, assigns.context)
+
+  defp stat(rows, drawn, assigns) do
+    field = Context.field(assigns.context, "rows", "value")
+    values = rows |> Enum.map(&Table.get(&1, field)) |> Enum.reject(&is_nil/1)
 
     assigns =
       Map.merge(assigns, %{
@@ -81,8 +86,6 @@ defmodule MyApp.Components.Stat do
     """
   end
 
-  def render(:content, assigns), do: Drawn.render(assigns.drawn, assigns.context)
-
   defp reduce("count", values), do: length(values)
   defp reduce(_sum_or_max, []), do: "–"
   defp reduce("sum", values), do: Enum.sum(values)
@@ -91,10 +94,11 @@ end
 ```
 
 The rows arrive with the source's field names, and the context says which of them the
-document bound to the `value` role: `Context.field/3`, below. This one uses HEEx, which
-needs `phoenix_live_view` in your dependencies; a render may equally answer
-`{:safe, iodata}` or a string, which is escaped. Any value of the `Phoenix.HTML.Safe`
-protocol will do.
+document bound to the `value` role: `Context.field/3`, below. `Delivery.named_rows/1`
+answers `{:ok, rows}`, or `{:error, faults}` for tuple rows it can't read by name, and the
+render draws that as `:no_data` rather than raising. This one uses HEEx, which needs
+`phoenix_live_view` in your dependencies; a render may equally answer `{:safe, iodata}`
+or a string, which is escaped. Any value of the `Phoenix.HTML.Safe` protocol will do.
 
 The assigns are a plain map, not a LiveView's: add to them with `Map.merge/2`.
 `Phoenix.Component.assign/2` raises on them, because they carry no change tracking.
@@ -313,10 +317,17 @@ defmodule MyApp.Components.Readings do
   def render(:content, %{drawn: drawn, deliveries: %{"series" => delivery}} = assigns)
       when drawn in [:live, :capped] do
     y = Context.field(assigns.context, "series", "y")
-    count = delivery |> Delivery.named_rows() |> Enum.count(&(Table.get(&1, y) != nil))
 
-    {:safe,
-     [Phoenix.HTML.Safe.to_iodata(Drawn.render(drawn, assigns.context)), "<p>#{count} readings</p>"]}
+    case Delivery.named_rows(delivery) do
+      {:ok, rows} ->
+        count = Enum.count(rows, &(Table.get(&1, y) != nil))
+
+        {:safe,
+         [Phoenix.HTML.Safe.to_iodata(Drawn.render(drawn, assigns.context)), "<p>#{count} readings</p>"]}
+
+      {:error, _faults} ->
+        Drawn.render(:no_data, assigns.context)
+    end
   end
 
   def render(:content, assigns), do: Drawn.render(assigns.drawn, assigns.context)
@@ -651,7 +662,7 @@ The dispatch functions call the transitions, and refuse a pure component with
 alias MyApp.Components.Tally
 
 value = Macaw.Component.init(Tally, %{}, context)
-value = Macaw.Component.delivery(Tally, value, "rows", Macaw.Data.Delivery.new([%{"a" => 1}, %{"a" => 2}]))
+value = Macaw.Component.delivery(Tally, value, "rows", Macaw.Data.Delivery.new!([%{"a" => 1}, %{"a" => 2}]))
 value = Macaw.Component.size(Tally, value, {300, 128})
 {value, Macaw.Component.contained?(Tally), Macaw.Component.contained?(Stat)}
 #=> {%{rows: 2, size: {300, 128}}, true, false}

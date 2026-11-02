@@ -91,7 +91,7 @@ earlier chapters, `MyApp.Services` and `MyApp.Latency` most of all.
 ## What's released, and what isn't
 
 `macaw` 0.3.0 holds **surfaces**, validated and rendered complete without a socket, and
-the built-in table, on `macaw_layers` 0.4, `macaw_data` 0.9 and `macaw_component` 0.3. A
+the built-in table, on `macaw_layers` 0.4, `macaw_data` 0.10 and `macaw_component` 0.4. A
 surface's layout is a behavior, `Macaw.Layout`, with the grid (6, 12 or 24 columns), the
 stack, the flow and named areas built in, and a host's registry holds the layouts it
 allows as it holds components. A surface and its cells' settings are terms, checked at

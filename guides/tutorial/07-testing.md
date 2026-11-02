@@ -44,13 +44,13 @@ defmodule MyApp.Components.StatTest do
         name: "sum",
         settings: %{"label" => "Errors"},
         bindings: %{"rows" => %{"value" => "errors"}},
-        deliveries: %{"rows" => Delivery.new([%{"errors" => 3}, %{"errors" => 4}])}
+        deliveries: %{"rows" => Delivery.new!([%{"errors" => 3}, %{"errors" => 4}])}
       },
       %{
         name: "count of nothing",
         settings: %{"label" => "Errors", "reduce" => "count"},
         bindings: %{"rows" => %{"value" => "errors"}},
-        deliveries: %{"rows" => Delivery.new([])}
+        deliveries: %{"rows" => Delivery.new!([])}
       }
     ]
 end
@@ -81,6 +81,9 @@ every context the kit builds) and `events` (event names its interaction produces
 as declared). The `:bindings` check probes each fixture that has bindings: it renames the
 bound fields, in the delivery and the binding alike, and finds `{:ignores_binding, slot}`
 when the render doesn't follow them, as a component reading a fixed field name wouldn't.
+It rebuilds the renamed delivery through `Delivery.new/2`'s value, so a delivery it can't
+rebuild is the finding `{:unrenamable, slot, faults}`, the delivery's own faults, never
+a raise.
 
 The options are `fixtures:` (one bare fixture by default), `check_sets:`, `theme:`
 (a `%Macaw.Layers.Theme{}`, its colors terms), `size:` (`{640, 400}`) and `now:`.
@@ -96,7 +99,7 @@ defmodule MyApp.Components.ReadingsTest do
     fixtures: [
       %{
         bindings: %{"series" => %{"t" => "t", "y" => "ms"}},
-        deliveries: %{"series" => Macaw.Data.Delivery.new([%{"t" => ~U[2026-10-29 12:00:00Z], "ms" => 3}])}
+        deliveries: %{"series" => Macaw.Data.Delivery.new!([%{"t" => ~U[2026-10-29 12:00:00Z], "ms" => 3}])}
       }
     ]
 end
@@ -106,7 +109,7 @@ defmodule MyApp.Components.TallyTest do
 
   use Macaw.Component.Conformance,
     component: MyApp.Components.Tally,
-    fixtures: [%{deliveries: %{"rows" => Macaw.Data.Delivery.new([%{"n" => 1}])}}]
+    fixtures: [%{deliveries: %{"rows" => Macaw.Data.Delivery.new!([%{"n" => 1}])}}]
 end
 ```
 
@@ -133,9 +136,15 @@ defmodule MyApp.Components.FixedField do
     do: {:ok, slots: %{"rows" => %{requires: %{"value" => %{type: :number}}}}}
 
   @impl true
-  def render(:content, %{drawn: :live, deliveries: %{"rows" => delivery}}) do
-    values = delivery |> Delivery.named_rows() |> Enum.map(&Table.get(&1, "n"))
-    {:safe, "<p>#{values |> Enum.reject(&is_nil/1) |> Enum.sum()}</p>"}
+  def render(:content, %{drawn: :live, deliveries: %{"rows" => delivery}} = assigns) do
+    case Delivery.named_rows(delivery) do
+      {:ok, rows} ->
+        values = rows |> Enum.map(&Table.get(&1, "n")) |> Enum.reject(&is_nil/1)
+        {:safe, "<p>#{Enum.sum(values)}</p>"}
+
+      {:error, _faults} ->
+        Drawn.render(:no_data, assigns.context)
+    end
   end
 
   def render(:content, assigns), do: Drawn.render(assigns.drawn, assigns.context)
@@ -148,7 +157,7 @@ defmodule MyApp.Components.FindingsTest do
 
   alias Macaw.Component.Conformance
 
-  @rows %{"rows" => Macaw.Data.Delivery.new([%{"n" => 1}])}
+  @rows %{"rows" => Macaw.Data.Delivery.new!([%{"n" => 1}])}
 
   test "a fixture without the required label is a declarations finding" do
     findings = Conformance.check(MyApp.Components.Stat, [])
@@ -264,7 +273,7 @@ defmodule MyApp.Sloppy do
   def fetch(%__MODULE__{}, request) do
     # The request's now, never the clock: two fetches of one request agree.
     rows = for i <- 1..20, do: %{"t" => DateTime.add(request.now, -i), "v" => i}
-    {:ok, Delivery.new(rows, schema: Schema.version(@schema))}
+    Delivery.new(rows, schema: Schema.version(@schema))
   end
 end
 ```
