@@ -379,8 +379,9 @@ finished = Finish.finish(delivery, description, slowest)
   parameter is: `Source.fetch/3` answers `{:error, {:order, [{[:order, 0],
   {:unknown_field, "cpu"}}]}}` for an order on a field the schema lacks.
 - **A component asks for one** with its optional `order(slot, settings)` callback
-  (chapter 6), read through `Macaw.Component.order/3`, `{:ok, []}` without it. A surface
-  fetched by `macaw` 0.3.0 doesn't ask it yet: its requests carry no order.
+  (chapter 6), read through `Macaw.Component.order/3`, `{:ok, []}` without it. A surface's
+  fetch puts each slot's order in its request, and pools only slots asking the same one;
+  an order the slot's schema can't answer draws the cell `invalid`, and nothing is fetched.
 
 `finish/4` takes `reduce: "m4"` to use the M4 reducer instead of LTTB. A request the
 schema can't answer, such as a `box` on a source with no `:point` field, raises

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The built-in table asks its source for its sort order, so a table capped at its budget holds the first rows in it, not a sorted sample; a surface's fetch puts each slot's `Component.order/3` in its request, pools slots only on equal orders, and draws `invalid` a cell whose order its schema can't answer (#221, #196, #241).
 - **Breaking:** on `macaw_layers ~> 0.4.0`, `macaw_data ~> 0.9.0` and `macaw_component ~> 0.3.0` (were `~> 0.3.1`, `~> 0.7.0` and `~> 0.2.2`) (#242, #241). An application on the older versions moves with them and follows their upgrade notes: macaw_data 0.8's tables are chunked and opaque and its pushes numbered, 0.9's requests carry an order; macaw_layers 0.4's `Form.read/3` refuses every URL without `urls:` and a theme refuses untrusted text; macaw_component 0.3 adds a component's `order/2`. The core's own API is unchanged.
 - Needs macaw_component `~> 0.2.2`: a column the table's `columns` role lists twice is `{:duplicate, field}` at its path, never shown twice (#240, #237).
 - **Fixed:** a layout's bad options no longer hide its cells' place faults, at `new/1` or at validation, since `place/1` judges a place's shape alone; and `Surface.show/2` answers a failed `new/1` or `build/2` result's faults instead of raising (#238, #236).

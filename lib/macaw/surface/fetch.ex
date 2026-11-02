@@ -25,11 +25,9 @@ defmodule Macaw.Surface.Fetch do
     outcomes =
       readers
       |> Enum.reject(&match?(%{budget: :invalid}, &1))
-      |> Enum.group_by(&{&1.source, &1.params})
+      |> Enum.group_by(&{&1.source, &1.params, &1.order})
       |> Task.async_stream(
-        fn {{source, params}, group} ->
-          {{source, params}, fetch_group(sources, source, params, group, env, now)}
-        end,
+        fn {key, group} -> {key, fetch_group(sources, key, group, env, now)} end,
         timeout: :infinity,
         ordered: true
       )
@@ -53,8 +51,10 @@ defmodule Macaw.Surface.Fetch do
     end)
   end
 
-  # One reader per bound slot: its cell, slot, source, params, description and budget at
-  # its cell's declared size, clamped to the ceiling. A bad budget is the cell's `invalid`.
+  # One reader per bound slot: its cell, slot, source, params, description, the order its
+  # component asks for (`Component.order/3`, checked against the slot's schema) and budget
+  # at its cell's declared size, clamped to the ceiling. A bad budget, or an order of no
+  # shape or naming a field the schema lacks, is the cell's `invalid`.
   defp readers(validated, env, ceiling) do
     # The place is read in the body: a comprehension's `place = …` is a filter, which drops
     # a cell whose place is `nil`, a stack's or a flow's (#232).
@@ -71,23 +71,40 @@ defmodule Macaw.Surface.Fetch do
           {:error, _bad} -> {:invalid, false}
         end
 
+      order = order(cell, slot, binding.description.schema)
+
       %{
         cell: name,
         slot: slot,
         source: binding.source,
         params: binding.params,
         description: binding.description,
-        budget: budget,
+        order: order,
+        budget: if(order == :invalid, do: :invalid, else: budget),
         clamped: clamped
       }
     end
   end
 
-  defp fetch_group(sources, source, params, group, env, now) do
+  # The order a slot's component asks for, when the slot's schema can answer it.
+  defp order(cell, slot, schema) do
+    with {:ok, order} <- Component.order(cell.module, slot, cell.settings),
+         [] <- Macaw.Data.Source.Order.faults(order, schema) do
+      order
+    else
+      _bad -> :invalid
+    end
+  end
+
+  # Slots of one source pool when they ask for the same params and the same order: a
+  # delivery's first rows are first in one order only.
+  defp fetch_group(sources, {source, params, order}, group, env, now) do
     {struct, _context} = Map.fetch!(sources, source)
     description = hd(group).description
     budget = Finish.pooled(Enum.map(group, & &1.budget))
-    {:ok, request} = Request.new(params: params, budget: budget, viewer: env[:viewer], now: now)
+
+    {:ok, request} =
+      Request.new(params: params, order: order, budget: budget, viewer: env[:viewer], now: now)
 
     case Bounded.run(fn -> Source.fetch(struct, description, request) end, timeout: env[:timeout]) do
       {:ok, {:ok, %Delivery{} = delivery}, _spent} ->
@@ -107,7 +124,7 @@ defmodule Macaw.Surface.Fetch do
   defp slot_outcome(%{budget: :invalid}, _outcomes), do: {:drawn, :invalid}
 
   defp slot_outcome(reader, outcomes) do
-    case Map.fetch!(outcomes, {reader.source, reader.params}) do
+    case Map.fetch!(outcomes, {reader.source, reader.params, reader.order}) do
       {:ok, delivery} ->
         reduced = Finish.reduce(delivery, reader.description.schema, reader.budget)
         {:ok, if(reader.clamped, do: runtime(reduced), else: reduced)}

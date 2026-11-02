@@ -2,13 +2,20 @@ defmodule Macaw.Test.Rows do
   @moduledoc false
   # A source over fixed rows, for surfaces' tests: it honors its params and the budget,
   # reports each fetch to `notify`, and fails as `mode` asks (:ok, :error, :crash, :hang,
-  # :capped, :undescribable).
+  # :capped, :undescribable). It supports `supports` (`[:budget]` by default); one that
+  # supports `:order` serves its rows in the request's order before it takes the budget.
   @behaviour Macaw.Data.Source
 
   alias Macaw.Data.{Delivery, Schema}
-  alias Macaw.Data.Source.Description
+  alias Macaw.Data.Source.{Description, Order}
 
-  defstruct schema: nil, rows: [], params: %{}, mode: :ok, notify: nil, name: "rows"
+  defstruct schema: nil,
+            rows: [],
+            params: %{},
+            mode: :ok,
+            notify: nil,
+            name: "rows",
+            supports: [:budget]
 
   @default Schema.new!(%{
              "t" => %{type: :time},
@@ -26,13 +33,16 @@ defmodule Macaw.Test.Rows do
       Description.new(
         schema: source.schema || @default,
         params: source.params,
-        supports: [:budget]
+        supports: source.supports
       )
 
   @impl true
   def fetch(%__MODULE__{} = source, request) do
     if source.notify,
       do: send(source.notify, {:fetched, source.name, request.budget, request.params})
+
+    if source.notify && request.order != [],
+      do: send(source.notify, {:ordered, source.name, request.order})
 
     case source.mode do
       :error ->
@@ -45,7 +55,14 @@ defmodule Macaw.Test.Rows do
         Process.sleep(:infinity)
 
       mode ->
-        rows = if request.budget, do: Enum.take(source.rows, request.budget), else: source.rows
+        schema = source.schema || @default
+        orders? = :order in source.supports
+        rows = if orders?, do: Order.sort(source.rows, request.order, schema), else: source.rows
+
+        rows =
+          if request.budget && :budget in source.supports,
+            do: Enum.take(rows, request.budget),
+            else: rows
 
         {:ok,
          Delivery.new(rows,
@@ -54,6 +71,7 @@ defmodule Macaw.Test.Rows do
            served: [
              capped: mode == :capped,
              reduced_by: if(length(rows) < length(source.rows), do: :source),
+             ordered: if(orders? and request.order != [], do: :source),
              params: request.params
            ]
          )}

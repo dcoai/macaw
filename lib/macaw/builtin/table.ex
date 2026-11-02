@@ -189,6 +189,14 @@ defmodule Macaw.Builtin.Table do
     ]
   end
 
+  # The order the rows slot asks its source for (spec/05 §6.1): the sort column in the
+  # sort direction, so a delivery capped at the budget holds the first rows in it.
+  @impl true
+  def order("rows", %{"sort" => sort, "order" => direction}) when sort != "",
+    do: [{sort, if(direction == "desc", do: :desc, else: :asc)}]
+
+  def order(_slot, _settings), do: []
+
   # Sorted by a column, nil last, ties in delivered order; descending keeps nil last too.
   defp sorted(rows, nil, _order), do: rows
 

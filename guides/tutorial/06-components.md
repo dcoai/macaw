@@ -450,13 +450,14 @@ Macaw.Component.order(Readings, "series", %{})
 #=> {:ok, []}
 ```
 
-- **No callback, no order:** `{:ok, []}`, as for `my_app.readings` and the built-in
-  table, which sorts the rows it's given.
+- **No callback, no order:** `{:ok, []}`, as for `my_app.readings`. The built-in table
+  answers its `sort` column in its `order` direction (chapter 5).
 - **A malformed answer** (a field twice, a bad direction, not a list) is
   `{:error, {:bad_order, answer}}`, and the component kit's `:order` check reports it
   (chapter 7).
-- **`macaw` 0.3.0 doesn't ask it yet.** A surface's fetch puts no order in its requests,
-  so today `order/2` is read only by the kit and by your own code.
+- **A surface asks it for every bound slot,** puts the order in the slot's request, and
+  pools slots of one source only when they ask the same order. An order the slot's schema
+  can't answer, a field it lacks, draws the cell `invalid` and fetches nothing.
 
 ## Rendering
 

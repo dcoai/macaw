@@ -309,12 +309,15 @@ serves them from Phoenix).
   renders rows without select buttons.
 - **Headers that read like field names.** A header is the field's name only when its
   schema has no `label`; give the field one.
-- **A low ceiling with a sorted table:** reduction happens before sorting, so a
-  "slowest first" table under a tight budget shows a sample of rows sorted, not the top
-  rows. A request's `order` (chapter 2) is how a reader asks for the first rows in an
-  order, but the table declares no `order/2`, and a surface fetched by `macaw` 0.3.0
-  sends none. If you need the top rows today, have the source sort and limit, and
-  declare `:budget` in its `supports`.
+- **A sorted table under a tight budget holds the top rows** only when someone can order
+  every row before the cut. The table asks for its `sort` order (its `order/2`), and the
+  request carries it (chapter 2): a source supporting `:order` serves its first rows in
+  it; one supporting neither `:order` nor `:budget` serves every row, and the runtime
+  orders them and keeps the head. A source that caps (`:budget`) but can't order cuts
+  first, and its delivery says `served.ordered: :sample`: in order, but not the top. Give
+  such a source the `:order` capability.
+- **A sort naming no field** of the source's schema (a stale binding) draws the cell
+  `invalid`, and nothing is fetched.
 
 ## Recap
 
