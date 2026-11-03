@@ -65,9 +65,9 @@ defmodule Macaw.MixProject do
       # The document kernel, fragments and themes (spec/00 §4).
       {:macaw_layers, "~> 0.4.0"},
       # The data model, sources, deliveries and finishing (spec/00 §4).
-      {:macaw_data, "~> 0.10.0"},
+      {:macaw_data, "~> 0.11.0"},
       # The component contract (spec/00 §4).
-      {:macaw_component, "~> 0.4.0"},
+      {:macaw_component, "~> 0.5.0"},
       {:phoenix_html, "~> 4.1"},
       # The component kit reads renders with it; the built-in table is checked by the kit.
       {:lazy_html, "~> 0.1", only: :test},
