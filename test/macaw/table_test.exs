@@ -206,6 +206,30 @@ defmodule Macaw.TableTest do
 
     assert html =~ ~s(value="seen">seen</button></th>)
 
+    # A unit is headed by its display symbol, annotations kept, not its UCUM code (#252).
+    units =
+      Macaw.Data.Schema.new!(%{
+        "t" => %{type: :number, label: "Temperature", unit: "Cel"},
+        "f" => %{type: :number, label: "Temperature", unit: "[degF]"},
+        "wind" => %{type: :number, label: "Wind", unit: "[mi_i]/h"},
+        "lag" => %{type: :number, label: "Lag", unit: "us"},
+        "pm" => %{type: :number, label: "PM2.5", unit: "ug/m3"},
+        "rate" => %{type: :number, label: "Request rate", unit: "{request}/s"}
+      })
+
+    columns = %{"rows" => %{"columns" => ["t", "f", "wind", "lag", "pm", "rate"]}}
+    heads = html(%{}, :live, columns, %{"rows" => units})
+
+    for {field, head} <- [
+          {"t", "Temperature (°C)"},
+          {"f", "Temperature (°F)"},
+          {"wind", "Wind (mi/h)"},
+          {"lag", "Lag (µs)"},
+          {"pm", "PM2.5 (µg/m³)"},
+          {"rate", "Request rate (request/s)"}
+        ],
+        do: assert(heads =~ ~s(value="#{field}">#{head}</button>), "#{field}: #{heads}")
+
     # No schema for the slot: every header is its field.
     plain = html(%{}, :live)
     for f <- ["host", "ms", "seen"], do: assert(plain =~ ~s(value="#{f}">#{f}</button>))

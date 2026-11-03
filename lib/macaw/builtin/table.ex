@@ -22,6 +22,7 @@ defmodule Macaw.Builtin.Table do
 
   use Macaw.Component, name: "macaw.table", kinds: [:content]
 
+  alias Macaw.Builtin.Text
   alias Macaw.Component.{Context, Drawn}
   alias Macaw.Data.{Delivery, Table}
 
@@ -131,8 +132,8 @@ defmodule Macaw.Builtin.Table do
      ]}
   end
 
-  # A column's header reads its field's label, its unit after it, from the source's schema
-  # (`Context.label/3`, `unit/3`); the sort button's value stays the field.
+  # A column's header reads its field's label, its unit's display symbol after it, from the
+  # source's schema (`Macaw.Builtin.Text.heading/3`); the sort button's value stays the field.
   defp header(column, sort, order, context) do
     aria =
       cond do
@@ -145,18 +146,9 @@ defmodule Macaw.Builtin.Table do
       ~s(<th scope="col"#{aria}><button type="button" data-mw-event="sort" value="),
       escape(column),
       ~s(">),
-      escape(heading(context, column)),
+      escape(Text.heading(context, "rows", column)),
       "</button></th>"
     ]
-  end
-
-  defp heading(context, column) do
-    label = Context.label(context, "rows", column)
-
-    case Context.unit(context, "rows", column) do
-      nil -> label
-      unit -> "#{label} (#{unit})"
-    end
   end
 
   defp row(row, columns, identity, context) do

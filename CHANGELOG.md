@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The built-in table heads a unit with its display symbol, annotations kept, where 0.3.0 wrote its UCUM code: `Temperature (°C)`, `Wind (mi/h)`, `Lag (µs)` and `Request rate (request/s)` for `Cel`, `[mi_i]/h`, `us` and `{request}/s`; a code with no symbol is shown as it is. The heading words come from `Macaw.Builtin.Text`, which the built-in components share (#252, #255, spec/05 §6.1). Expectations and goldens written from 0.3.0's heads change.
+
 ## v0.3.0 (2026-11-03)
 
 **Layouts are a behavior, a surface has defaults, the built-in table is finished, and errors are values, on macaw_layers 0.4, macaw_data 0.11 and macaw_component 0.5** (#196, #198, #204, #212, #214, #215, #236, #237, #241, #243, #245, #249). The grid is one of four built-in layouts (`:grid` of 6, 12 or 24 columns, `:stack`, `:flow`, `:areas`) reached through `Macaw.Layout`, and a host's registry holds the layouts it allows. A surface can be written short: cells as a list, a cell's single `source:`, stacked placement by default, `Surface.build/2`, and `Registry.default/0` with `Surface.show/2`, which validates, fetches and renders in one call. The built-in table chooses and orders its columns, heads them with labels and units, asks its source for its sort order before the budget caps it, and has a static stylesheet. Every public function that fails on input answers its faults as values, and CI fails on a raise or a locked advisory. This release is breaking for an adopter of 0.2.0: follow the guide below, then each dependency's own upgrade notes.
