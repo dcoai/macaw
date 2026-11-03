@@ -2,7 +2,7 @@ defmodule Macaw.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/dcoai/macaw"
-  @version "0.2.0"
+  @version "0.3.0"
 
   # The tutorial, in reading order: its overview, then one chapter per file.
   @tutorial [
