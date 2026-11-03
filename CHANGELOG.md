@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The built-in status grid, `"macaw.status_grid"` (`Macaw.Builtin.StatusGrid`, #256, #257, spec/05 §6.2): one tile per thing, bound by its `name`, `status` and optional `detail` roles. Each tile's color comes from the role the schema's `status` gives its state, `neutral` without one, and the state's words are always shown. It has a static stylesheet at `stylesheet_path/0`; link it where a page uses the grid.
 - The built-in table heads a unit with its display symbol, annotations kept, where 0.3.0 wrote its UCUM code: `Temperature (°C)`, `Wind (mi/h)`, `Lag (µs)` and `Request rate (request/s)` for `Cel`, `[mi_i]/h`, `us` and `{request}/s`; a code with no symbol is shown as it is. The heading words come from `Macaw.Builtin.Text`, which the built-in components share (#252, #255, spec/05 §6.1). Expectations and goldens written from 0.3.0's heads change.
 
 ## v0.3.0 (2026-11-03)

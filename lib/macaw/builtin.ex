@@ -5,9 +5,10 @@ defmodule Macaw.Builtin do
   implicitly.
 
     * `Macaw.Builtin.Table`, `"macaw.table"`: an HTML table of whole rows.
+    * `Macaw.Builtin.StatusGrid`, `"macaw.status_grid"`: one tile per thing, showing its state.
   """
 
   @doc "The package's members."
   @spec __members__() :: [module()]
-  def __members__, do: [Macaw.Builtin.Table]
+  def __members__, do: [Macaw.Builtin.Table, Macaw.Builtin.StatusGrid]
 end

@@ -75,6 +75,7 @@ Components ship in packages, which bring their own dependencies (Macaw never imp
 **Built in,** in `macaw`'s package `Macaw.Builtin`: content components using the same contract as any package:
 - **prose** (Markdown) and **cards**;
 - **the table:** an HTML `<table>` of kind `:content`, with a caption, header cells with scope, sortable columns as real buttons, a budget per slot, reading load `:scan`, and rows that write `selection` by identity. Dashboards (metresis#452, visualize#755) and `macaw_edit` share it (macaw_compose#22, decision 10).
+- **the status grid** (§6.2): one tile per thing, its state's words and its role's color, reading load `:glance`. The stat, meter, record and feed follow it (#256).
 
 **Expected packages:**
 - **visualize:** its visuals (charts, maps, scenes) implement the contract **from visualize itself**, as `Visualize.Macaw.*` in `visualize_live`, compiled when `macaw_component` is present ([00](00-overview.md) goal 6; visualize#946). Its visual table stays for standalone use and image output;
@@ -114,6 +115,33 @@ the table's stylesheet has a rule for every class and element the table emits, e
 
 ```test:table-markup
 the table renders a caption, scoped header buttons that sort, rows sorted by a field in either order with nil last, selection buttons and stable ids with an identity, and its notice when not live; it passes the component kit
+```
+
+### 6.2 The status grid {#components-status-grid}
+
+`Macaw.Builtin.StatusGrid`, registered as `"macaw.status_grid"` in the package `Macaw.Builtin`, of kind `:content`, `:pure`: one tile per thing, showing its state (#256).
+- **Parameters:** `label` (text, `""`), the grid's heading, none when empty.
+- **Declarations:** one slot, `rows`, with three roles, each checked against the source's schema at validation ([06 §3.4](06-pages.md#pages-surface-validate)): `name` (`:category`, `:text` or `:number`, `identity: true`), what each tile is about; `status` (`:category`), its state; `detail` (optional, `:time`, `:number`, `:category` or `:text`), a line under the state. Reading load `:glance`; no events and no writes.
+- **Budget:** `nil`, every row up to the host's ceiling; no order.
+- **Markup:** a `<div class="mw-status-grid">`, its `label` as a heading at the context's level (`Context.heading/2`) when given, and a `<ul>` of one `<li class="mw-status-tile mw-status-<role>">` per row, in the order of the `name` field's values compared by its type as a source orders them ([macaw_data 01 §2.3](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-request)), or as delivered when the slot has no schema. Each tile holds the name, the state's words and the detail:
+  - **the role** is the one the `status` field's schema gives the state ([macaw_data 01 §1.6](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-schema-measure)), a theme's word: `neutral` for a state with none, for no state, and for a word that spells no class (lower-case letters, digits, `-` and `_`, starting with a letter). A theme's own word is kept as a class the theme may style;
+  - **the state's words** are its value's display name from the schema, else its spelling, and an en dash for no state, so color is never the only cue;
+  - **the detail** is its value as text, with its unit's display symbol after it (`Macaw.Builtin.Text.unit/3`, §6.1), and nothing for `nil`;
+  - **the tile's id** is `Context.id/2` of `s-` and the name's spelling, base64url-encoded, so ids are stable;
+  - a `capped` or `stale` grid draws its notice above its tiles, any other non-live state its notice alone, and a live slot with no rows draws `no_data`.
+- **Stylesheet:** one static sheet, `Macaw.Builtin.StatusGrid.stylesheet/0`, served from `'self'` at `stylesheet_path/0`, its content address: the grid, its tiles, and a rule per built-in status role (`good`, `warning`, `bad`, `info`, `neutral`, `roles/0`), each a theme custom property with the default theme's value as its fallback ([macaw_layers 04 §6](https://github.com/dcoai/macaw_layers/blob/main/spec/04-themes.md#themes-delivery)); it has no `url(` and no `@import`.
+- **It passes `macaw_component`'s kit.**
+
+```test:status-grid-declares
+the status grid's parameter, roles, reading load and budget are as declared and it is a member of Macaw.Builtin; a surface checks its roles against the source's schema, a status bound to a number and a field the source lacks being faults at their roles
+```
+
+```test:status-grid-markup
+the status grid renders one tile per row in the name field's order, each tile's role from the schema's status (neutral without one or for a word that spells no class), the state's display words or spelling always, the detail with its unit's symbol, stable ids, a heading only with a label, no inline style, and its notice when not live; it passes the component kit
+```
+
+```test:status-grid-stylesheet
+the status grid's stylesheet has a rule for every class it emits and each built-in role, every color a theme property, no url( and no @import, and its path is its content's address
 ```
 
 ## 7. The contract and the core {#components-libraries}

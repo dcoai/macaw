@@ -89,7 +89,7 @@ defmodule Macaw.TableTest do
     assert Component.budget(Table, "rows", %{}, {600, 320}) == {:ok, 40}
     assert Component.budget(Table, "rows", %{}, {600, 32}) == {:ok, 10}
     assert {:ok, %{name: "macaw.table", kinds: [:content]}} = Component.info(Table)
-    assert Macaw.Builtin.__members__() == [Table]
+    assert Table in Macaw.Builtin.__members__()
   end
 
   @tag verifies: "table-markup"
