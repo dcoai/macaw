@@ -52,7 +52,8 @@ defmodule Macaw.Surface.Fetch do
   end
 
   # One reader per bound slot: its cell, slot, source, params, description, the order its
-  # component asks for (`Component.order/3`, checked against the slot's schema) and budget
+  # component asks for (`Component.resolve_order/4`, its role keys resolved through the
+  # slot's binding, then checked against the slot's schema) and budget
   # at its cell's declared size, clamped to the ceiling. A bad budget, or an order of no
   # shape or naming a field the schema lacks, is the cell's `invalid`.
   defp readers(validated, env, ceiling) do
@@ -73,7 +74,7 @@ defmodule Macaw.Surface.Fetch do
           {:error, _bad} -> {:invalid, false}
         end
 
-      order = order(cell, slot, binding.description.schema)
+      order = order(cell, slot, binding)
 
       %{
         cell: name,
@@ -88,10 +89,10 @@ defmodule Macaw.Surface.Fetch do
     end
   end
 
-  # The order a slot's component asks for, when the slot's schema can answer it.
-  defp order(cell, slot, schema) do
-    with {:ok, order} <- Component.order(cell.module, slot, cell.settings),
-         [] <- Macaw.Data.Source.Order.faults(order, schema) do
+  # The order a slot's component asks for, in fields, when the slot's schema can answer it.
+  defp order(cell, slot, binding) do
+    with {:ok, order} <- Component.resolve_order(cell.module, slot, cell.settings, binding.fields),
+         [] <- Macaw.Data.Source.Order.faults(order, binding.description.schema) do
       order
     else
       _bad -> :invalid

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- A component's order can name a role (macaw_component 0.6, #256, #258, spec/06 §3.5): `Surface.Fetch` resolves it through the slot's binding, so `[{{:role, "t"}, :desc}]` asks the source for the field bound to `t`, before the request and before slots pool. A field-keyed order is unchanged.
 - A delivery whose `served.stale` is true draws its cell `:stale`, where it drew `:live`: a source serving its last good answer now says so, also when capped and through a derived source (#253, #266, spec/06 §3.5). **Changed:** every fact of a delivery goes through `Drawn.pick/1`'s one precedence, so an empty capped delivery draws `:no_data`, where it drew `:capped`.
 - **Breaking:** on `macaw_data ~> 0.12.0` and `macaw_component ~> 0.6.0` (were `~> 0.11.0` and `~> 0.5.0`) (#254, #265). The built-in components match `Table.rows/1`'s value, a refused source drawing `no_data`. An application on macaw_data 0.11 follows its "Upgrading from 0.11.x": `rows/1` answers `{:ok, rows}` (`rows!/1` is the old answer), a `!` twin raises `Macaw.Data.Error`, and a hand-built served map adds `stale`.
 - The built-in status grid, `"macaw.status_grid"` (`Macaw.Builtin.StatusGrid`, #256, #257, spec/05 §6.2): one tile per thing, bound by its `name`, `status` and optional `detail` roles. Each tile's color comes from the role the schema's `status` gives its state, `neutral` without one, and the state's words are always shown. It has a static stylesheet at `stylesheet_path/0`; link it where a page uses the grid.
