@@ -23,8 +23,6 @@ defmodule Macaw.Builtin.StatusGrid do
   alias Macaw.Data.{Delivery, Schema, Table}
   alias Macaw.Data.Source.Order
 
-  # A role becomes a class only when it spells one; any other word is drawn neutral.
-  @role ~r/\A[a-z][a-z0-9_-]*\z/
   @roles ~w(good warning bad info neutral)
 
   @impl true
@@ -149,13 +147,13 @@ defmodule Macaw.Builtin.StatusGrid do
 
     [
       ~s(<li class="mw-status-tile mw-status-),
-      role(schema, status, state),
+      Text.role(schema, status, state),
       ~s(" id="),
       Context.id(context, "s-" <> Base.url_encode64(thing, padding: false)),
       ~s("><p class="mw-status-name">),
       escape(thing),
       ~s(</p><p class="mw-status-state">),
-      escape(words(schema, status, state)),
+      escape(Text.words(schema, status, state)),
       "</p>",
       detail(row, detail, context),
       "</li>"
@@ -175,30 +173,6 @@ defmodule Macaw.Builtin.StatusGrid do
         [~s(<p class="mw-status-detail">), escape(shown), "</p>"]
     end
   end
-
-  # The state's role from the status field's schema, `neutral` without one or for a word
-  # that spells no class.
-  defp role(%Schema{} = schema, field, state) when state != nil do
-    with {:ok, roles} <- Schema.fetch(schema, field, :status),
-         role when is_binary(role) <- Map.get(roles, Text.value(state)),
-         true <- Regex.match?(@role, role) do
-      role
-    else
-      _none -> "neutral"
-    end
-  end
-
-  defp role(_schema, _field, _state), do: "neutral"
-
-  # The state's words: its value's display name from the schema, else its spelling, and
-  # an en dash for no state, so a tile never relies on its color alone.
-  defp words(_schema, _field, nil), do: "–"
-
-  defp words(%Schema{} = schema, field, state) do
-    Map.get(Schema.value_names(schema, field), Text.value(state), Text.value(state))
-  end
-
-  defp words(nil, _field, state), do: Text.value(state)
 
   defp escape(text), do: text |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
 end

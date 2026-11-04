@@ -9,6 +9,7 @@ defmodule Macaw.Builtin do
     * `Macaw.Builtin.Stat`, `"macaw.stat"`: one number from a slot's rows.
     * `Macaw.Builtin.Meter`, `"macaw.meter"`: one number against its range.
     * `Macaw.Builtin.Record`, `"macaw.record"`: one row as a definition list.
+    * `Macaw.Builtin.Feed`, `"macaw.feed"`: time-ordered rows, newest first.
   """
 
   @doc "The package's members."
@@ -19,6 +20,7 @@ defmodule Macaw.Builtin do
       Macaw.Builtin.StatusGrid,
       Macaw.Builtin.Stat,
       Macaw.Builtin.Meter,
-      Macaw.Builtin.Record
+      Macaw.Builtin.Record,
+      Macaw.Builtin.Feed
     ]
 end

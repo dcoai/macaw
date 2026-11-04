@@ -77,7 +77,8 @@ Components ship in packages, which bring their own dependencies (Macaw never imp
 - **the table:** an HTML `<table>` of kind `:content`, with a caption, header cells with scope, sortable columns as real buttons, a budget per slot, reading load `:scan`, and rows that write `selection` by identity. Dashboards (metresis#452, visualize#755) and `macaw_edit` share it (macaw_compose#22, decision 10).
 - **the status grid** (§6.2): one tile per thing, its state's words and its role's color, reading load `:glance`;
 - **the stat** (§6.3) and **the meter** (§6.4): one number from a slot's rows, alone or against its range, reading load `:glance`;
-- **the record** (§6.5): one row as a definition list, reading load `:scan`. The feed follows it (#256).
+- **the record** (§6.5): one row as a definition list, reading load `:scan`;
+- **the feed** (§6.6): time-ordered rows, newest first, reading load `:scan`.
 
 **Expected packages:**
 - **visualize:** its visuals (charts, maps, scenes) implement the contract **from visualize itself**, as `Visualize.Macaw.*` in `visualize_live`, compiled when `macaw_component` is present ([00](00-overview.md) goal 6; visualize#946). Its visual table stays for standalone use and image output;
@@ -215,6 +216,36 @@ the record renders a definition list of labels and unit symbols, values as the t
 
 ```test:record-stylesheet
 the record's stylesheet has a rule for every element it emits, every color a theme property, no url( and no @import, and its path is its content's address
+```
+
+### 6.6 The feed {#components-feed}
+
+`Macaw.Builtin.Feed`, registered as `"macaw.feed"` in the package `Macaw.Builtin`, of kind `:content`, `:pure`: time-ordered rows, newest first (#256).
+- **Parameters:** `label` (text, `""`), its heading, none when empty; `limit` (number, `20`), the most items shown, a positive whole number, else `{:type, :pos_integer}` at `limit`.
+- **Declarations:** one slot, `rows`, with four roles, each checked against the source's schema at validation ([06 §3.4](06-pages.md#pages-surface-validate)): `t` (`:time`, `window: true`), when; `title` (`:text` or `:category`), what happened; `body` (`:text`, optional); `level` (`:category`, optional), how much it matters. Reading load `:scan`; no events and no writes.
+- **Order and budget:** the newest `limit` rows, newest first by the `t` role ([06 §3.5](06-pages.md#pages-surface-fetch)).
+- **Markup:** a `<div class="mw-feed">`; the `label` as a heading at the context's level (`Context.heading/2`), of class `mw-feed-label`, when given; an `<ol>` of `<li class="mw-feed-item">`, each a `<time datetime>` of the row's time, written as the table writes it, a `<p class="mw-feed-title">`, and a `<p class="mw-feed-body">` when it has one. **A level** adds the class `mw-feed-<role>`, the role its schema's `status` gives it, `neutral` without one (as the status grid's, §6.2), and a `<p class="mw-feed-level">` of its words, so color is never the only cue. **The newest `limit` are the whole answer:** its cell is `capped` when there are more, but nothing it asked for is missing, so it draws no notice unless the source cut its rows before they were ordered (`:sample`) or says it stopped short. `stale` draws its notice above the list, any other non-live state its notice alone, and a live slot with no rows draws `no_data`.
+- **Stylesheet:** one static sheet, `Macaw.Builtin.Feed.stylesheet/0`, as the stat's (§6.3), with a rule per built-in status role.
+- **It passes `macaw_component`'s kit.**
+
+```test:feed-declares
+the feed's parameters, roles, reading load, order, budget and membership are as declared; a limit that isn't a positive whole number is a fault; a surface checks the roles against the source's schema, a title bound to a number and a field the source lacks being faults at their roles
+```
+
+```test:feed-reads
+on a surface, the feed holds the newest limit rows, newest first, from a source that orders and one that doesn't, with no capped notice; a sample and a source's own capped keep the notice
+```
+
+```test:feed-markup
+the feed renders its heading only with a label, a list of times, titles and bodies, a level's role class and words, neutral without a role, no inline style; stale draws its notice above the list, other states the notice alone, and no rows no_data; it passes the component kit
+```
+
+```test:feed-stylesheet
+the feed's stylesheet has a rule for every class it emits and each built-in role, every color a theme property, no url( and no @import, and its path is its content's address
+```
+
+```test:builtins-end-to-end
+a surface of every built-in component over in-memory sources validates and renders in every mode, with no inline style, and each is a member of Macaw.Builtin
 ```
 
 ## 7. The contract and the core {#components-libraries}

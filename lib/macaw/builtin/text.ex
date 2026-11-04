@@ -11,7 +11,10 @@ defmodule Macaw.Builtin.Text do
   """
 
   alias Macaw.Component.Context
-  alias Macaw.Data.Unit
+  alias Macaw.Data.{Schema, Unit}
+
+  # A role becomes a class only when it spells one; any other word is drawn neutral.
+  @role ~r/\A[a-z][a-z0-9_-]*\z/
 
   @doc """
   The unit `field` of `slot` is shown in: its code's display symbol, the code itself when
@@ -36,6 +39,36 @@ defmodule Macaw.Builtin.Text do
       {:error, _reason} -> code
     end
   end
+
+  @doc """
+  The role `field`'s schema gives a state (macaw_data spec/01 §1.6): a theme's word, `neutral`
+  for a state with none, for no state, for no schema, and for a word that spells no class. A
+  theme's own word is kept, as a class it may style.
+  """
+  @spec role(Schema.t() | nil, String.t(), term()) :: String.t()
+  def role(%Schema{} = schema, field, state) when state != nil do
+    with {:ok, roles} <- Schema.fetch(schema, field, :status),
+         role when is_binary(role) <- Map.get(roles, value(state)),
+         true <- Regex.match?(@role, role) do
+      role
+    else
+      _none -> "neutral"
+    end
+  end
+
+  def role(_schema, _field, _state), do: "neutral"
+
+  @doc """
+  A state's words, so color is never the only cue: its display name from the schema, else
+  its spelling, and an en dash for no state.
+  """
+  @spec words(Schema.t() | nil, String.t(), term()) :: String.t()
+  def words(_schema, _field, nil), do: "–"
+
+  def words(%Schema{} = schema, field, state),
+    do: Map.get(Schema.value_names(schema, field), value(state), value(state))
+
+  def words(nil, _field, state), do: value(state)
 
   @doc """
   A value as a built-in component writes it: a time as ISO 8601, whole seconds without a
