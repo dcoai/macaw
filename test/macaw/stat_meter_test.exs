@@ -271,6 +271,54 @@ defmodule Macaw.StatMeterTest do
     end
   end
 
+  @tag verifies: ["stat-markup", "meter-markup"]
+  test "a latest that is the whole answer has no notice; a sample, capped, or another statistic does" do
+    rows = Enum.reverse(@rows)
+    words = Macaw.Component.Drawn.words(:capped)
+
+    page = fn cell, supports, ceiling ->
+      sources = %{
+        "lat" => {%Macaw.Test.Rows{schema: @schema, rows: rows, supports: supports}, nil}
+      }
+
+      surface = Surface.build!("s", cells: [cell])
+      {:ok, v} = Surface.validate(surface, Registry.new!([Macaw.Builtin]), sources)
+
+      v
+      |> Surface.render(sources: sources, now: @now, ceiling: ceiling)
+      |> Phoenix.HTML.safe_to_string()
+    end
+
+    stat = fn settings ->
+      {"macaw.stat", source: "lat", settings: settings, fields: %{"value" => "p50"}}
+    end
+
+    meter = {"macaw.meter", source: "lat", settings: %{"max" => 100}, fields: %{"value" => "p50"}}
+
+    for supports <- [[:budget, :order], []] do
+      for cell <- [stat.(%{}), meter] do
+        html = page.(cell, supports, 1_000)
+        refute html =~ words, "#{inspect(supports)}: #{html}"
+        assert html =~ ~s(value="30")
+      end
+
+      # Another statistic under a low ceiling read only part of the data.
+      assert page.(stat.(%{"reduce" => "sum"}), supports, 2) =~ words
+    end
+
+    sample = fn facts ->
+      delivery = Delivery.new!([%{"at" => @now, "p50" => 1}], served: facts)
+      {:ok, context} = Context.new(mode: :socketless, instance: "c1", size: {1, 1}, now: @now)
+      Reading.notice(:capped, delivery, context, "latest")
+    end
+
+    assert sample.(reduced_by: :source, ordered: :source) == nil
+    assert sample.(reduced_by: :runtime, ordered: :runtime) == nil
+    refute sample.(reduced_by: :source, ordered: :sample) == nil
+    refute sample.(capped: true, ordered: :source) == nil
+    assert html(Stat, %{}, :stale) =~ Macaw.Component.Drawn.words(:stale)
+  end
+
   @tag verifies: "stat-declares"
   test "a surface checks the value role against the source's schema" do
     sources = %{"lat" => {%Macaw.Test.Rows{schema: @schema, rows: @rows}, nil}}

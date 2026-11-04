@@ -12,7 +12,8 @@ defmodule Macaw.Builtin.Stat do
       one row;
     * **markup:** the label as a heading, then the number in a `<data>` with its unit's
       symbol. A slot with no readings shows an en dash, never zero. `latest` or `delta` with
-      no time field draws `invalid`;
+      no time field draws `invalid`. A capped or stale number draws its notice above it,
+      but for a `latest` that is the whole answer (`Macaw.Builtin.Reading.notice/4`);
     * **stylesheet:** `stylesheet/0`, served at `stylesheet_path/0`, its content address.
   """
 
@@ -88,13 +89,17 @@ defmodule Macaw.Builtin.Stat do
 
   # A capped or stale number is still a number: the notice, then the stat.
   @impl true
-  def render(:content, %{drawn: drawn, deliveries: %{"rows" => %Delivery{}}} = assigns)
+  def render(:content, %{drawn: drawn, deliveries: %{"rows" => %Delivery{} = delivery}} = assigns)
       when drawn in [:capped, :stale] do
-    {:safe,
-     [
-       Drawn.render(drawn, assigns.context) |> Phoenix.HTML.Safe.to_iodata(),
-       render(:content, %{assigns | drawn: :live}) |> Phoenix.HTML.Safe.to_iodata()
-     ]}
+    body = render(:content, %{assigns | drawn: :live})
+
+    case Reading.notice(drawn, delivery, assigns.context, assigns.settings["reduce"]) do
+      nil ->
+        body
+
+      notice ->
+        {:safe, [Phoenix.HTML.Safe.to_iodata(notice), Phoenix.HTML.Safe.to_iodata(body)]}
+    end
   end
 
   def render(:content, %{drawn: :live, deliveries: %{"rows" => %Delivery{} = delivery}} = assigns) do

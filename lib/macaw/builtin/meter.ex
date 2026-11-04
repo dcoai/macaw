@@ -87,13 +87,17 @@ defmodule Macaw.Builtin.Meter do
 
   # A capped or stale number is still a number: the notice, then the meter.
   @impl true
-  def render(:content, %{drawn: drawn, deliveries: %{"rows" => %Delivery{}}} = assigns)
+  def render(:content, %{drawn: drawn, deliveries: %{"rows" => %Delivery{} = delivery}} = assigns)
       when drawn in [:capped, :stale] do
-    {:safe,
-     [
-       Drawn.render(drawn, assigns.context) |> Phoenix.HTML.Safe.to_iodata(),
-       render(:content, %{assigns | drawn: :live}) |> Phoenix.HTML.Safe.to_iodata()
-     ]}
+    body = render(:content, %{assigns | drawn: :live})
+
+    case Reading.notice(drawn, delivery, assigns.context, assigns.settings["reduce"]) do
+      nil ->
+        body
+
+      notice ->
+        {:safe, [Phoenix.HTML.Safe.to_iodata(notice), Phoenix.HTML.Safe.to_iodata(body)]}
+    end
   end
 
   def render(:content, %{drawn: :live, deliveries: %{"rows" => %Delivery{} = delivery}} = assigns) do

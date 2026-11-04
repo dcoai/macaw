@@ -33,6 +33,22 @@ defmodule Macaw.Builtin.Reading do
   def budget(_reduce), do: nil
 
   @doc """
+  The notice a capped or stale delivery draws above the number, or none for one that is
+  the whole answer to what was asked. `latest` asks for one row, so it is always reduced;
+  when those are the first rows in its order, nothing is missing. It keeps the notice when
+  the source cut its rows before they were ordered (`:sample`, which may not be the newest)
+  or says it stopped short (`capped`), and every other statistic keeps it, having read only
+  part of the data.
+  """
+  @spec notice(Macaw.Component.Drawn.t(), Delivery.t(), Context.t(), String.t()) ::
+          Phoenix.HTML.Safe.t() | nil
+  def notice(:capped, %Delivery{served: %{capped: false, ordered: ordered}}, _context, "latest")
+      when ordered in [:source, :runtime],
+      do: nil
+
+  def notice(drawn, _delivery, context, _reduce), do: Macaw.Component.Drawn.render(drawn, context)
+
+  @doc """
   The number `reduce` answers over a live slot's rows: `{:ok, number}`, `{:ok, nil}` for
   no readings, `:needs_time` for `latest` or `delta` with no time field, and `:no_rows` for
   rows that don't pack.
