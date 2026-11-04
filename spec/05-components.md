@@ -75,7 +75,8 @@ Components ship in packages, which bring their own dependencies (Macaw never imp
 **Built in,** in `macaw`'s package `Macaw.Builtin`: content components using the same contract as any package:
 - **prose** (Markdown) and **cards**;
 - **the table:** an HTML `<table>` of kind `:content`, with a caption, header cells with scope, sortable columns as real buttons, a budget per slot, reading load `:scan`, and rows that write `selection` by identity. Dashboards (metresis#452, visualize#755) and `macaw_edit` share it (macaw_compose#22, decision 10).
-- **the status grid** (§6.2): one tile per thing, its state's words and its role's color, reading load `:glance`. The stat, meter, record and feed follow it (#256).
+- **the status grid** (§6.2): one tile per thing, its state's words and its role's color, reading load `:glance`;
+- **the stat** (§6.3) and **the meter** (§6.4): one number from a slot's rows, alone or against its range, reading load `:glance`. The record and feed follow them (#256).
 
 **Expected packages:**
 - **visualize:** its visuals (charts, maps, scenes) implement the contract **from visualize itself**, as `Visualize.Macaw.*` in `visualize_live`, compiled when `macaw_component` is present ([00](00-overview.md) goal 6; visualize#946). Its visual table stays for standalone use and image output;
@@ -142,6 +143,50 @@ the status grid renders one tile per row in the name field's order, each tile's 
 
 ```test:status-grid-stylesheet
 the status grid's stylesheet has a rule for every class it emits and each built-in role, every color a theme property, no url( and no @import, and its path is its content's address
+```
+
+### 6.3 The stat {#components-stat}
+
+`Macaw.Builtin.Stat`, registered as `"macaw.stat"` in the package `Macaw.Builtin`, of kind `:content`, `:pure`: one number from a slot's rows, with its label and unit (#256).
+- **Parameters:** `label` (text, `""`), the heading, the field's label from the schema when empty; `reduce` (category, `"latest"`, bindable), one of `latest`, `delta`, `sum`, `mean`, `min`, `max`, `median` and `count`; `digits` (category, `""`), `"0"` to `"6"` decimal places, `""` for the number as it is.
+- **Declarations:** one slot, `rows`, with two roles, each checked against the source's schema at validation ([06 §3.4](06-pages.md#pages-surface-validate)): `value` (`:number`), the field read; `t` (`:time`, `window: true`, optional), which `latest` and `delta` read by. Reading load `:glance`; no events and no writes.
+- **Order and budget:** `latest` and `delta` ask for the rows newest first by the `t` role ([06 §3.5](06-pages.md#pages-surface-fetch)), and `latest` for one row, so a capped series holds its newest; the rest ask for no order, and every row up to the host's ceiling.
+- **The number** (`Macaw.Builtin.Reading`): `latest` is the newest row's value, a gap being no reading; `delta` is the last reading in time minus the first; the others are the statistics of the same names ([macaw_data 04 §5](https://github.com/dcoai/macaw_data/blob/main/spec/04-operations.md#operations-statistics)) over the readings, gaps dropped. **Absence is never zero:** a slot whose readings are all gaps has no number, whatever the statistic, except `count`, which is `0`. `latest` or `delta` with no time field, neither bound nor the schema's window field, has no newest row, and draws `invalid` rather than call an arbitrary row the newest.
+- **Markup:** a `<div class="mw-stat">`; the label as a heading at the context's level (`Context.heading/2`), of class `mw-stat-label`; a `<p class="mw-stat-value">` of the number in a `<data value="…">`, at its `digits`, and its unit's display symbol (`Macaw.Builtin.Text.unit/3`) in a `<span class="mw-stat-unit">`, none for `count`. No number is an en dash, with no `<data>` and no unit. A `capped` or `stale` stat draws its notice above its number, any other non-live state its notice alone.
+- **Stylesheet:** one static sheet, `Macaw.Builtin.Stat.stylesheet/0`, served from `'self'` at `stylesheet_path/0`, its content address, every color a theme custom property with the default theme's value as its fallback; it has no `url(` and no `@import`.
+- **It passes `macaw_component`'s kit.**
+
+```test:stat-declares
+the stat's parameters, roles and reading load are as declared and it is a member of Macaw.Builtin; digits outside its values is a fault; a surface checks the value role against the source's schema, a time and a field the source lacks being faults at the role
+```
+
+```test:stat-reduce
+latest and delta ask for the rows newest first and latest for one row, the rest for neither; each statistic answers the operations' number over the readings, gaps dropped; delta is the last in time minus the first; on a surface, a capped series' latest is its newest from a source that orders and one that doesn't
+```
+
+```test:stat-markup
+the stat renders its heading, its number in a data element at its digits, and its unit's symbol, none for a count, with no inline style; all-gap readings show an en dash and no data element, and a count of them is zero; latest or delta with no time field draws invalid and the other statistics still answer; capped and stale draw their notice above the number, other states the notice alone; it passes the component kit
+```
+
+```test:stat-stylesheet
+the stat's and the meter's stylesheets have a rule for every class they emit, every color a theme property, no url( and no @import, and each path is its content's address
+```
+
+### 6.4 The meter {#components-meter}
+
+`Macaw.Builtin.Meter`, registered as `"macaw.meter"` in the package `Macaw.Builtin`, of kind `:content`, `:pure`: one number against its range (#256).
+- **Parameters:** `label` and `reduce` as the stat's (§6.3); `min` (number, `0`); `max` (number, required), above `min`, else `{:not_above, min, max}` at `max`. The `<meter>` element's `low`, `high` and `optimum` wait on an optional number parameter, which macaw_data's parameters don't express yet (macaw_data#172).
+- **Declarations, order and budget:** the stat's slot, roles, reading load, order, budget and number (§6.3).
+- **Markup:** a `<div class="mw-meter">`; the label as a heading at the context's level, of class `mw-meter-label`, its id `Context.id/2` of `label`; a native `<meter>` named by that heading through `aria-labelledby`, with `value`, `min` and `max`, its fallback content the number; and a `<p class="mw-meter-value">` of the number and its unit's display symbol, so neither color nor length is the only cue. `<meter>` clamps its bar to the range, and the text shows the true value. No number is an en dash and no bar. Its states are drawn as the stat's.
+- **Stylesheet:** one static sheet, `Macaw.Builtin.Meter.stylesheet/0`, as the stat's.
+- **It passes `macaw_component`'s kit.**
+
+```test:meter-declares
+the meter's name and kind are as declared and it is a member of Macaw.Builtin; max is required, and a max not above min is a fault at its name
+```
+
+```test:meter-markup
+the meter renders a native meter named by its heading, with its value and range, the true value and its unit's symbol beside it, a value past the range kept in both, and an en dash and no meter with no readings
 ```
 
 ## 7. The contract and the core {#components-libraries}
