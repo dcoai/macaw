@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `mix hex.publish` runs the family's CI drift check first, so an edited, missing or behind copy of a `ci/` script stops a release, naming the file (#268, #271).
 - The built-in feed, `"macaw.feed"` (`Macaw.Builtin.Feed`, #256, #261, spec/05 §6.6): time-ordered rows, newest first, the newest `limit` of them, with a title, an optional body and an optional level whose role colors the item and whose words are always shown. It has a static stylesheet at `stylesheet_path/0`.
 - The built-in record, `"macaw.record"` (`Macaw.Builtin.Record`, #256, #260, spec/05 §6.5): one row as a definition list, labeled and with units from the schema, chosen by `identity` or as the `first` or `last` in time. Its `identity` is bindable, so state can make a record follow a selection. It has a static stylesheet at `stylesheet_path/0`.
 - The built-in stat and meter, `"macaw.stat"` and `"macaw.meter"` (`Macaw.Builtin.Stat`, `Meter`, #256, #259, spec/05 §6.3–§6.4): one number from a slot's rows by a statistic, alone or in a native `<meter>` against its range. A `latest` that is the whole answer draws no capped notice (#270). Bound by their `value` and optional `t` roles; `latest` and `delta` read newest first by time, so a capped series' latest is its newest. Absence is never zero: all-gap readings show an en dash. Each has a static stylesheet at `stylesheet_path/0`; link it where a page uses it.
