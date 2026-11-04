@@ -152,11 +152,13 @@ defmodule Macaw.Surface.Fetch do
   defp runtime(%Delivery{served: served} = delivery),
     do: %{delivery | served: %{served | reduced_by: :runtime}}
 
+  # Every fact of a delivery goes through the one precedence (macaw_component 02 §6), so an
+  # empty answer is no data whatever else it says, and a stale one says so even when capped.
   defp drawn(%Delivery{served: served} = delivery) do
-    cond do
-      served.capped or served.reduced_by != nil -> :capped
-      Delivery.empty?(delivery) -> :no_data
-      true -> :live
-    end
+    Drawn.pick([
+      if(Delivery.empty?(delivery), do: :no_data, else: :live),
+      if(served.stale, do: :stale, else: :live),
+      if(served.capped or served.reduced_by != nil, do: :capped, else: :live)
+    ])
   end
 end
