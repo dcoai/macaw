@@ -27,7 +27,7 @@ defmodule Macaw.TableOrderTest do
   end
 
   defp budget, do: elem(Component.budget(Table, "rows", %{"sort" => "v"}, {1200, 256}), 1)
-  defp vs(delivery), do: delivery |> Delivery.rows() |> Enum.map(& &1["v"])
+  defp vs(delivery), do: delivery |> Delivery.rows!() |> Enum.map(& &1["v"])
 
   @tag verifies: "table-order"
   test "the table's order is its sort column in its direction, none without a sort" do

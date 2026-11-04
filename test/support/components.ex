@@ -87,7 +87,7 @@ defmodule Macaw.Test.Series do
 
   @impl true
   def render(:content, %{drawn: :live} = assigns) do
-    rows = assigns.deliveries |> Map.fetch!("points") |> Macaw.Data.Delivery.rows()
+    rows = assigns.deliveries |> Map.fetch!("points") |> Macaw.Data.Delivery.rows!()
     h = Macaw.Component.Context.heading(assigns.context, 0)
     {:safe, ~s(<#{h}>#{assigns.settings["label"]}</#{h}><p>#{length(rows)} points</p>)}
   end
@@ -107,7 +107,7 @@ defmodule Macaw.Test.Counter do
   def init(_settings, context), do: %{rows: 0, size: context.size, instance: context.instance}
   @impl true
   def delivery(value, _slot, delivery),
-    do: %{value | rows: value.rows + length(Macaw.Data.Delivery.rows(delivery))}
+    do: %{value | rows: value.rows + length(Macaw.Data.Delivery.rows!(delivery))}
 
   @impl true
   def size(value, size), do: %{value | size: size}
@@ -149,7 +149,7 @@ defmodule Macaw.Test.Bound do
   def render(:content, %{drawn: :live} = assigns) do
     ctx = assigns.context
     {x, y} = {Context.field(ctx, "points", "x"), Context.field(ctx, "points", "y")}
-    rows = assigns.deliveries |> Map.fetch!("points") |> Macaw.Data.Delivery.rows()
+    rows = assigns.deliveries |> Map.fetch!("points") |> Macaw.Data.Delivery.rows!()
     sum = rows |> Enum.map(&Map.fetch!(&1, y)) |> Enum.sum()
 
     {:safe,

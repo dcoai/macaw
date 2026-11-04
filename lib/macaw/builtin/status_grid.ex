@@ -98,7 +98,7 @@ defmodule Macaw.Builtin.StatusGrid do
 
   def render(:content, %{drawn: :live, deliveries: %{"rows" => %Delivery{} = delivery}} = assigns) do
     with {:ok, table} <- Delivery.table(delivery),
-         rows when rows != [] <- Table.rows(table) do
+         {:ok, [_ | _] = rows} <- Table.rows(table) do
       render_grid(rows, assigns)
     else
       _no_rows -> Drawn.render(:no_data, assigns.context)

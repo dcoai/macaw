@@ -102,8 +102,10 @@ defmodule Macaw.Builtin.Table do
   # The rows packed into a table for their columns (macaw_data 0.6.0 keeps a delivery's
   # rows as the source gave them); rows that don't pack draw as no data.
   def render(:content, %{drawn: :live, deliveries: %{"rows" => %Delivery{} = delivery}} = assigns) do
-    case Delivery.table(delivery) do
-      {:ok, table} -> render_table(table, assigns)
+    with {:ok, table} <- Delivery.table(delivery),
+         {:ok, rows} <- Table.rows(table) do
+      render_table(table, rows, assigns)
+    else
       {:error, _faults} -> Drawn.render(:no_data, assigns.context)
     end
   end
@@ -111,14 +113,14 @@ defmodule Macaw.Builtin.Table do
   def render(:content, %{drawn: :live, context: context}), do: Drawn.render(:no_data, context)
   def render(:content, %{drawn: drawn, context: context}), do: Drawn.render(drawn, context)
 
-  defp render_table(table, assigns) do
+  defp render_table(table, rows, assigns) do
     settings = assigns.settings
     names = Table.names(table)
     # The bound columns, checked against the schema at validation; unbound, every column.
     columns = Context.field(assigns.context, "rows", "columns") || names
     sort = if settings["sort"] in names, do: settings["sort"]
     identity = if settings["identity"] in names, do: settings["identity"]
-    rows = table |> Table.rows() |> sorted(sort, settings["order"])
+    rows = sorted(rows, sort, settings["order"])
 
     {:safe,
      [
