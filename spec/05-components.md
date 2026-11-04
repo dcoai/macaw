@@ -76,7 +76,8 @@ Components ship in packages, which bring their own dependencies (Macaw never imp
 - **prose** (Markdown) and **cards**;
 - **the table:** an HTML `<table>` of kind `:content`, with a caption, header cells with scope, sortable columns as real buttons, a budget per slot, reading load `:scan`, and rows that write `selection` by identity. Dashboards (metresis#452, visualize#755) and `macaw_edit` share it (macaw_compose#22, decision 10).
 - **the status grid** (§6.2): one tile per thing, its state's words and its role's color, reading load `:glance`;
-- **the stat** (§6.3) and **the meter** (§6.4): one number from a slot's rows, alone or against its range, reading load `:glance`. The record and feed follow them (#256).
+- **the stat** (§6.3) and **the meter** (§6.4): one number from a slot's rows, alone or against its range, reading load `:glance`;
+- **the record** (§6.5): one row as a definition list, reading load `:scan`. The feed follows it (#256).
 
 **Expected packages:**
 - **visualize:** its visuals (charts, maps, scenes) implement the contract **from visualize itself**, as `Visualize.Macaw.*` in `visualize_live`, compiled when `macaw_component` is present ([00](00-overview.md) goal 6; visualize#946). Its visual table stays for standalone use and image output;
@@ -187,6 +188,33 @@ the meter's name and kind are as declared and it is a member of Macaw.Builtin; m
 
 ```test:meter-markup
 the meter renders a native meter named by its heading, with its value and range, the true value and its unit's symbol beside it, a value past the range kept in both, and an en dash and no meter with no readings
+```
+
+### 6.5 The record {#components-record}
+
+`Macaw.Builtin.Record`, registered as `"macaw.record"` in the package `Macaw.Builtin`, of kind `:content`, `:pure`: one row as a definition list (#256).
+- **Parameters:** `label` (text, `""`), its heading, none when empty; `identity` (text, `""`, bindable), the row whose identity field has this value, which state will bind so a record follows a table's selection; `pick` (category `"first"` or `"last"`, `"first"`), the row in time order when `identity` is empty.
+- **Declarations:** one slot, `rows`, with two roles, each checked against the source's schema at validation ([06 §3.4](06-pages.md#pages-surface-validate)): `fields` (`many`, any type, optional), the fields shown, in the order bound, every column of the delivered table when unbound; `t` (`:time`, `window: true`, optional), which `pick` reads by. Reading load `:scan`; no events and no writes.
+- **Order and budget:** with no `identity`, one row, oldest first for `first` and newest first for `last`, by the `t` role ([06 §3.5](06-pages.md#pages-surface-fetch)); with one, every row up to the host's ceiling, in no order.
+- **The row:** by `identity`, the row whose identity field's value is written as that text, `no_data` for none, and `invalid` for a schema with no single identity field, since a composite identity has no one value to look up by; else the row the order put first. `last` with no time field, neither bound nor the schema's window field, draws `invalid` rather than call an arbitrary row the last.
+- **Markup:** a `<div class="mw-record">`; the `label` as a heading at the context's level (`Context.heading/2`), of class `mw-record-label`, when given; a `<dl>` of each field's `<dt>`, its label and unit's display symbol (`Macaw.Builtin.Text.heading/3`), and its `<dd>`, the value as the table writes it (`Macaw.Builtin.Text.value/1`), `nil` empty. **A picked row that is the whole answer draws no notice:** it asks for one row, so its cell is `capped`, but with no `identity`, `served.capped` false and `served.ordered` not `:sample`, nothing is missing. A row looked up by `identity` may have been past the cap, so it keeps the notice above its list, as a sample, a source's own `capped` and `stale` do; any other non-live state draws its notice alone.
+- **Stylesheet:** one static sheet, `Macaw.Builtin.Record.stylesheet/0`, as the stat's (§6.3).
+- **It passes `macaw_component`'s kit.**
+
+```test:record-declares
+the record's parameters, roles, reading load, order, budget and membership are as declared; a surface checks the fields role against the source's schema, a field the source lacks being a fault at the role
+```
+
+```test:record-reads
+on a surface, first and last are the oldest and newest row from a source that orders and one that doesn't, and identity finds its row; last with no time field draws invalid and first still answers
+```
+
+```test:record-markup
+the record renders a definition list of labels and unit symbols, values as the table writes them, a gap empty, a heading only with a label, no inline style; the fields role chooses the fields and their order; no matching identity draws no_data, and no single identity field invalid; a picked row draws no notice, while a sample, a capped source, a lookup and stale keep theirs, and other states draw the notice alone; it passes the component kit
+```
+
+```test:record-stylesheet
+the record's stylesheet has a rule for every element it emits, every color a theme property, no url( and no @import, and its path is its content's address
 ```
 
 ## 7. The contract and the core {#components-libraries}

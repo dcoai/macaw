@@ -38,6 +38,23 @@ defmodule Macaw.Builtin.Text do
   end
 
   @doc """
+  A value as a built-in component writes it: a time as ISO 8601, whole seconds without a
+  fraction; a point as `lon, lat`; `nil` as nothing.
+  """
+  @spec value(term()) :: String.t()
+  def value(nil), do: ""
+
+  def value(%DateTime{microsecond: {0, _}} = t),
+    do: t |> DateTime.truncate(:second) |> DateTime.to_iso8601()
+
+  def value(%DateTime{} = t), do: DateTime.to_iso8601(t)
+  def value(%NaiveDateTime{} = t), do: NaiveDateTime.to_iso8601(t)
+  def value(%Date{} = d), do: Date.to_iso8601(d)
+  def value({lon, lat}), do: "#{lon}, #{lat}"
+  def value(value) when is_binary(value), do: value
+  def value(value), do: to_string(value)
+
+  @doc """
   The heading of `field` of `slot`: its label (`Macaw.Component.Context.label/3`, the
   field's name without one), then its unit in parentheses when it has one:
   `Request rate (request/s)`.

@@ -144,7 +144,7 @@ defmodule Macaw.Builtin.StatusGrid do
   end
 
   defp tile(row, name, status, detail, schema, context) do
-    thing = text(Map.get(row, name))
+    thing = Text.value(Map.get(row, name))
     state = Map.get(row, status)
 
     [
@@ -171,7 +171,7 @@ defmodule Macaw.Builtin.StatusGrid do
 
       value ->
         unit = Text.unit(context, "rows", field)
-        shown = if unit, do: "#{text(value)} #{unit}", else: text(value)
+        shown = if unit, do: "#{Text.value(value)} #{unit}", else: Text.value(value)
         [~s(<p class="mw-status-detail">), escape(shown), "</p>"]
     end
   end
@@ -180,7 +180,7 @@ defmodule Macaw.Builtin.StatusGrid do
   # that spells no class.
   defp role(%Schema{} = schema, field, state) when state != nil do
     with {:ok, roles} <- Schema.fetch(schema, field, :status),
-         role when is_binary(role) <- Map.get(roles, text(state)),
+         role when is_binary(role) <- Map.get(roles, Text.value(state)),
          true <- Regex.match?(@role, role) do
       role
     else
@@ -195,15 +195,10 @@ defmodule Macaw.Builtin.StatusGrid do
   defp words(_schema, _field, nil), do: "–"
 
   defp words(%Schema{} = schema, field, state) do
-    Map.get(Schema.value_names(schema, field), text(state), text(state))
+    Map.get(Schema.value_names(schema, field), Text.value(state), Text.value(state))
   end
 
-  defp words(nil, _field, state), do: text(state)
-
-  defp text(nil), do: ""
-  defp text(%DateTime{} = t), do: DateTime.to_iso8601(t)
-  defp text(value) when is_binary(value), do: value
-  defp text(value), do: to_string(value)
+  defp words(nil, _field, state), do: Text.value(state)
 
   defp escape(text), do: text |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
 end

@@ -157,7 +157,7 @@ defmodule Macaw.Builtin.Table do
     {id, select} =
       case identity && Map.get(row, identity) do
         value when value != nil and value != false ->
-          spelled = text(value)
+          spelled = Text.value(value)
 
           {~s( id="#{Context.id(context, "r-" <> Base.url_encode64(spelled, padding: false))}"),
            [
@@ -177,7 +177,12 @@ defmodule Macaw.Builtin.Table do
       columns
       |> Enum.with_index()
       |> Enum.map(fn {column, i} ->
-        ["<td>", if(i == 0, do: select, else: []), escape(text(Map.get(row, column))), "</td>"]
+        [
+          "<td>",
+          if(i == 0, do: select, else: []),
+          escape(Text.value(Map.get(row, column))),
+          "</td>"
+        ]
       end),
       "</tr>"
     ]
@@ -204,18 +209,6 @@ defmodule Macaw.Builtin.Table do
   defp key(%NaiveDateTime{} = t), do: NaiveDateTime.to_gregorian_seconds(t)
   defp key(%Date{} = d), do: Date.to_gregorian_days(d)
   defp key(value), do: value
-
-  defp text(nil), do: ""
-
-  defp text(%DateTime{microsecond: {0, _}} = t),
-    do: t |> DateTime.truncate(:second) |> DateTime.to_iso8601()
-
-  defp text(%DateTime{} = t), do: DateTime.to_iso8601(t)
-  defp text(%NaiveDateTime{} = t), do: NaiveDateTime.to_iso8601(t)
-  defp text(%Date{} = d), do: Date.to_iso8601(d)
-  defp text({lon, lat}), do: "#{lon}, #{lat}"
-  defp text(value) when is_binary(value), do: value
-  defp text(value), do: to_string(value)
 
   defp escape(text), do: text |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
 end

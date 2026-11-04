@@ -8,10 +8,17 @@ defmodule Macaw.Builtin do
     * `Macaw.Builtin.StatusGrid`, `"macaw.status_grid"`: one tile per thing, showing its state.
     * `Macaw.Builtin.Stat`, `"macaw.stat"`: one number from a slot's rows.
     * `Macaw.Builtin.Meter`, `"macaw.meter"`: one number against its range.
+    * `Macaw.Builtin.Record`, `"macaw.record"`: one row as a definition list.
   """
 
   @doc "The package's members."
   @spec __members__() :: [module()]
   def __members__,
-    do: [Macaw.Builtin.Table, Macaw.Builtin.StatusGrid, Macaw.Builtin.Stat, Macaw.Builtin.Meter]
+    do: [
+      Macaw.Builtin.Table,
+      Macaw.Builtin.StatusGrid,
+      Macaw.Builtin.Stat,
+      Macaw.Builtin.Meter,
+      Macaw.Builtin.Record
+    ]
 end
