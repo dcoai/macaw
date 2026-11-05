@@ -35,12 +35,18 @@ defmodule Macaw.NoRaiseTest do
     tree(leaf, fn child ->
       one_of([
         list_of(child, max_length: 3),
-        map_of(one_of([child, key()]), child, max_length: 3),
+        some_map(one_of([child, key()]), child, 3),
         tuple({child, child}),
         list_of(tuple({key(), child}), max_length: 3)
       ])
     end)
   end
+
+  # A map of up to `max` pairs. Not map_of/3: it retries for a key it hasn't drawn and raises
+  # after 10 misses, which a small key space reaches at random (#269). Here a repeated key
+  # just collapses.
+  defp some_map(key, value, max),
+    do: list_of(tuple({key, value}), max_length: max) |> map(&Map.new/1)
 
   defp key do
     member_of([
@@ -85,8 +91,8 @@ defmodule Macaw.NoRaiseTest do
     maybe(
       optional_map(%{
         source: maybe(constant("lat")),
-        fields: maybe(map_of(member_of(["x", "y", "label", "columns"]), junk(), max_length: 2)),
-        params: maybe(map_of(string(:alphanumeric, max_length: 3), junk(), max_length: 2))
+        fields: maybe(some_map(member_of(["x", "y", "label", "columns"]), junk(), 2)),
+        params: maybe(some_map(string(:alphanumeric, max_length: 3), junk(), 2))
       })
     )
   end
@@ -96,8 +102,8 @@ defmodule Macaw.NoRaiseTest do
       optional_map(%{
         component: maybe(member_of(["macaw.table", "macaw.nope", "nope"])),
         kind: junk(),
-        settings: maybe(map_of(member_of(["sort", "order", "x"]), junk(), max_length: 2)),
-        slots: maybe(map_of(member_of(["rows", "x"]), slot(), max_length: 2)),
+        settings: maybe(some_map(member_of(["sort", "order", "x"]), junk(), 2)),
+        slots: maybe(some_map(member_of(["rows", "x"]), slot(), 2)),
         source: maybe(constant("lat")),
         fields: junk(),
         params: junk(),
@@ -126,7 +132,7 @@ defmodule Macaw.NoRaiseTest do
       cells:
         maybe(
           one_of([
-            map_of(member_of(["t", "u", "a", "b"]), cell(), max_length: 3),
+            some_map(member_of(["t", "u", "a", "b"]), cell(), 3),
             list_of(cell(), max_length: 3)
           ])
         )
