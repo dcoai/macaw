@@ -8,7 +8,7 @@ defmodule Macaw.Surface.Fetch do
   alias Macaw.Component.Drawn
   alias Macaw.Data.{Bounded, Delivery, Source}
   alias Macaw.Data.Source.{Finish, Request}
-  alias Macaw.Surface.{Sources, Validated}
+  alias Macaw.Surface.{Env, Sources, Validated}
 
   @defaults [viewer: nil, width: 1200, row_height: 64, timeout: 5_000]
 
@@ -16,10 +16,25 @@ defmodule Macaw.Surface.Fetch do
   @spec fetch(Validated.t(), keyword()) :: %{String.t() => %{deliveries: map(), drawn: Drawn.t()}}
   def fetch(%Validated{} = validated, env) when is_list(env) do
     env = Keyword.merge(@defaults, env)
-    sources = Keyword.get(env, :sources)
     now = Keyword.fetch!(env, :now)
     ceiling = Keyword.fetch!(env, :ceiling)
 
+    case Env.fetch_faults(env) do
+      [] -> slots(validated, env, now, ceiling)
+      _faults -> refused(validated)
+    end
+  end
+
+  # An env whose values can't fetch: every slot's cell is invalid, with nothing fetched.
+  defp refused(validated) do
+    Map.new(validated.order, fn name ->
+      slots = Map.fetch!(validated.cells, name).slots
+      {name, %{deliveries: %{}, drawn: Drawn.pick(Enum.map(slots, fn _slot -> :invalid end))}}
+    end)
+  end
+
+  defp slots(validated, env, now, ceiling) do
+    sources = Keyword.get(env, :sources)
     readers = readers(validated, env, ceiling)
 
     outcomes =

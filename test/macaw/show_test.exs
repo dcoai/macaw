@@ -95,6 +95,11 @@ defmodule Macaw.ShowTest do
     # The ceiling from the host's configuration, and a fault when there is none.
     Application.put_env(:macaw, :ceiling, 1_000)
     assert Surface.show(s, sources: @sources, now: @now) == {:ok, expected}
+    Application.put_env(:macaw, :ceiling, :nope)
+
+    assert Surface.show(s, sources: @sources, now: @now) ==
+             {:error, [{[:ceiling], {:type, :pos_integer}}]}
+
     Application.delete_env(:macaw, :ceiling)
     assert Surface.show(s, sources: @sources, now: @now) == {:error, [{[:ceiling], :required}]}
 

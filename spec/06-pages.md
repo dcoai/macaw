@@ -258,6 +258,8 @@ a placement's classes name its column, span, row and rows; the stylesheet has a 
 
 `sources` that isn't a map is the one fault `{:type, :map}` at `[:sources]`.
 
+**A `describe` that raises** is a bug in the host's source, and it fails `validate/3` and `show/2` as any raise does: a source's `describe` runs in the caller's process, and only a fetch is isolated ([00 §4.3](00-overview.md#core-errors)).
+
 ```test:validate-pass
 a surface of known components bound to described sources validates, with each cell's module, settings, declarations and descriptions, in reading order
 ```
@@ -267,7 +269,7 @@ an unknown component, an unoffered kind, bad settings, an unbound and an unknown
 ```
 
 ```test:validate-bad-source
-a malformed entry is {:bad_source, name} at the binding's source, under the shorthand and a slot, from validate/3 and show/2, and the fault never echoes the entry; a source not in the map stays unknown, and sources that aren't a map are a fault at [:sources]
+a malformed entry is {:bad_source, name} at the binding's source, under the shorthand and a slot, from validate/3 and show/2, and the fault never echoes the entry; a source not in the map stays unknown, and sources that aren't a map are a fault at [:sources]; a describe that raises fails the call
 ```
 
 ```test:validate-independent
@@ -284,6 +286,12 @@ one cell failing its kind, settings, a source and a binding's params reports eve
 - **Drawn states** ([macaw_component 02 §6](https://github.com/dcoai/macaw_component/blob/main/spec/02-rendering.md#components-states)), the highest of its slots': a fetch that answers an error or whose process exits is `down`; one that hasn't answered within `timeout:` is `loading`; a delivery with no rows is `no_data`, whatever else it says; one whose `served.stale` is true, an answer its source could not refresh ([macaw_data 01 §3](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-delivery)), is `stale`, also when capped, and also when it reached the slot through a derived source; one `capped` or `reduced_by` anything is `capped`; otherwise `live`, in the drawn states' one precedence. A cell with no slots is `live`.
 
 - **A source gone or malformed by fetch:** `sources:` is read again at each fetch, so a host can pass a different map than it validated with. A slot whose source is missing there, or whose entry is malformed by the rule in §3.4, draws its cell `invalid` and fetches nothing for that slot; other cells are unaffected. The same goes for a missing `sources:` or one that isn't a map.
+
+- **A value of `env` that can't fetch:** a `ceiling:` that isn't a positive integer, a `now:` that isn't a `DateTime`, a `width:` or `row_height:` that isn't a positive number, or a `timeout:` that isn't a non-negative integer draws the cell of every slot `invalid` and fetches nothing; a cell with no slots draws as it always does. A ceiling is judged before it clamps: a term that isn't a number doesn't fail a comparison with one, and orders above every number, so unjudged it would apply no limit at all. Leaving out `now:` or `ceiling:` is a wrong call ([00 §4.3](00-overview.md#core-errors)).
+
+```test:fetch-bad-env
+a ceiling that isn't a positive integer, and a bad width, row height, timeout or now, draw the cell invalid with nothing fetched and the caller alive; a positive integer ceiling still clamps; a cell with no slots draws as it always does; through render/2 the values only fetching reads draw invalid
+```
 
 ```test:fetch-bad-source
 a source gone or malformed by fetch, and sources missing or not a map, draw their cells invalid with the caller alive, and one bad source leaves another cell's fetch alone
@@ -340,10 +348,10 @@ each cell renders with its context: its instance, declared size, heading level b
 - `ceiling:`, `config :macaw, :ceiling` unless given; with neither it answers `{[:ceiling], :required}`, a host's configuration mistake, as a value ([00 §4.3](00-overview.md#core-errors));
 - `mode:`, `:socketless` unless given; given a LiveView `socket:`, `:live` once it is connected and `:socketless` before, as `Phoenix.LiveView.connected?/1` reads it (a socket with a transport process is connected), so `macaw` needs no LiveView.
 
-It renders exactly what `validate/3` then `render/2` render, given the same `now`. **Its faults,** in order: a first argument that isn't a surface answers `new/1`'s; an `env` that can't show it answers every fault of the `env`, by its key: `{[:sources], :required}` or `{:type, :map}`, `{[:registry], {:type, :registry}}`, a configured registry's faults from `Registry.default/0` under `[:registry]`, and `{[:ceiling], :required}`; then validation's.
+It renders exactly what `validate/3` then `render/2` render, given the same `now`. **Its faults,** in order: a first argument that isn't a surface answers `new/1`'s; an `env` that can't show it answers every fault of the `env`, by its key: `{[:sources], :required}` or `{:type, :map}`, `{[:registry], {:type, :registry}}`, a configured registry's faults from `Registry.default/0` under `[:registry]`, `{[:ceiling], :required}`, and a value that can't be used, the configured ceiling among them: `{[:ceiling], {:type, :pos_integer}}`, `{[:now], {:type, :time}}`, `{:type, :pos_number}` at `[:width]` or `[:row_height]`, `{[:timeout], {:type, :non_neg_integer}}`, and a context's faults at `[:mode]`, `[:theme]` and `[:heading_level]`; an `env` that isn't a keyword list is `{[], {:type, :keyword}}`; then validation's.
 
 ```test:surface-show
-show/2 renders what validate/3 then render/2 render given the same now, from a surface, {:ok, surface} or attrs, with the default registry or a given one; it answers validation's and new/1's faults unchanged; the ceiling comes from the host's config, and its absence is a fault; a missing or wrong sources, a registry that isn't one and a configured registry that can't be built are faults by key, all at once; a first argument that isn't a surface answers new/1's faults; with no now it reads the clock once itself; its mode is socketless unless given and follows a LiveView socket's connection
+show/2 renders what validate/3 then render/2 render given the same now, from a surface, {:ok, surface} or attrs, with the default registry or a given one; it answers validation's and new/1's faults unchanged; the ceiling comes from the host's config, and its absence is a fault; a missing or wrong sources, a registry that isn't one, a configured registry that can't be built and any bad value of the env, a configured ceiling included, are faults by key, all at once; an env that isn't a keyword list is a fault; a first argument that isn't a surface answers new/1's faults; with no now it reads the clock once itself; its mode is socketless unless given and follows a LiveView socket's connection
 ```
 
 ### 3.8 The short code form {#pages-surface-build}

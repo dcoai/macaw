@@ -359,7 +359,10 @@ defmodule Macaw.Surface do
   `env`: `sources:` (as given to `validate/3`), `now:` and `ceiling:` (required),
   `viewer:` (`nil`), `width:` (`1200`), `row_height:` (`64`), `timeout:` (`5_000` ms).
   Each fetch runs bounded in a process of its own, so it never blocks or crashes the caller.
-  A source gone or malformed since validation draws its cell `invalid`.
+  A source gone or malformed since validation draws its cell `invalid`, and so does a value
+  of `env` that can't fetch: a `ceiling:` that isn't a positive integer, a `now:` that isn't
+  a `DateTime`, a `width:` or `row_height:` that isn't a positive number, a `timeout:` that
+  isn't a non-negative integer. Leaving out `now:` or `ceiling:` is a wrong call, and raises.
   """
   @spec fetch(Macaw.Surface.Validated.t(), keyword()) :: %{String.t() => map()}
   defdelegate fetch(validated, env), to: Macaw.Surface.Fetch
@@ -367,7 +370,8 @@ defmodule Macaw.Surface do
   @doc """
   The surface's markup (spec/06 §3.6), a safe value: its title at `heading_level:` (`2`),
   then its cells in reading order, in `mode:` (`:socketless`), with `theme:`, `now:`,
-  `width:` and `row_height:` as for fetching.
+  `width:` and `row_height:` as for fetching. It has no fault to answer, so a value it can't
+  build a cell's context from is a wrong call, and raises (spec/00 §4.3).
   """
   @spec render(Macaw.Surface.Validated.t(), map(), keyword()) :: Phoenix.HTML.safe()
   defdelegate render(validated, fetched, env), to: Macaw.Surface.Render
@@ -395,9 +399,14 @@ defmodule Macaw.Surface do
 
   A surface that isn't one answers its own faults. An env that can't show it answers every
   fault of the env, by its key: `{[:sources], :required}` (or `{:type, :map}`),
-  `{[:registry], {:type, :registry}}`, and `{[:ceiling], :required}` when neither the env
-  nor the config gives a ceiling. A configured registry that can't be built answers
-  `Macaw.Registry.default/0`'s faults under `[:registry]`. Then validation's faults.
+  `{[:registry], {:type, :registry}}`, `{[:ceiling], :required}` when neither the env nor
+  the config gives a ceiling, and a value given that can't be used, the config's ceiling
+  among them: `{[:ceiling], {:type, :pos_integer}}`, `{[:now], {:type, :time}}`, `{[:width],
+  {:type, :pos_number}}`, the same at `[:row_height]`, `{[:timeout], {:type,
+  :non_neg_integer}}`, and a context's faults at `[:mode]`, `[:theme]` and
+  `[:heading_level]`. An env that isn't a keyword list is `{[], {:type, :keyword}}`. A
+  configured registry that can't be built answers `Macaw.Registry.default/0`'s faults under
+  `[:registry]`. Then validation's faults.
   """
   @spec show(t() | {:ok, t()} | keyword() | map(), keyword()) ::
           {:ok, Phoenix.HTML.safe()} | {:error, [Fault.t(), ...]}
@@ -417,6 +426,10 @@ defmodule Macaw.Surface do
   # The env with the host's defaults filled in (the registry, now, the ceiling and the
   # mode), or every fault of it by key.
   defp shown(env) do
+    if Keyword.keyword?(env), do: shown_keyword(env), else: {:error, [{[], {:type, :keyword}}]}
+  end
+
+  defp shown_keyword(env) do
     {registry, r} = shown_registry(Keyword.fetch(env, :registry))
 
     s =
@@ -429,7 +442,12 @@ defmodule Macaw.Surface do
     ceiling = Keyword.get_lazy(env, :ceiling, fn -> Application.get_env(:macaw, :ceiling) end)
     c = if ceiling == nil, do: [{[:ceiling], :required}], else: []
 
-    case Fault.sort(s ++ r ++ c) do
+    judged =
+      if c == [], do: Keyword.put(env, :ceiling, ceiling), else: Keyword.delete(env, :ceiling)
+
+    values = Macaw.Surface.Env.fetch_faults(judged) ++ Macaw.Surface.Env.render_faults(judged)
+
+    case Fault.sort(s ++ r ++ c ++ values) do
       [] ->
         {:ok,
          env

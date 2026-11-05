@@ -212,6 +212,48 @@ defmodule Macaw.NoRaiseTest do
     end
   end
 
+  # What a host might pass in an env's values: junk, or the near misses of a limit.
+  defp env_term do
+    value = one_of([junk(), member_of([0, -1, 1.5, :infinity, "100", nil, ~D[2026-01-01]])])
+
+    keys =
+      member_of([:ceiling, :now, :width, :row_height, :timeout, :mode, :theme, :heading_level])
+
+    list_of(tuple({keys, value}), min_length: 1, max_length: 3)
+  end
+
+  @tag verifies: "errors-values"
+  property "an env's values answer a value from show/2, and fetch/2 keeps the caller alive" do
+    attrs = [name: "s", cells: [%{component: "macaw.table", name: "c", source: "lat"}]]
+    {:ok, surface} = Surface.new(attrs)
+    {:ok, validated} = Surface.validate(surface, @registry, sources())
+    good = [sources: sources(), now: @now, ceiling: 1_000]
+
+    check all(given <- env_term(), max_runs: 300) do
+      env = Keyword.merge(good, given)
+      assert value?(Surface.show(attrs, [registry: @registry] ++ env))
+      assert value?(Surface.show(surface, [registry: @registry] ++ env))
+      assert %{"c" => %{drawn: _}} = Surface.fetch(validated, env)
+    end
+  end
+
+  # A ceiling is a positive integer or nothing fetched: never a limit that doesn't limit.
+  @tag verifies: "fetch-bad-env"
+  property "a ceiling that isn't a positive integer never delivers a row" do
+    attrs = [name: "s", cells: [%{component: "macaw.table", name: "c", source: "lat"}]]
+    {:ok, surface} = Surface.new(attrs)
+    {:ok, validated} = Surface.validate(surface, @registry, sources())
+
+    check all(
+            ceiling <- filter(junk(), &(not (is_integer(&1) and &1 > 0))),
+            max_runs: 300
+          ) do
+      env = [sources: sources(), now: @now, ceiling: ceiling]
+      assert %{"c" => %{deliveries: deliveries, drawn: :invalid}} = Surface.fetch(validated, env)
+      assert deliveries == %{}
+    end
+  end
+
   # A term as JSON could carry it: atoms as text, tuples as lists, keys as strings.
   defp jsonable(term) when is_map(term),
     do: Map.new(term, fn {k, v} -> {json_key(jsonable(k)), jsonable(v)} end)
