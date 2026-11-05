@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- A malformed `sources:` no longer raises (#267, spec/06 §3.4, §3.5). An entry that isn't a `{source, context}` of a real source is the fault `{:bad_source, name}` at its binding's source, from `Surface.validate/3` and `show/2`, and never echoes the entry; `validate/3` answers `{:type, :map}` at `[:sources]` for sources that aren't a map. In `fetch/2` and `render/2`, a source gone or malformed since validation draws its cell `invalid`, where it took the caller down.
 - `mix hex.publish` runs the family's CI drift check first, so an edited, missing or behind copy of a `ci/` script stops a release, naming the file (#268, #271).
 - The built-in feed, `"macaw.feed"` (`Macaw.Builtin.Feed`, #256, #261, spec/05 §6.6): time-ordered rows, newest first, the newest `limit` of them, with a title, an optional body and an optional level whose role colors the item and whose words are always shown. It has a static stylesheet at `stylesheet_path/0`.
 - The built-in record, `"macaw.record"` (`Macaw.Builtin.Record`, #256, #260, spec/05 §6.5): one row as a definition list, labeled and with units from the schema, chosen by `identity` or as the `first` or `last` in time. Its `identity` is bindable, so state can make a record follow a selection. It has a static stylesheet at `stylesheet_path/0`.

@@ -244,7 +244,7 @@ a placement's classes name its column, span, row and rows; the stylesheet has a 
 - **the kind**: one the component doesn't offer is `{:kind_not_offered, kind, kinds}` at `[:cells, name, :kind]`;
 - **the settings and declarations**: `Macaw.Component.declarations/2`'s faults, at `[:cells, name, :settings | path]`;
 - **the source shorthand**: a cell's `source` binds the component's one slot, its source and params checked as that slot's binding is, at the cell's own keys (`[:cells, name, :source]`, `[..., :params | path]`, `[..., :fields | path]`); a component with no slot or several is `{:ambiguous_slot, slots}` at `[:cells, name, :source]`, so a component that later gains a second slot faults loudly and is never silently rebound. An unknown component, or settings that fail, leave it `{:unchecked, :component}` or `{:unchecked, :settings}` there. `Validated` holds the explicit binding under the slot's name;
-- **the slots**: every slot the component declares must be bound (`:unbound` at `[:cells, name, :slots, slot]`), and a binding of a slot it doesn't declare is `:unknown_slot`; a source not in the map is `{:unknown_source, name}` at `[..., slot, :source]`, one whose `describe` fails `{:describe, reason}`; the binding's fields are checked by `Macaw.Component.Slot.check/3` against the described schema (at `[..., slot, :fields | path]`), and its params by `Macaw.Data.Parameter.validate/2` against the described params (at `[..., slot, :params | path]`).
+- **the slots**: every slot the component declares must be bound (`:unbound` at `[:cells, name, :slots, slot]`), and a binding of a slot it doesn't declare is `:unknown_slot`; a source not in the map is `{:unknown_source, name}` at `[..., slot, :source]`, an entry that isn't a `{source, context}` of a struct with the source contract's `describe/2` and `fetch/2` is `{:bad_source, name}` there, never echoing the entry, one whose `describe` fails `{:describe, reason}`; the binding's fields are checked by `Macaw.Component.Slot.check/3` against the described schema (at `[..., slot, :fields | path]`), and its params by `Macaw.Data.Parameter.validate/2` against the described params (at `[..., slot, :params | path]`).
 
 **Each check runs on what it needs, so no failure hides another** (#195):
 - **A binding's source and params need only the cell.** They are checked for every binding, whatever else in the cell fails.
@@ -256,12 +256,18 @@ a placement's classes name its column, span, row and rows; the stylesheet has a 
 
 `%Macaw.Surface.Validated{surface, cells, layout, order}` holds, for each cell, its component module, its validated settings, its declarations, and each slot's source, description, request params and **resolved binding** (`Macaw.Component.Slot.resolve/3`: the field each role reads, an unbound `window` role holding the window field and an unbound optional role absent); `layout` is the layout module and its checked options; `order` is the cells in its reading order. Rendering takes only a validated surface, so nothing renders that hasn't passed.
 
+`sources` that isn't a map is the one fault `{:type, :map}` at `[:sources]`.
+
 ```test:validate-pass
 a surface of known components bound to described sources validates, with each cell's module, settings, declarations and descriptions, in reading order
 ```
 
 ```test:validate-faults
 an unknown component, an unoffered kind, bad settings, an unbound and an unknown slot, an unknown source, a failing describe, a binding the schema doesn't meet, bad params and a bad place are all reported at once by path
+```
+
+```test:validate-bad-source
+a malformed entry is {:bad_source, name} at the binding's source, under the shorthand and a slot, from validate/3 and show/2, and the fault never echoes the entry; a source not in the map stays unknown, and sources that aren't a map are a fault at [:sources]
 ```
 
 ```test:validate-independent
@@ -276,6 +282,12 @@ one cell failing its kind, settings, a source and a binding's params reports eve
 - **Pooling within the surface:** slots bound to one source with equal params and equal orders cost one fetch, at the largest of their budgets (`Finish.pooled/1`), and each slot is reduced to its own (`Finish.reduce`). Pooling across pages is #108's.
 - **Fetching never blocks or crashes the caller:** each fetch runs in a process of its own (`Macaw.Data.Bounded`), the fetches concurrently, each bounded by `timeout:`; the delivery is finished by `Macaw.Data.Source.Finish.finish/4` against the description and reduced to each slot's budget. Every step answers a value (macaw_data 0.10): a ceiling, a request, a finishing or a reduction that refuses draws the slot's cell `invalid`, never a crash.
 - **Drawn states** ([macaw_component 02 §6](https://github.com/dcoai/macaw_component/blob/main/spec/02-rendering.md#components-states)), the highest of its slots': a fetch that answers an error or whose process exits is `down`; one that hasn't answered within `timeout:` is `loading`; a delivery with no rows is `no_data`, whatever else it says; one whose `served.stale` is true, an answer its source could not refresh ([macaw_data 01 §3](https://github.com/dcoai/macaw_data/blob/main/spec/01-sources.md#sources-delivery)), is `stale`, also when capped, and also when it reached the slot through a derived source; one `capped` or `reduced_by` anything is `capped`; otherwise `live`, in the drawn states' one precedence. A cell with no slots is `live`.
+
+- **A source gone or malformed by fetch:** `sources:` is read again at each fetch, so a host can pass a different map than it validated with. A slot whose source is missing there, or whose entry is malformed by the rule in §3.4, draws its cell `invalid` and fetches nothing for that slot; other cells are unaffected. The same goes for a missing `sources:` or one that isn't a map.
+
+```test:fetch-bad-source
+a source gone or malformed by fetch, and sources missing or not a map, draw their cells invalid with the caller alive, and one bad source leaves another cell's fetch alone
+```
 
 ```test:fetch-budgets
 each slot is fetched at its budget at its cell's size, under every built-in layout, a place or none, clamped to the ceiling and marked runtime when clamped; slots sharing a source and params are fetched once at the largest budget and each reduced to its own

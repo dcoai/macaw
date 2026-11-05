@@ -8,7 +8,7 @@ defmodule Macaw.Surface.Fetch do
   alias Macaw.Component.Drawn
   alias Macaw.Data.{Bounded, Delivery, Source}
   alias Macaw.Data.Source.{Finish, Request}
-  alias Macaw.Surface.Validated
+  alias Macaw.Surface.{Sources, Validated}
 
   @defaults [viewer: nil, width: 1200, row_height: 64, timeout: 5_000]
 
@@ -16,7 +16,7 @@ defmodule Macaw.Surface.Fetch do
   @spec fetch(Validated.t(), keyword()) :: %{String.t() => %{deliveries: map(), drawn: Drawn.t()}}
   def fetch(%Validated{} = validated, env) when is_list(env) do
     env = Keyword.merge(@defaults, env)
-    sources = Keyword.fetch!(env, :sources)
+    sources = Keyword.get(env, :sources)
     now = Keyword.fetch!(env, :now)
     ceiling = Keyword.fetch!(env, :ceiling)
 
@@ -102,14 +102,22 @@ defmodule Macaw.Surface.Fetch do
   # Slots of one source pool when they ask for the same params and the same order: a
   # delivery's first rows are first in one order only.
   defp fetch_group(sources, {source, params, order}, group, env, now) do
-    {struct, _context} = Map.fetch!(sources, source)
-    description = hd(group).description
     budget = Finish.pooled(Enum.map(group, & &1.budget))
 
-    case Request.new(params: params, order: order, budget: budget, viewer: env[:viewer], now: now) do
-      {:ok, request} -> fetched(struct, description, request, env)
-      # A request the slots' params, order and budget can't make: their cells are invalid.
-      {:error, _faults} -> {:drawn, :invalid}
+    with {:ok, struct, _context} <- Sources.entry(sources, source),
+         {:ok, request} <-
+           Request.new(
+             params: params,
+             order: order,
+             budget: budget,
+             viewer: env[:viewer],
+             now: now
+           ) do
+      fetched(struct, hd(group).description, request, env)
+    else
+      # A source gone or malformed since validation, or a request the slots' params, order
+      # and budget can't make: their cells are invalid.
+      _unfetchable -> {:drawn, :invalid}
     end
   end
 

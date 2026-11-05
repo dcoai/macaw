@@ -15,6 +15,7 @@ defmodule Macaw.Surface.Validated do
   alias Macaw.Data.Source.Description
   alias Macaw.Layers.Fault
   alias Macaw.{Layout, Registry, Surface}
+  alias Macaw.Surface.Sources
   alias Macaw.Component.Slot
 
   @enforce_keys [:surface, :cells, :layout, :order]
@@ -45,12 +46,15 @@ defmodule Macaw.Surface.Validated do
   # The static pass: every fault at once, by path from the surface.
   @spec validate(Surface.t(), Registry.t(), %{String.t() => {Source.t(), term()}}) ::
           {:ok, t()} | {:error, [Fault.t(), ...]}
-  def validate(%Surface{} = surface, %Registry{} = registry, sources) when is_map(sources) do
+  def validate(%Surface{}, %Registry{}, sources) when not is_map(sources) or is_struct(sources),
+    do: {:error, [{[:sources], {:type, :map}}]}
+
+  def validate(%Surface{} = surface, %Registry{} = registry, sources) do
     described = describe(surface, sources)
 
     {cells, faults} =
       Enum.reduce(surface.cells, {%{}, []}, fn {name, cell}, {acc, faults} ->
-        case cell(name, cell, registry, sources, described) do
+        case cell(name, cell, registry, described) do
           {:ok, built} -> {Map.put(acc, name, built), faults}
           {:error, more} -> {acc, faults ++ more}
         end
@@ -113,19 +117,19 @@ defmodule Macaw.Surface.Validated do
           uniq: true,
           do: source
 
-    for source <- names,
-        {:ok, {s, context}} <- [Map.fetch(sources, source)],
-        into: %{},
-        do: {source, Source.describe(s, context)}
+    Map.new(names, &{&1, described(Sources.entry(sources, &1))})
   end
+
+  defp described({:ok, source, context}), do: Source.describe(source, context)
+  defp described(absent_or_malformed), do: absent_or_malformed
 
   # Each check runs on what it needs (spec/06 §3.4), so one failure never hides another:
   # a binding's source and params need only the cell; the kind and settings the component;
   # which slots exist and each binding's fields the configured declarations. Checks a failed
   # prerequisite rules out are reported as {:unchecked, prerequisite}, never skipped silently.
-  defp cell(name, cell, registry, sources, described) do
+  defp cell(name, cell, registry, described) do
     path = [:cells, name]
-    {bindings, binding_faults} = bindings(path, cell, sources, described)
+    {bindings, binding_faults} = bindings(path, cell, described)
 
     {configured, faults} =
       case Registry.component(registry, cell.component) do
@@ -195,16 +199,16 @@ defmodule Macaw.Surface.Validated do
 
   # Each binding's source and params, which need no component; the shorthand's at the
   # cell's own keys, under no slot name until validation gives it one.
-  defp bindings(path, %{source: %{} = binding}, sources, described) do
-    case binding(path, binding, sources, described) do
+  defp bindings(path, %{source: %{} = binding}, described) do
+    case binding(path, binding, described) do
       {:ok, built, faults} -> {%{nil => built}, faults}
       {:error, faults} -> {%{}, faults}
     end
   end
 
-  defp bindings(path, cell, sources, described) do
+  defp bindings(path, cell, described) do
     Enum.reduce(cell.slots, {%{}, []}, fn {slot, binding}, {acc, faults} ->
-      case binding(path ++ [:slots, slot], binding, sources, described) do
+      case binding(path ++ [:slots, slot], binding, described) do
         {:ok, built, []} -> {Map.put(acc, slot, built), faults}
         {:ok, built, more} -> {Map.put(acc, slot, built), faults ++ more}
         {:error, more} -> {acc, faults ++ more}
@@ -266,9 +270,8 @@ defmodule Macaw.Surface.Validated do
 
   # A binding's source, described, and its params against the description. A described
   # binding is kept even when its params fail, so its fields are still checked.
-  defp binding(path, binding, sources, described) do
-    with {:source, true} <- {:source, Map.has_key?(sources, binding.source)},
-         {:describe, {:ok, %Description{} = description}} <-
+  defp binding(path, binding, described) do
+    with {:describe, {:ok, %Description{} = description}} <-
            {:describe, Map.fetch!(described, binding.source)} do
       {params, faults} =
         case Parameter.validate(description.params, binding.params) do
@@ -284,7 +287,8 @@ defmodule Macaw.Surface.Validated do
          params: params
        }, faults}
     else
-      {:source, false} -> {:error, [{path ++ [:source], {:unknown_source, binding.source}}]}
+      {:describe, :unknown} -> {:error, [{path ++ [:source], {:unknown_source, binding.source}}]}
+      {:describe, :malformed} -> {:error, [{path ++ [:source], {:bad_source, binding.source}}]}
       {:describe, {:error, reason}} -> {:error, [{path ++ [:source], {:describe, reason}}]}
     end
   end

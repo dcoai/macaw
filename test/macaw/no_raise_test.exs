@@ -177,6 +177,41 @@ defmodule Macaw.NoRaiseTest do
     end
   end
 
+  # What a host might pass as `sources:`: junk, a map of junk entries, or entries with the
+  # right shape and the wrong contents, beside a real source.
+  defp sources_term do
+    real = {%Rows{rows: [%{"t" => @now, "v" => 1.0}], name: "lat"}, nil}
+
+    entry =
+      one_of([
+        junk(),
+        tuple({junk(), junk()}),
+        tuple({constant(:ok), junk()}),
+        tuple({tuple({constant(:ok), constant(elem(real, 0))}), junk()}),
+        tuple({constant(~D[2026-01-01]), junk()}),
+        constant(real)
+      ])
+
+    one_of([junk(), some_map(member_of(["lat", "x"]), entry, 2)])
+  end
+
+  @tag verifies: "errors-values"
+  property "malformed sources answer a value from validate/3 and show/2, and fetch and render keep the caller alive" do
+    attrs = [name: "s", cells: [%{component: "macaw.table", name: "c", source: "lat"}]]
+    {:ok, surface} = Surface.new(attrs)
+    {:ok, validated} = Surface.validate(surface, @registry, sources())
+
+    check all(given <- sources_term(), max_runs: 300) do
+      assert value?(Surface.validate(surface, @registry, given))
+
+      env = [sources: given, now: @now, ceiling: 1_000]
+      assert value?(Surface.show(attrs, [registry: @registry] ++ env))
+      assert value?(Surface.show(surface, [registry: @registry] ++ env))
+      assert %{"c" => %{drawn: _}} = Surface.fetch(validated, env)
+      assert {:safe, _} = Surface.render(validated, env)
+    end
+  end
+
   # A term as JSON could carry it: atoms as text, tuples as lists, keys as strings.
   defp jsonable(term) when is_map(term),
     do: Map.new(term, fn {k, v} -> {json_key(jsonable(k)), jsonable(v)} end)

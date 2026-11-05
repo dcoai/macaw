@@ -344,7 +344,8 @@ defmodule Macaw.Surface do
   @doc """
   The static pass over a surface (spec/06 §3.4), with the host's registry and its sources
   by name, each `{source, context}`: `{:ok, %Macaw.Surface.Validated{}}` or every fault at
-  once, by path from the surface. No I/O but each source's `describe`, and no viewer.
+  once, by path from the surface. No I/O but each source's `describe`, and no viewer. An
+  entry of any other shape is `{:bad_source, name}` at its binding's source.
   """
   @spec validate(t(), Macaw.Registry.t(), %{String.t() => {Macaw.Data.Source.t(), term()}}) ::
           {:ok, Macaw.Surface.Validated.t()} | {:error, [Fault.t(), ...]}
@@ -358,6 +359,7 @@ defmodule Macaw.Surface do
   `env`: `sources:` (as given to `validate/3`), `now:` and `ceiling:` (required),
   `viewer:` (`nil`), `width:` (`1200`), `row_height:` (`64`), `timeout:` (`5_000` ms).
   Each fetch runs bounded in a process of its own, so it never blocks or crashes the caller.
+  A source gone or malformed since validation draws its cell `invalid`.
   """
   @spec fetch(Macaw.Surface.Validated.t(), keyword()) :: %{String.t() => map()}
   defdelegate fetch(validated, env), to: Macaw.Surface.Fetch

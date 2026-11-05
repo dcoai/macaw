@@ -144,7 +144,7 @@ The rest of each repository follows the family's conventions: private on GitLab,
 - **Enforced in CI:** `ci/raises.exs`, the family's copy, finds every explicit `raise`, `throw` and `exit` in `lib/` and fails on one outside `ci/raises_allowlist.exs`, which names each by function with its class (`:bang`, `:compile`, `:mix_task`, `:invariant`) and reason, defaults to `[]`, and fails on a stale entry. Implicit raises are guarded by property tests: over generated malformed attrs and documents, `Surface.new/1`, `from_map/1`, `from_json/2`, `validate/3` and `show/2` answer a value.
 
 ```test:errors-values
-over generated malformed attrs, documents and text, Surface.new/1, validate/3, show/2, from_map/1 and from_json/2 answer {:ok, _} or {:error, faults}, never a raise
+over generated malformed attrs, documents, text and sources, Surface.new/1, validate/3, show/2, from_map/1 and from_json/2 answer {:ok, _} or {:error, faults}, never a raise, and fetch/2 and render/2 keep the caller alive
 ```
 
 ## 5. Order of work {#overview-order}
