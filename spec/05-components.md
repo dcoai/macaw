@@ -177,18 +177,18 @@ the stat's and the meter's stylesheets have a rule for every class they emit, ev
 ### 6.4 The meter {#components-meter}
 
 `Macaw.Builtin.Meter`, registered as `"macaw.meter"` in the package `Macaw.Builtin`, of kind `:content`, `:pure`: one number against its range (#256).
-- **Parameters:** `label` and `reduce` as the stat's (§6.3); `min` (number, `0`); `max` (number, required), above `min`, else `{:not_above, min, max}` at `max`. The `<meter>` element's `low`, `high` and `optimum` wait on an optional number parameter, which macaw_data's parameters don't express yet (macaw_data#172).
+- **Parameters:** `label` and `reduce` as the stat's (§6.3); `min` (number, `0`); `max` (number, required), above `min`, else `{:not_above, min, max}` at `max`; `low`, `high` and `optimum` (numbers, each `nil` by default, meaning not given, not bindable, #272). Each one given must lie in the range, else `{:outside_range, value, min, max}` at its name, and `low` must not be above `high`, else `{:below_low, low, high}` at `high`.
 - **Declarations, order and budget:** the stat's slot, roles, reading load, order, budget and number (§6.3).
-- **Markup:** a `<div class="mw-meter">`; the label as a heading at the context's level, of class `mw-meter-label`, its id `Context.id/2` of `label`; a native `<meter>` named by that heading through `aria-labelledby`, with `value`, `min` and `max`, its fallback content the number; and a `<p class="mw-meter-value">` of the number and its unit's display symbol, so neither color nor length is the only cue. `<meter>` clamps its bar to the range, and the text shows the true value. No number is an en dash and no bar. Its states are drawn as the stat's.
+- **Markup:** a `<div class="mw-meter">`; the label as a heading at the context's level, of class `mw-meter-label`, its id `Context.id/2` of `label`; a native `<meter>` named by that heading through `aria-labelledby`, with `value`, `min` and `max`, and each of `low`, `high` and `optimum` given, an absent one left out, its fallback content the number; and a `<p class="mw-meter-value">` of the number and its unit's display symbol, then a `<span class="mw-meter-band">` of the word `low` or `high` when the number is below `low` or above `high`, so neither color nor length is the only cue. On a threshold is the middle band, as `<meter>` reads it, and `optimum` names no band: the word says where the number is, not whether that is good. `<meter>` clamps its bar to the range, and the text shows the true value. No number is an en dash and no bar. Its states are drawn as the stat's.
 - **Stylesheet:** one static sheet, `Macaw.Builtin.Meter.stylesheet/0`, as the stat's.
 - **It passes `macaw_component`'s kit.**
 
 ```test:meter-declares
-the meter's name and kind are as declared and it is a member of Macaw.Builtin; max is required, and a max not above min is a fault at its name
+the meter's name and kind are as declared and it is a member of Macaw.Builtin; max is required, and a max not above min is a fault at its name; low, high and optimum are optional numbers, not bindable, each in the range, with low not above high, else a fault at its name
 ```
 
 ```test:meter-markup
-the meter renders a native meter named by its heading, with its value and range, the true value and its unit's symbol beside it, a value past the range kept in both, and an en dash and no meter with no readings
+the meter renders a native meter named by its heading, with its value and range, the true value and its unit's symbol beside it, a value past the range kept in both, each threshold given written and an absent one left out, the word low or high beside a number past that threshold, and an en dash and no meter with no readings
 ```
 
 ### 6.5 The record {#components-record}

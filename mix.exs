@@ -72,7 +72,7 @@ defmodule Macaw.MixProject do
       # The document kernel, fragments and themes (spec/00 §4).
       {:macaw_layers, "~> 0.4.0"},
       # The data model, sources, deliveries and finishing (spec/00 §4).
-      {:macaw_data, "~> 0.12.0"},
+      {:macaw_data, "~> 0.12.1"},
       # The component contract (spec/00 §4).
       {:macaw_component, "~> 0.6.0"},
       {:phoenix_html, "~> 4.1"},

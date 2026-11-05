@@ -69,7 +69,7 @@ defmodule Macaw.StatMeterTest do
           }
         },
         %{
-          settings: %{"max" => 10, "min" => 1, "reduce" => "sum"},
+          settings: %{"max" => 10, "min" => 1, "reduce" => "sum", "low" => 2, "high" => 4},
           bindings: %{"rows" => %{"value" => "p50"}},
           deliveries: %{
             "rows" =>
@@ -248,6 +248,80 @@ defmodule Macaw.StatMeterTest do
     assert absent =~ ~s(<p class="mw-meter-value">–</p>)
   end
 
+  @tag verifies: "meter-declares"
+  test "low, high and optimum are optional numbers checked against the range and each other" do
+    {:ok, parameters} = Component.parameters(Meter)
+
+    for name <- ~w(low high optimum) do
+      assert %{type: :number, default: nil} = parameters[name]
+      refute parameters[name][:bindable]
+    end
+
+    assert {:ok, %{"low" => nil, "high" => nil, "optimum" => nil}} =
+             Component.settings(Meter, %{"max" => 10})
+
+    range = %{"min" => 0, "max" => 10}
+
+    assert {:ok, _} =
+             Component.declarations(
+               Meter,
+               Map.merge(range, %{"low" => 0, "high" => 10, "optimum" => 5})
+             )
+
+    assert {:ok, _} = Component.declarations(Meter, Map.merge(range, %{"low" => 5, "high" => 5}))
+
+    for name <- ~w(low high optimum), value <- [-1, 11] do
+      assert {:error, [{[^name], {:outside_range, ^value, 0, 10}}]} =
+               Component.declarations(Meter, Map.put(range, name, value))
+    end
+
+    assert {:error, [{["high"], {:below_low, 7, 3}}]} =
+             Component.declarations(Meter, Map.merge(range, %{"low" => 7, "high" => 3}))
+
+    assert {:error, faults} =
+             Component.declarations(Meter, Map.merge(range, %{"low" => 20, "high" => 3}))
+
+    assert {["low"], {:outside_range, 20, 0, 10}} in faults
+    assert {["high"], {:below_low, 20, 3}} in faults
+  end
+
+  @tag verifies: "meter-markup"
+  test "a given threshold is written on the meter, and an absent one is left out" do
+    given = html(Meter, %{"max" => 100, "low" => 20, "high" => 80, "optimum" => 10})
+
+    assert given =~
+             ~s(<meter aria-labelledby="c1-label" value="30" min="0" max="100" low="20" high="80" optimum="10">)
+
+    assert html(Meter, %{"max" => 100, "high" => 80}) =~ ~s(max="100" high="80">)
+
+    # A threshold of zero is a value, not an absence.
+    assert html(Meter, %{"min" => -5, "max" => 100, "low" => 0}) =~ ~s(low="0")
+
+    refute html(Meter, %{"max" => 100}) =~ ~r/low=|high=|optimum=/
+  end
+
+  @tag verifies: "meter-markup"
+  test "a value past low or high says so in words, so color is never the only cue" do
+    words = ~s(<span class="mw-meter-band">)
+
+    assert html(Meter, %{"max" => 100, "high" => 20}) =~
+             ~s(<p class="mw-meter-value">30 ms #{words}high</span></p>)
+
+    assert html(Meter, %{"max" => 100, "low" => 40}) =~
+             ~s(<p class="mw-meter-value">30 ms #{words}low</span></p>)
+
+    # On a threshold is in the middle, as <meter> reads it.
+    for settings <- [%{"low" => 30}, %{"high" => 30}, %{"low" => 10, "high" => 50}, %{}] do
+      refute html(Meter, Map.put(settings, "max", 100)) =~ words
+    end
+
+    # Optimum names no band.
+    refute html(Meter, %{"max" => 100, "optimum" => 90}) =~ words
+
+    gaps = [%{"at" => ~U[2026-11-04 11:00:00Z], "p50" => nil}]
+    refute html(Meter, %{"max" => 100, "high" => 20}, :live, gaps) =~ words
+  end
+
   @tag verifies: "stat-reduce"
   test "on a surface, a capped series' latest is its newest, from a source that orders or not" do
     rows = Enum.reverse(@rows)
@@ -347,7 +421,14 @@ defmodule Macaw.StatMeterTest do
   test "the stylesheets style what they emit, in the theme's colors only, at their addresses" do
     for {module, selectors} <- [
           {Stat, [".mw-stat{", ".mw-stat-label{", ".mw-stat-value{", ".mw-stat-unit{"]},
-          {Meter, [".mw-meter{", ".mw-meter-label{", ".mw-meter meter{", ".mw-meter-value{"]}
+          {Meter,
+           [
+             ".mw-meter{",
+             ".mw-meter-label{",
+             ".mw-meter meter{",
+             ".mw-meter-value{",
+             ".mw-meter-band{"
+           ]}
         ] do
       css = module.stylesheet()
       assert module.stylesheet_path() == Macaw.Component.Stylesheet.path(css)
