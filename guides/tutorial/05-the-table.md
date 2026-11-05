@@ -1,7 +1,8 @@
 # 5. The built-in table
 
-`macaw` ships one built-in component, the table, registered as `"macaw.table"` in the
-package `Macaw.Builtin`. This chapter covers its settings, its markup, how it sorts and
+The table is one of `macaw`'s built-in components, registered as `"macaw.table"` in the
+package `Macaw.Builtin` beside the feed, the meter, the record, the stat and the status
+grid. This chapter covers its settings, its markup, how it sorts and
 selects, its row budget, and what it draws when data is missing. It's also a worked
 example of the component contract you'll implement in chapter 6.
 
@@ -52,7 +53,7 @@ Its declarations say it has one slot, `rows`, of whole rows, with one role, `col
 the fields shown, in order, of any type, many of them, and optional, so any source binds
 and, left unbound, every field shows. It emits `sort` and `select` events; it writes the
 standard `selection` state as an identity; it observes `:activate` and `:select`; and
-its reading load is `:scan`. The live runtime will use the events and state; in 0.3.0
+its reading load is `:scan`. The live runtime will use the events and state; in 0.4.0
 they're declarations, and the buttons are rendered ready for it.
 
 ## A source with some texture
@@ -169,9 +170,10 @@ What to notice:
 ## Columns and headers
 
 **Headers come from the schema.** Each column is headed by its field's `label`, with its
-`unit` after it in parentheses, or by the field's name when the schema gives no label:
-`minutes` above has a unit and no label, so it reads `minutes (min)`, and chapter 1's
-`p50` reads `Median latency (ms)`. The sort button's `value` stays the field's name,
+`unit`'s display symbol after it in parentheses (`°C` for `Cel`, and a code with no symbol
+as it is), or by the field's name when the schema gives no label: `minutes` above has a
+unit and no label, so it reads `minutes (min)`, and chapter 1's `p50` reads
+`Median latency (ms)`. The sort button's `value` stays the field's name,
 which is what a `sort` setting names. A schema describes meaning, so the words a person
 reads belong there, once, for every component that shows the field.
 
@@ -244,7 +246,8 @@ for h <- [1, 2, 4, 8], do: Macaw.Component.budget(Table, "rows", %{}, Macaw.Grid
 ```
 
 When the delivery was capped by its source, or reduced by anyone, the table draws the
-"Showing part of the data" notice **above** its rows; the rows it has are still shown.
+"Showing part of the data" notice **above** its rows; the rows it has are still shown. A
+stale delivery does the same with "Out of date".
 With a ceiling of 2, two of the three incidents remain:
 
 ```elixir
@@ -267,8 +270,8 @@ html = capped |> Macaw.Surface.render(sources: sources, now: now, ceiling: 2) |>
 #=> {true, 2}
 ```
 
-A delivery with no rows draws "No data", and a failing source "Source unavailable"
-(chapter 4). Rows that can't be packed into columns, such as a text value in a column
+A delivery with no rows draws "No data", capped or not, and a failing source "Source
+unavailable" (chapter 4). Rows that can't be packed into columns, such as a text value in a column
 the delivery's `types:` declares `:number` (chapter 3), also draw "No data".
 
 ## The table's stylesheet
@@ -292,8 +295,9 @@ serves them from Phoenix).
 ## What the table leaves to you
 
 - **The notices' look.** Its stylesheet covers the table itself. The drawn-state notices
-  render classes (`mw-drawn`, `mw-glyph`, `mw-role-…`) and no styles; style them in your
-  stylesheet with the theme's custom properties (chapter 9). Override the table's own
+  render classes (`mw-drawn`, `mw-glyph`, `mw-role-…`), which `macaw_component`'s static
+  sheet styles (`Macaw.Component.Drawn.stylesheet_url/0`, chapter 10), or style them in
+  your stylesheet with the theme's custom properties (chapter 9). Override the table's own
   rules there too, if you want another look.
 - **Interaction.** The sort and select buttons emit events for the live runtime, which
   isn't released. On a server-rendered page they do nothing; set `sort` and `order` in
@@ -327,7 +331,8 @@ serves them from Phoenix).
   labels and units, stable row ids and escaped text values.
 - Its budget follows its height; capped data shows a notice above the rows.
 - Its stylesheet is static, themed by custom properties, and served at its content
-  address; the notices' look and interaction are yours or the live runtime's.
+  address; the notices' look is `macaw_component`'s sheet or yours, and interaction the
+  live runtime's.
 
 **Further reading:** [the table](https://github.com/dcoai/macaw/blob/main/spec/05-components.md#components-table) in spec/05.
 

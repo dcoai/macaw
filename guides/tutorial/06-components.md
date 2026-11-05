@@ -56,7 +56,7 @@ defmodule MyApp.Components.Stat do
 
   @impl true
   def render(:content, %{drawn: drawn, deliveries: %{"rows" => delivery}} = assigns)
-      when drawn in [:live, :capped] do
+      when drawn in [:live, :capped, :stale] do
     case Delivery.named_rows(delivery) do
       {:ok, rows} -> stat(rows, drawn, assigns)
       # Rows that can't be read by name draw as the built-in table draws rows that don't pack.
@@ -96,7 +96,8 @@ end
 The rows arrive with the source's field names, and the context says which of them the
 document bound to the `value` role: `Context.field/3`, below. `Delivery.named_rows/1`
 answers `{:ok, rows}`, or `{:error, faults}` for tuple rows it can't read by name, and the
-render draws that as `:no_data` rather than raising. This one uses HEEx, which needs
+render draws that as `:no_data` rather than raising. A `:capped` or `:stale` delivery still
+has rows, so it draws them under its notice. This one uses HEEx, which needs
 `phoenix_live_view` in your dependencies; a render may equally answer `{:safe, iodata}`
 or a string, which is escaped. Any value of the `Phoenix.HTML.Safe` protocol will do.
 
@@ -315,7 +316,7 @@ defmodule MyApp.Components.Readings do
 
   @impl true
   def render(:content, %{drawn: drawn, deliveries: %{"series" => delivery}} = assigns)
-      when drawn in [:live, :capped] do
+      when drawn in [:live, :capped, :stale] do
     y = Context.field(assigns.context, "series", "y")
 
     case Delivery.named_rows(delivery) do
@@ -641,7 +642,7 @@ defmodule MyApp.Components.Tally do
   def init(_settings, context), do: %{rows: 0, size: context.size}
 
   @impl true
-  def delivery(value, "rows", delivery), do: %{value | rows: value.rows + length(Delivery.rows(delivery))}
+  def delivery(value, "rows", delivery), do: %{value | rows: value.rows + length(Delivery.rows!(delivery))}
 
   @impl true
   def size(value, size), do: %{value | size: size}
@@ -671,7 +672,7 @@ Macaw.Component.transitions()
 #=> [init: 2, delivery: 3, size: 2, bound: 3]
 ```
 
-A surface rendered by `macaw` 0.3.0 runs `init`, `delivery` for each delivered slot in
+A surface rendered by `macaw` 0.4.0 runs `init`, `delivery` for each delivered slot in
 name order, and `size`, then renders with the value.
 
 ## Packages and the registry

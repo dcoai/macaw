@@ -212,7 +212,7 @@ socket.assigns
 ```
 
 Route it with `live "/status", StatusLive`. To refresh, re-render on a timer or a PubSub
-message and assign the new value. What `macaw` 0.3.0 doesn't do is react to the
+message and assign the new value. What `macaw` 0.4.0 doesn't do is react to the
 components' own events (the table's sort buttons): wiring events to state, change
 notification and per-cell processes are `macaw_live`'s, the runtime still to come. Until
 then, a LiveView owns the interaction, and re-renders the surface with new settings or
@@ -290,6 +290,8 @@ announcer and the client bus, chapter 6), serve that package's `priv/static` fro
 endpoint as well, beside your own `Plug.Static`:
 `plug Plug.Static, at: "/", from: {:macaw_component, "priv/static"}, only: ~w(macaw_component)`.
 Hooks import it from `Macaw.Component.Client.module_url/0`, `/macaw_component/client.js`.
+The same plug serves the drawn states' notices' stylesheet: link
+`Macaw.Component.Drawn.stylesheet_url/0`, `/macaw_component/drawn.css`, with the others.
 
 **Content Security Policy.** Nothing a surface renders is inline: no `style` attributes,
 no `<style>` elements, no inline scripts, nothing from another origin. A policy of

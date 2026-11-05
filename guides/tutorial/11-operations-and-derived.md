@@ -57,7 +57,7 @@ rows = [
     rows
   )
 
-Table.rows(table)
+Table.rows!(table)
 #=> [%{"avg" => 90.0, "host" => "b"}, %{"avg" => 50.0, "host" => "a"}]
 ```
 
@@ -394,7 +394,7 @@ engine = Engine.run(engine, 0)
 Engine.status(engine)
 #=> %{["average"] => :live, ["worst"] => :live}
 
-engine |> Engine.outputs() |> Map.new(fn {path, d} -> {path, Macaw.Data.Delivery.rows(d)} end)
+engine |> Engine.outputs() |> Map.new(fn {path, d} -> {path, Macaw.Data.Delivery.rows!(d)} end)
 #=> %{
 #      ["average"] => [%{"host" => "web-1", "mean" => 34.0}, %{"host" => "web-2", "mean" => 35.0}],
 #      ["worst"] => [%{"host" => "web-1", "worst" => 48}, %{"host" => "web-2", "worst" => 47}]
@@ -402,7 +402,7 @@ engine |> Engine.outputs() |> Map.new(fn {path, d} -> {path, Macaw.Data.Delivery
 ```
 
 - An output is a `Macaw.Data.Table`, packed once under the output schema, so
-  `Delivery.rows/1` reads it as any table's rows: every field present, keys as strings,
+  `Delivery.rows!/1` reads it as any table's rows: every field present, keys as strings,
   `nil` where the function left a field out, and a category's atom as its string.
 - `push/4` takes the latest deliveries and schemas by source name and the owner's
   monotonic milliseconds; a changed input marks the sources that read it, and the next

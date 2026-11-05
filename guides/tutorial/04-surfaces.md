@@ -1,7 +1,7 @@
 # 4. Surfaces in depth
 
 Chapter 1 rendered a one-cell surface. This chapter covers everything a surface does in
-`macaw` 0.3.0: the document and its cells, layouts, the registry, validation and its
+`macaw` 0.4.0: the document and its cells, layouts, the registry, validation and its
 faults, fetching with budgets and pooling, drawn states, and rendering options.
 
 **What you'll learn:**
@@ -697,6 +697,12 @@ deliveries and **drawn state**: `%{cell => %{deliveries: %{slot => delivery}, dr
 | `row_height:` | a layout row's height in CSS pixels | `64` |
 | `timeout:` | milliseconds a fetch may take before its cells show "Loading" | `5_000` |
 
+A value it can't fetch with (a `ceiling:` that isn't a positive integer, a `now:` that isn't
+a time, a bad `width:`, `row_height:` or `timeout:`) draws each cell with slots `invalid`
+and fetches nothing, where `show/2` answers it as a fault by key, such as
+`{[:ceiling], {:type, :pos_integer}}`. Leaving out `now:` or `ceiling:` is a wrong call, and
+raises.
+
 ```elixir
 now = ~U[2026-10-29 12:00:30Z]
 env = [sources: sources, now: now, ceiling: 1_000]
@@ -714,7 +720,7 @@ was reduced to 32 and the cell says it shows part of the data:
 
 ```elixir
 delivery = fetched["latency"].deliveries["rows"]
-{length(Macaw.Data.Delivery.rows(delivery)), delivery.served.reduced_by}
+{length(Macaw.Data.Delivery.rows!(delivery)), delivery.served.reduced_by}
 #=> {32, :runtime}
 ```
 
@@ -790,7 +796,7 @@ team_sources = %{"mine" => {%MyApp.TeamServices{}, nil}}
 {:ok, mine} = Surface.validate(mine, registry, team_sources)
 team_env = [sources: team_sources, now: now, ceiling: 100]
 
-mine |> Surface.fetch([viewer: %{team: "core"}] ++ team_env) |> get_in(["services", :deliveries, "rows"]) |> Macaw.Data.Delivery.rows() |> length()
+mine |> Surface.fetch([viewer: %{team: "core"}] ++ team_env) |> get_in(["services", :deliveries, "rows"]) |> Macaw.Data.Delivery.rows!() |> length()
 #=> 2
 
 mine |> Surface.fetch(team_env) |> get_in(["services", :drawn])
@@ -809,10 +815,10 @@ Every cell is always in exactly one **drawn state**, and never blank.
 |---|---|---|
 | `crashed` | (the live runtime: a component's process crashed) | Couldn't be drawn |
 | `down` | a fetch answered an error, or its process exited | Source unavailable |
-| `invalid` | a component's budget answer was bad | Invalid settings |
+| `invalid` | a component's budget or order answer was bad, an `env` value can't fetch, or a source is gone or malformed since validation | Invalid settings |
 | `loading` | a fetch didn't answer within `timeout:` | Loading |
-| `no_data` | a delivery has no rows | No data |
-| `stale` | (the live runtime: data out of date) | Out of date |
+| `no_data` | a delivery has no rows, capped or not | No data |
+| `stale` | a delivery's `served.stale` is true: its source is serving its last good answer | Out of date |
 | `capped` | a delivery was capped by its source or reduced by anyone | Showing part of the data |
 | `live` | everything else, and any cell without slots | |
 
@@ -884,7 +890,8 @@ Each state other than `live` renders a static notice, the same in every mode:
 
 The notice is text, so it reads without color or images; the glyph element carries the
 state's theme role as a class for your stylesheet (chapter 9). A capped table draws the
-"Showing part of the data" notice above its rows. You can use the module directly:
+"Showing part of the data" notice above its rows, and a stale one "Out of date". You can
+use the module directly:
 
 ```elixir
 alias Macaw.Component.Drawn

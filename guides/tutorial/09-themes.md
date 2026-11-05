@@ -235,9 +235,9 @@ Enum.all?(~w(--mw-text --mw-background --mw-grid --mw-axis --mw-surface --mw-inf
 #=> true
 ```
 
-`macaw` 0.3.0 ships no styles for the drawn-state notices: the classes are there for
-you. Each state's glyph name (`mw-glyph-square`, `mw-glyph-cross`, …) comes
-from its role's cue, so you can give each a distinct shape and states never differ by
+`macaw` 0.4.0 ships no styles of its own for the drawn-state notices: `macaw_component`
+has a static stylesheet for them (chapter 10), and the classes are there for you. Each state's glyph name
+(`mw-glyph-square`, `mw-glyph-cross`, …) comes from its role's cue, so you can give each a distinct shape and states never differ by
 color alone:
 
 ```elixir

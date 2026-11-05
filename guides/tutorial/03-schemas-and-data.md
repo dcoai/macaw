@@ -177,7 +177,7 @@ Schema.format_error(fault)
 #=> "cpu.quantity: unit \"%\" does not measure :duration (spec/03 §13)"
 ```
 
-`Schema.new!/1` raises `ArgumentError` with every fault formatted; use it for schemas
+`Schema.new!/1` raises `Macaw.Data.Error` with every fault formatted; use it for schemas
 built from constants, as the sources in this tutorial do.
 
 ### Versions, compatibility and JSON
@@ -339,11 +339,12 @@ Table.row(table, 1)
 changes a value,** with one exception: a category's atom reads back as the string that
 spells it (`:b` above reads `"b"`), so compare category values as strings, or with
 `Macaw.Data.Operations.same?/2`. A time keeps its zone and precision, and a number its
-integer or float. `rows/1` is every row as a map, `row/2` one row (`nil` past
-the end), and `slice/3` a run of rows that keeps the parent's chunks, copying nothing:
+integer or float. `rows!/1` is every row as a map (`rows/1` answers `{:ok, rows}`), `row/2`
+one row (`nil` past the end), and `slice/3` a run of rows that keeps the parent's chunks,
+copying nothing:
 
 ```elixir
-table |> Table.slice(1, 2) |> Table.rows() |> length()
+table |> Table.slice(1, 2) |> Table.rows!() |> length()
 #=> 2
 
 Table.types()
@@ -393,17 +394,18 @@ become `DateTime`s. Numbers stay as given, an integer an integer beside a float:
     types: %{"t" => :time}
   )
 
-Table.rows(edge)
+Table.rows!(edge)
 #=> [%{"t" => ~U[2026-10-29 12:00:00Z], "v" => 1},
 #    %{"t" => ~U[2026-10-29 00:00:00Z], "v" => 2.5}]
 
 Table.column_types([%{"a" => 1, "b" => "x", "c" => ~U[2026-10-29 12:00:00Z], "d" => :ok, "e" => ~RGB"#3b6fa8"}])
-#=> %{"a" => :number, "b" => :text, "c" => :time, "d" => :category, "e" => :color}
+#=> {:ok, %{"a" => :number, "b" => :text, "c" => :time, "d" => :category, "e" => :color}}
 ```
 
-`column_types/1` only suggests types; a table's declared types are what `column_type/2`
-says. `Table.get/2` reads a row's field by either spelling of its name, which helps when
-rows have atom keys and documents use strings:
+`column_types/1` answers `{:ok, types}`, and `column_types!/1` the types. It only suggests
+them; a table's declared types are what `column_type/2` says. `Table.get/2` reads a row's
+field by either spelling of its name, which helps when rows have atom keys and documents
+use strings:
 
 ```elixir
 Table.get(%{ms: 3}, "ms")
@@ -435,6 +437,7 @@ The `served` facts are what a reader needs to draw honestly:
 | `reduced_by` | who brought the rows within budget: `:source`, `:runtime` or `nil` | `nil` |
 | `ordered` | who put the rows in the request's order: `:source`, `:runtime` or `:sample` (chapter 2) | `nil` |
 | `params` | the parameters it answered for | `%{}` |
+| `stale` | the source is serving its last good answer, and the cell draws `:stale` | `false` |
 | `note` | a line for a person (`"coarsened from raw"`) | `nil` |
 | `position` | for a push snapshot, the number of the last increment it reflects (chapter 2) | `nil` |
 | `complete_until` | the source's watermark: a window value below which it expects no further change | `nil` |
@@ -451,7 +454,7 @@ Delivery.new([%{"a" => 1}], served: [capped: 3], zone: 1)
 ```
 
 A source answers that value from `fetch/2` as it is (chapter 2). Code over rows it knows
-are good calls `new!/2`, which answers the delivery and raises `ArgumentError` on a
+are good calls `new!/2`, which answers the delivery and raises `Macaw.Data.Error` on a
 fault. A delivery of tuple rows needs `names:` so it can be read by name:
 
 ```elixir
@@ -461,7 +464,7 @@ delivery =
     served: [capped: true, note: "first two only", resolution: :minute]
   )
 
-Delivery.rows(delivery)
+Delivery.rows!(delivery)
 #=> [{"web-1", 42}, {"web-2", nil}]
 
 Delivery.named_rows(delivery)
@@ -474,7 +477,8 @@ Delivery.named_rows(Delivery.new!([{"web-1", 42}]))
 #=> {true, "first two only", false}
 ```
 
-- `rows/1` reads the rows as given, a list uncopied;
+- `rows/1` reads the rows as given, a list uncopied, `{:ok, rows}` or `{:error, faults}`,
+  and `rows!/1` answers the rows;
 - `named_rows/1` reads them as maps, by `names` for tuples, `{:ok, rows}` or
   `{:error, faults}` (tuple rows without names can't be read by name), and
   `named_rows!/1` answers the maps;

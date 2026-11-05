@@ -1,6 +1,6 @@
 # Tutorial
 
-This tutorial teaches Macaw from nothing to the depths of what `macaw` 0.3.0 ships. It's
+This tutorial teaches Macaw from nothing to the depths of what `macaw` 0.4.0 ships. It's
 for Elixir developers new to Macaw: you'll write sources, compose surfaces, build and
 test components, store documents, theme them and serve them from Phoenix, with every
 example run against the released code.
@@ -28,7 +28,7 @@ macaw_layers ← macaw_data ← macaw_component ← macaw
   faults,        schemas,     contract, its     layouts, the registry,
   fragments,     tables,      context, drawn    validation, fetching,
   stores,        deliveries,  states and its    rendering, the built-in
-  themes         operations,  conformance kit   table
+  themes         operations,  conformance kit   components
                  derived
                  sources
 ```
@@ -41,7 +41,8 @@ macaw_layers ← macaw_data ← macaw_component ← macaw
   component conformance kit. Component packages depend on it without the core.
 - **`macaw`**, this package: surfaces and their layouts (the grid, the stack, the flow
   and named areas), the registry of enabled components and layouts, validation, fetching
-  and rendering, the one-call `show/2` and the short code form, and the built-in table.
+  and rendering, the one-call `show/2` and the short code form, and the built-in
+  components.
 
 Dependencies run one way, left to right. Installing `macaw` brings the other three.
 
@@ -90,8 +91,11 @@ earlier chapters, `MyApp.Services` and `MyApp.Latency` most of all.
 
 ## What's released, and what isn't
 
-`macaw` 0.3.0 holds **surfaces**, validated and rendered complete without a socket, and
-the built-in table, on `macaw_layers` 0.4, `macaw_data` 0.10 and `macaw_component` 0.4. A
+`macaw` 0.4.0 holds **surfaces**, validated and rendered complete without a socket, and
+the built-in components (the table, the status grid, the stat, the meter, the record and
+the feed; chapter 5 teaches the table, and the others are in their modules' documentation
+and [spec/05 §6](https://github.com/dcoai/macaw/blob/main/spec/05-components.md#components-packaging)),
+on `macaw_layers` 0.4, `macaw_data` 0.12 and `macaw_component` 0.6. A
 surface's layout is a behavior, `Macaw.Layout`, with the grid (6, 12 or 24 columns), the
 stack, the flow and named areas built in, and a host's registry holds the layouts it
 allows as it holds components. A surface and its cells' settings are terms, checked at

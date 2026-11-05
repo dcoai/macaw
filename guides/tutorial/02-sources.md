@@ -96,7 +96,7 @@ the library's rule for errors, and the rest of the tutorial follows it:
 - **A function answers `{:ok, value}` or `{:error, reason}`.** `Delivery.new/2` answers
   `{:ok, delivery}`, or `{:error, faults}` naming every bad option at once, which is
   already a fetch's answer.
-- **Its `!` twin answers the bare value** and raises `ArgumentError` on a fault:
+- **Its `!` twin answers the bare value** and raises `Macaw.Data.Error` on a fault:
   `Delivery.new!/2`, `Finish.finish!/4`, `Order.sort!/3`, `Push.new!/3` and the others.
 - **A source answers the value form;** code and tests over data known to be good call the
   twin, which reads most simply.
@@ -126,7 +126,7 @@ latency = %MyApp.Latency{}
 {:ok, request} = Request.new(now: now, params: %{"host" => "web-1"})
 {:ok, delivery} = Source.fetch(latency, description, request)
 
-length(Macaw.Data.Delivery.rows(delivery))
+length(Macaw.Data.Delivery.rows!(delivery))
 #=> 60
 ```
 
@@ -187,7 +187,7 @@ Description.capabilities()
 #=> [:window, :box, :region, :latest, :order, :budget, :push, :as_of]
 ```
 
-`Description.new!/1` raises `ArgumentError` instead, which suits a description built
+`Description.new!/1` raises `Macaw.Data.Error` instead, which suits a description built
 from constants.
 
 **Capabilities are all optional.** `supports` lists what the source does itself, so Macaw
@@ -251,7 +251,7 @@ it. JSON is only an adapter for these terms, at the edge (chapter 8).
 
 A parameter with no `default` is **required**: `validate/2` reports it as `:required` when
 it's missing. `legal_for: {slot, field, fact}`, which says the legal values follow from a
-bound slot's schema, is for the page runtime and isn't resolved by `macaw` 0.3.0.
+bound slot's schema, is for the page runtime and isn't resolved by `macaw` 0.4.0.
 
 ### Binding parameters on a surface
 
@@ -349,7 +349,7 @@ latest = Request.new!(now: now, latest: true)
 {:ok, all} = Source.fetch(latency, description, latest)
 finished = Finish.finish!(all, description, latest)
 
-Macaw.Data.Delivery.rows(finished)
+Macaw.Data.Delivery.rows!(finished)
 #=> [%{"host" => "web-1", "ms" => 20, "t" => ~U[2026-10-29 12:00:00Z]},
 #    %{"host" => "web-2", "ms" => 33, "t" => ~U[2026-10-29 12:00:00Z]}]
 ```
@@ -363,7 +363,7 @@ budgeted = Request.new!(now: now, params: %{"host" => "web-1"}, budget: 10)
 {:ok, delivery} = Source.fetch(latency, description, budgeted)
 finished = Finish.finish!(delivery, description, budgeted)
 
-{length(Macaw.Data.Delivery.rows(finished)), finished.served.reduced_by}
+{length(Macaw.Data.Delivery.rows!(finished)), finished.served.reduced_by}
 #=> {10, :runtime}
 ```
 
@@ -376,7 +376,7 @@ slowest = Request.new!(now: now, params: %{"host" => "web-1"}, order: [{"ms", :d
 {:ok, delivery} = Source.fetch(latency, description, slowest)
 finished = Finish.finish!(delivery, description, slowest)
 
-{Enum.map(Macaw.Data.Delivery.rows(finished), & &1["ms"]), finished.served.ordered}
+{Enum.map(Macaw.Data.Delivery.rows!(finished), & &1["ms"]), finished.served.ordered}
 #=> {[49, 49, 48], :runtime}
 ```
 
@@ -435,7 +435,7 @@ by `Macaw.Surface.fetch/2`; knowing them explains what you see.
 
   {:ok, everything} = Source.fetch(latency, description, Request.new!(now: now))
   reduced = Finish.reduce!(everything, description.schema, 20)
-  {length(Macaw.Data.Delivery.rows(reduced)), reduced.served.reduced_by}
+  {length(Macaw.Data.Delivery.rows!(reduced)), reduced.served.reduced_by}
   #=> {20, :runtime}
   ```
 
@@ -570,7 +570,7 @@ Source.subscribe(latency, self())
 #=> {:error, :no_push}
 ```
 
-A surface rendered by `macaw` 0.3.0 fetches; it doesn't subscribe. Pushing pays off with
+A surface rendered by `macaw` 0.4.0 fetches; it doesn't subscribe. Pushing pays off with
 the live runtime, and today in your own processes.
 
 ## How a surface calls sources

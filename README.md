@@ -15,10 +15,10 @@ Macaw exists for **composition effects**: components composed through it gain ef
 From Hex:
 
 ```elixir
-{:macaw, "~> 0.3.0"}
+{:macaw, "~> 0.4.0"}
 ```
 
-**v0.1.0: surfaces with a grid,** validated and rendered complete without a socket, and the built-in table ([spec/06 §3](https://github.com/dcoai/macaw/blob/main/spec/06-pages.md#pages-regions)). State, pages and templates, records, the web plans and the live runtime follow, each tracked by its own issue ([spec/00 §5](https://github.com/dcoai/macaw/blob/main/spec/00-overview.md#overview-order)).
+**v0.1.0: surfaces with a grid,** validated and rendered complete without a socket, and the built-in table ([spec/06 §3](https://github.com/dcoai/macaw/blob/main/spec/06-pages.md#pages-regions)). **v0.4.0 adds the built-in** status grid, stat, meter, record and feed ([spec/05 §6.2–6.6](https://github.com/dcoai/macaw/blob/main/spec/05-components.md#components-status-grid)). State, pages and templates, records, the web plans and the live runtime follow, each tracked by its own issue ([spec/00 §5](https://github.com/dcoai/macaw/blob/main/spec/00-overview.md#overview-order)).
 
 In five lines, the host's registry and ceiling configured (`config :macaw, packages: [...], ceiling: 10_000`):
 
@@ -53,7 +53,7 @@ sources = %{"latency" => {my_source, my_context}}
 html = Macaw.Surface.render(validated, sources: sources, now: DateTime.utc_now(), ceiling: 10_000)
 ```
 
-Serve `Macaw.Grid.stylesheet/0` at `Macaw.Grid.stylesheet_path/0`, `Macaw.Layout.Stack.stylesheet/0` and `Macaw.Layout.Flow.stylesheet/0` at their `stylesheet_path/0` when a surface uses them (and, for any surface, `Macaw.Surface.stylesheet/1` of the validated surface, which an areas layout's template needs), and `Macaw.Builtin.Table.stylesheet/0` at `Macaw.Builtin.Table.stylesheet_path/0`, and serve macaw_component's `priv/static` for the drawn states' notices (`Macaw.Component.Drawn.stylesheet_url/0`); link them from the page. Nothing is inline.
+Serve `Macaw.Grid.stylesheet/0` at `Macaw.Grid.stylesheet_path/0`, `Macaw.Layout.Stack.stylesheet/0` and `Macaw.Layout.Flow.stylesheet/0` at their `stylesheet_path/0` when a surface uses them (and, for any surface, `Macaw.Surface.stylesheet/1` of the validated surface, which an areas layout's template needs), and `Macaw.Builtin.Table.stylesheet/0` at `Macaw.Builtin.Table.stylesheet_path/0` (each other built-in has its own, the same way, for a page that uses it), and serve macaw_component's `priv/static` for the drawn states' notices (`Macaw.Component.Drawn.stylesheet_url/0`); link them from the page. Nothing is inline.
 
 New to Macaw? [The tutorial](guides/tutorial.md) goes from a first surface to sources, components, documents, themes and Phoenix, every example run against this release.
 
@@ -62,7 +62,7 @@ New to Macaw? [The tutorial](guides/tutorial.md) goes from a first surface to so
 | `Macaw.Surface`, `Macaw.Surface.Cell` | the surface document and its cells: forms, version line, fragment type; validation, fetching and rendering | [06 §3.1–3.6](https://github.com/dcoai/macaw/blob/main/spec/06-pages.md#pages-surface-document) |
 | `Macaw.Grid` | the grid, 12 columns or 6 or 24: bounds, overlaps, reading order, classes and the static stylesheet | [06 §3.3](https://github.com/dcoai/macaw/blob/main/spec/06-pages.md#pages-grid) |
 | `Macaw.Registry` | a host's registry of components, built from the packages it enables | [12 §1.1](https://github.com/dcoai/macaw/blob/main/spec/12-registry.md#registry-host) |
-| `Macaw.Builtin`, `Macaw.Builtin.Table` | the built-in package and its table | [05 §6.1](https://github.com/dcoai/macaw/blob/main/spec/05-components.md#components-table) |
+| `Macaw.Builtin`, `Macaw.Builtin.Table`, `.StatusGrid`, `.Stat`, `.Meter`, `.Record`, `.Feed` | the built-in package and its components | [05 §6](https://github.com/dcoai/macaw/blob/main/spec/05-components.md#components-packaging) |
 
 ## The family
 

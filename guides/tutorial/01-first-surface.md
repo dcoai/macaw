@@ -17,7 +17,7 @@ so you see what each piece is and what the short form fills in for you.
 Macaw's core is the `macaw` package. Add it to your dependencies in `mix.exs`:
 
 ```elixir
-{:macaw, "~> 0.3.0"}
+{:macaw, "~> 0.4.0"}
 ```
 
 It brings `macaw_layers`, `macaw_data`, `macaw_component` and `phoenix_html` with it, so
@@ -25,7 +25,7 @@ you don't list them yourself. Run `mix deps.get`, and you're ready. Macaw needs 
 or later.
 
 Macaw is a very early release: every 0.x version may change its API. This tutorial
-describes `macaw` 0.3.0 on `macaw_layers` 0.4, `macaw_data` 0.10 and `macaw_component` 0.4.
+describes `macaw` 0.4.0 on `macaw_layers` 0.4, `macaw_data` 0.12 and `macaw_component` 0.6.
 
 ## The plan
 
@@ -182,9 +182,9 @@ config :macaw, ceiling: 1_000
 ```
 
 With that, `show/2` takes the ceiling from the configuration, and a call needs only
-`sources:`. Without either, `show/2` raises `ArgumentError`: a host that never chose a
-ceiling is misconfigured. The same configuration lists the component packages your
-documents may use, `packages: [...]`, which chapter 6 adds to.
+`sources:`. Without either, `show/2` answers `{:error, [{[:ceiling], :required}]}`: a host
+that never chose a ceiling is misconfigured. The same configuration lists the component
+packages your documents may use, `packages: [...]`, which chapter 6 adds to.
 
 ## Step 3: what the five lines expand to
 
@@ -195,14 +195,22 @@ time, with each default made explicit.
 
 A **registry** lists the components and layouts a host allows its documents to use. It's
 closed by default: a component is only available when its package is listed. The core's
-built-in components (today, one: the table) are the package `Macaw.Builtin`, which the
-host's default registry always holds, whatever the configuration lists:
+built-in components (the feed, the meter, the record, the stat, the status grid and the
+table) are the package `Macaw.Builtin`, which the host's default registry always holds,
+whatever the configuration lists:
 
 ```elixir
 registry = Macaw.Registry.default!()
 
 Macaw.Registry.components(registry)
-#=> [{"macaw.table", Macaw.Builtin.Table}]
+#=> [
+#      {"macaw.feed", Macaw.Builtin.Feed},
+#      {"macaw.meter", Macaw.Builtin.Meter},
+#      {"macaw.record", Macaw.Builtin.Record},
+#      {"macaw.stat", Macaw.Builtin.Stat},
+#      {"macaw.status_grid", Macaw.Builtin.StatusGrid},
+#      {"macaw.table", Macaw.Builtin.Table}
+#    ]
 
 Macaw.Registry.layouts(registry) |> Enum.map(fn {name, _module} -> name end)
 #=> ["areas", "flow", "grid", "stack"]
@@ -342,7 +350,8 @@ now a surface is rendered complete on the server, and that's what this tutorial 
 
 - A **source** describes its data (a schema) and fetches rows (a delivery).
 - A **registry** is the closed list of components and layouts your host allows;
-  `Macaw.Registry.default/0` builds it from your configuration, with the built-in table.
+  `Macaw.Registry.default/0` builds it from your configuration, with the built-in
+  components.
 - A **surface** is a document of **cells** under a **layout**; each cell names a
   component and binds its slots to sources by name.
 - `build!/2 |> show/2` is the short form; it expands to `new/1` with derived names, a
